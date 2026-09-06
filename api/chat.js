@@ -50,13 +50,13 @@ export default async function handler(req, res) {
     });
 
     // فراخوانی Gemini API
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: contents,
-      config: {
-        systemInstruction: systemInstruction,
-      }
-    });
+const response = await ai.models.generateContent({
+  model: 'gemini-3.6-flash',   // was: 'gemini-2.5-flash'
+  contents: contents,
+  config: {
+    systemInstruction: systemInstruction,
+  }
+});
 
     return res.status(200).json({
       success: true,
