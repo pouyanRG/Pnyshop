@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="
+    width=device-width, 
+    initial-scale=1.0, 
+    maximum-scale=1.0, 
+    user-scalable=no
+    ">
+ 
+    <title>جزئیات محصول | SHOP</title>
+    <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self';
+    script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com https://static.cloudflareinsights.com; 
+    style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com; 
+    font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:; 
+    img-src 'self' data: https: blob:; 
+    connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com;
+    object-src 'none'; 
+    base-uri 'self'; 
+    form-action 'self'; 
+    frame-ancestors 'self'; 
+    upgrade-insecure-requests;">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+ 
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="icon" type="image/png" href="img/f0909d6eae7ee548665693cfbe823b078cf70ede_1774984328.png">
+    <link rel="stylesheet" href="Css/style.css">
+    <link rel="stylesheet" href="Css/product.css">
+ 
+ 
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+ 
+</head>
+<body>
+        <div class="loading-screen" id="loadingScreen">
+            <div class="loader-dots">
+                <div class="dot"></div>
+                <div class="dot"></div>
+                <div class="dot"></div>
+            </div>
+        </div>
+    <header class="main-header" id="mainHeader">
+        <div class="header-inner">
+            <a class="logo-btn">
+                <img src="img/Pnyshop-img-logo.png" alt="pnyshop" class="logo-img">
+                <span class="logo-text"></span>
+            </a>
+    
+            <div class="search-container">
+                <div class="search-wrap">
+                    <i class="fas fa-search s-icon"></i>
+                    <label for="mainSearch" class="visually-hidden">جستجوی محصول</label>
+                    <input type="text" id="mainSearch" placeholder="جستجوی محصول، برند، دسته‌بندی..." autocomplete="off" spellcheck="false" aria-label="جستجو" role="combobox" aria-expanded="false" aria-controls="searchDropdown">
+                    <button type="button" id="clearSearch" aria-label="پاک کردن جستجو">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+                <div id="searchDropdown" class="search-dropdown" role="listbox"></div>
+            </div>
+    
+            <div class="header-actions">
+                <button type="button" class="theme-switch-pill theme-d" id="themeToggle" onclick="toggleTheme()" role="switch" aria-checked="false" aria-label="تغییر حالت شب/روز">
+                    <span class="tsp-track">
+                        <span class="tsp-thumb"><i class="fas fa-moon"></i></span>
+                        <span class="tsp-label" id="themeLabel">حالت شب</span>
+                    </span>
+                </button>
+                <div class="h-divider"></div>
+                <button class="h-action-btn" id="mobileTheme" onclick="toggleTheme()" aria-label="تغییر تم" style="display:none;">
+                    <i class="fas fa-moon"></i>
+                </button>
+            </div>
+        </div>
+    </header>
+ 
+    <main class="pdp-wrap">
+        <div id="loadingState">
+            <div style="display:flex;flex-direction:column;gap:16px;">
+                <div class="skel" style="height:320px;border-radius:16px;width:100%;"></div>
+                <div class="skel" style="height:14px;width:40%;"></div>
+                <div class="skel" style="height:24px;width:85%;"></div>
+                <div class="skel" style="height:18px;width:50%;"></div>
+                <div class="skel" style="height:36px;width:60%;"></div>
+                <div class="skel" style="height:100px;width:100%;"></div>
+            </div>
+        </div>
+ 
+        <div id="errorState" class="state-box" style="display:none;">
+            <i class="fas fa-box-open"></i>
+            <h2 id="errorTitle">محصول یافت نشد</h2>
+            <p id="errorMsg">این محصول ممکن است حذف شده باشد.</p>
+            <a href="index.html" class="btn-back"><i class="fas fa-arrow-right"></i> بازگشت</a>
+        </div>
+ 
+        <div id="productContent" style="display:none;">
+            <nav class="breadcrumb-row" id="breadcrumbRow" aria-label="مسیر"><a href="index.html">خانه</a></nav>
+ 
+            <div class="pdp-grid">
+                <section class="gallery-col" aria-label="گالری">
+                    <div class="gallery-desktop">
+                        <div class="thumb-rail" id="thumbRail"></div>
+                        <div class="main-image-wrap" id="mainImageWrap">
+                            <span class="discount-ribbon" id="discountRibbon" style="display:none;"></span>
+                            <span class="no-image-badge" id="noImageBadge" style="display:none;"><i class="fas fa-image"></i> بدون تصویر</span>
+                            <img id="mainImage" src="" alt="تصویر" onerror="this.src=FALLBACK_IMG">
+                            <button type="button" class="zoom-btn" id="zoomBtn" aria-label="بزرگنمایی"><i class="fas fa-expand"></i></button>
+                        </div>
+                    </div>
+                    <div class="gallery-mobile">
+                        <div class="swiper mobile-gallery-swiper" id="mobileGallerySwiper">
+                            <div class="swiper-wrapper" id="mobileGalleryWrapper"></div>
+                            <div class="swiper-pagination"></div>
+                            <span class="gallery-counter" id="galleryCounter">۱ / ۱</span>
+                            <span class="discount-ribbon" id="mobileDiscountRibbon" style="display:none;"></span>
+                            <span class="no-image-badge" id="mobileNoImageBadge" style="display:none;"><i class="fas fa-image"></i> بدون تصویر</span>
+                        </div>
+                    </div>
+                </section>
+ 
+                <section class="info-col" aria-label="اطلاعات">
+                    <span class="cat-chip" id="catChip"><i class="fas fa-check-circle"></i> <span id="catChipText"></span></span>
+                    <h1 class="pdp-title" id="prodTitle"></h1>
+                    <div class="hot-tag" id="hotTag"><i class="fas fa-fire"></i> فروش ویژه</div>
+ 
+                    <div class="rating-row">
+                        <div class="stars-static" id="starsRow"></div>
+                        <span class="rating-num" id="ratingNum">0.0</span>
+                        <span class="reviews-link" id="reviewsLink">۰ دیدگاه</span>
+                        <span class="stock-note" id="stockNote"></span>
+                    </div>
+ 
+                    <div class="price-block">
+                        <span class="old-price" id="oldPrice" style="display:none;"></span>
+                        <span class="discount-pill" id="discountPill" style="display:none;"></span>
+                        <span class="final-price" id="finalPrice">۰ <small>تومان</small></span>
+                    </div>
+ 
+                    <div class="attr-block">
+                        <label class="attr-label">رنگ: <span id="colorNameLabel" style="color:var(--primary);font-weight:900;"></span></label>
+                        <div class="colors-row" id="colorsRow"></div>
+                    </div>
+ 
+                    <div class="qty-cart-row">
+                        <div class="qty-ctrl">
+                            <button class="qty-btn-sm" onclick="changeQty(-1)" aria-label="کاهش">−</button>
+                            <input type="text" class="qty-input" id="qtyInput" value="1" readonly inputmode="numeric" aria-label="تعداد">
+                            <button class="qty-btn-sm" onclick="changeQty(1)" aria-label="افزایش">+</button>
+                        </div>
+                        <button class="btn-add-cart" id="btnAddCart" onclick="addToCart()"><i class="fas fa-shopping-cart"></i> افزودن به سبد</button>
+                        <button class="icon-action-btn" id="wishBtn" onclick="toggleWishlist()" aria-label="علاقه"><i class="far fa-heart"></i></button>
+                        <button class="icon-action-btn" onclick="shareProduct()" aria-label="اشتراک"><i class="fas fa-share-alt"></i></button>
+                    </div>
+ 
+                    <div class="trust-row">
+                        <div class="trust-item"><i class="fas fa-shield-alt"></i> ضمانت اصالت</div>
+                        <div class="trust-item"><i class="fas fa-undo"></i> ۷ روز بازگشت</div>
+                        <div class="trust-item"><i class="fas fa-truck"></i> ارسال سریع</div>
+                    </div>
+                </section>
+            </div>
+ 
+            <div class="pdp-section" id="descSection">
+                <div class="pdp-section-title">توضیحات</div>
+                <p class="desc-text" id="descText"></p>
+            </div>
+ 
+            <div class="pdp-section" id="specsSection" style="display:none;">
+                <div class="pdp-section-title">مشخصات فنی</div>
+                <div class="specs-list" id="specsList"></div>
+                <table class="specs-tbl" id="specsTable"><tbody></tbody></table>
+            </div>
+ 
+            <div class="pdp-section" id="relatedSection" style="display:none;">
+                <div class="pdp-section-title">مشابه</div>
+                <div class="related-grid" id="relatedGrid"></div>
+            </div>
+        </div>
+    </main>
+ 
+    <div class="lightbox-overlay" id="lightboxOverlay" role="dialog" aria-modal="true">
+        <div class="lightbox-top">
+            <span class="lightbox-count" id="lightboxCount">۱ / ۱</span>
+            <button class="lightbox-close" onclick="closeLightbox()" aria-label="بستن"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="swiper lightbox-swiper" id="lightboxSwiper">
+            <div class="swiper-wrapper" id="lightboxWrapper"></div>
+            <div class="swiper-button-next"></div>
+            <div class="swiper-button-prev"></div>
+        </div>
+        <div class="lightbox-hint"><i class="fas fa-hand-pointer"></i> دو بار ضربه بزنید</div>
+    </div>
+ 
+    <nav class="mobile-nav" aria-label="ناوبری">
+        <a href="index.html" class="mn-item" aria-label="خانه"><i class="fas fa-home"></i><span>خانه</span></a>
+        <div class="mn-item" tabindex="0" role="button" onclick="window.location.href='index.html'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location.href='index.html'}" aria-label="دسته"><i class="fas fa-th-large"></i><span>دسته</span></div>
+        <a href="sabad.html" class="mn-item" aria-label="سبد">
+            <div class="mn-cart-wrap"><i class="fas fa-shopping-cart"></i></div>
+            <span>سبد</span>
+        </a>
+        <a href="profile.html" class="mn-item" aria-label="حساب"><i class="far fa-user"></i><span>حساب</span></a>
+    </nav>
+ 
+    <div id="toast" class="toast"></div>
+ 
+ 
+<script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+<script type="module" src="Js/product.js"></script>
+<script type="module" src="Js/firebase-bridge.js"></script>
+<script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v4513226cdae34746b4dedf0b4dfa099e1781791509496" integrity="sha512-ZE9pZaUXND66v380QUtch/5sE9tPFh2zg45pR2PB0CVkCtOREv2AJKkSidISWkysEuQ0EH8faUU5du78bx87UQ==" data-cf-beacon='{"version":"2024.11.0","token":"4655f3c58dd6497fb7ddb85b68480db7"}' crossorigin="anonymous"></script>
+<script src="Js/all.js"></script>
+</body>
+</html>

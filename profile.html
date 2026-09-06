@@ -1,0 +1,287 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>پروفایل کاربری | SHOP</title>
+ 
+    <!-- ===================================================================
+         SECURITY: Content-Security-Policy (defense-in-depth, meta-tag based)
+         =================================================================== -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://www.gstatic.com;
+        style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+        font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:;
+        img-src 'self' data: https: blob:;
+        connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+        frame-ancestors 'self';
+        upgrade-insecure-requests;
+    ">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+ 
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="icon" type="image/png" href="img/f0909d6eae7ee548665693cfbe823b078cf70ede_1774984328.png">
+    <link rel="stylesheet" href="Css/style.css">
+ 
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    <link rel="stylesheet" href="Css/profile.css">
+</head>
+<body>
+ 
+<div class="loading-screen" id="loadingScreen">
+    <div class="loader-dots">
+        <div class="dot"></div>
+        <div class="dot"></div>
+        <div class="dot"></div>
+    </div>
+</div>
+ 
+<header class="main-header" id="mainHeader">
+    <div class="header-inner">
+        <a href="index.html" class="logo-btn" aria-label="صفحه اصلی">
+            <img src="img/Pnyshop-img-logo.png" alt="SHOP" class="logo-img">
+        </a>
+ 
+        <div class="search-container">
+            <div class="search-wrap">
+                <i class="fas fa-search s-icon"></i>
+                <input type="text" id="mainSearch" placeholder="جستجوی محصول، برند، دسته‌بندی..." autocomplete="off" spellcheck="false" aria-label="جستجو">
+                <div id="clearSearch" role="button" aria-label="پاک کردن جستجو">
+                    <i class="fas fa-times"></i>
+                </div>
+            </div>
+            <div id="searchDropdown" class="search-dropdown" role="listbox"></div>
+        </div>
+ 
+        <div class="header-actions">
+                <button type="button" class="theme-switch-pill theme-d" id="themeToggle" onclick="toggleTheme()" role="switch" aria-checked="false" aria-label="تغییر حالت شب/روز">
+                    <span class="tsp-track">
+                        <span class="tsp-thumb"><i class="fas fa-moon"></i></span>
+                        <span class="tsp-label" id="themeLabel">حالت شب</span>
+                    </span>
+                </button>
+            <a href="login.html" class="h-user-btn" id="authLink" aria-label="ورود">
+                <i class="far fa-user"></i>
+                <span id="userLabel" class="skeleton user-label-skeleton"></span>
+            </a>
+            <div class="h-divider"></div>
+            <a href="sabad.html" class="h-action-btn" aria-label="سبد خرید">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="h-badge" id="headerCartCount">۰</span>
+            </a>
+            <button class="h-action-btn" id="mobileTheme" onclick="toggleTheme()" aria-label="تغییر تم" style="display:none;">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </div>
+</header>
+ 
+    <!-- ===== SKELETON (تا لود کامل داده از Firestore) ===== -->
+    <div class="container" id="profileSkeleton">
+        <aside class="sidebar">
+            <div class="user-info-side">
+                <div class="avatar-wrap"><div class="skel" style="width:76px;height:76px;border-radius:50%;"></div></div>
+                <div class="skel" style="width:70%;height:14px;margin:14px auto 8px;"></div>
+                <div class="skel" style="width:85%;height:11px;margin:0 auto;"></div>
+            </div>
+            <div class="menu-overflow-wrap" style="flex-direction:column;gap:var(--space-2);">
+                <div class="skel" style="width:100%;height:40px;border-radius:var(--radius-sm);"></div>
+                <div class="skel" style="width:100%;height:40px;border-radius:var(--radius-sm);"></div>
+                <div class="skel" style="width:100%;height:40px;border-radius:var(--radius-sm);"></div>
+                <div class="skel" style="width:100%;height:40px;border-radius:var(--radius-sm);"></div>
+            </div>
+            <div class="skel" style="width:100%;height:44px;border-radius:var(--radius-md);margin-top:32px;"></div>
+        </aside>
+        <main class="main-content">
+            <div class="card">
+                <div class="section-title-row">
+                    <div class="skel" style="width:150px;height:20px;"></div>
+                    <div class="skel" style="width:120px;height:38px;border-radius:var(--radius-full);"></div>
+                </div>
+                <div class="info-grid-v2">
+                    <div class="info-box"><div class="info-box-text"><div class="skel" style="width:60%;height:10px;margin-bottom:8px;"></div><div class="skel" style="width:85%;height:14px;"></div></div><div class="skel" style="width:40px;height:40px;border-radius:var(--radius-md);flex-shrink:0;"></div></div>
+                    <div class="info-box"><div class="info-box-text"><div class="skel" style="width:60%;height:10px;margin-bottom:8px;"></div><div class="skel" style="width:85%;height:14px;"></div></div><div class="skel" style="width:40px;height:40px;border-radius:var(--radius-md);flex-shrink:0;"></div></div>
+                    <div class="info-box"><div class="info-box-text"><div class="skel" style="width:60%;height:10px;margin-bottom:8px;"></div><div class="skel" style="width:85%;height:14px;"></div></div><div class="skel" style="width:40px;height:40px;border-radius:var(--radius-md);flex-shrink:0;"></div></div>
+                    <div class="info-box full-width"><div class="info-box-text"><div class="skel" style="width:30%;height:10px;margin-bottom:8px;"></div><div class="skel" style="width:60%;height:14px;"></div></div><div class="skel" style="width:40px;height:40px;border-radius:var(--radius-md);flex-shrink:0;"></div></div>
+                    <div class="info-box full-width"><div class="info-box-text"><div class="skel" style="width:30%;height:10px;margin-bottom:8px;"></div><div class="skel" style="width:80%;height:14px;"></div></div><div class="skel" style="width:40px;height:40px;border-radius:var(--radius-md);flex-shrink:0;"></div></div>
+                    <div class="info-box"><div class="info-box-text"><div class="skel" style="width:60%;height:10px;margin-bottom:8px;"></div><div class="skel" style="width:85%;height:14px;"></div></div><div class="skel" style="width:40px;height:40px;border-radius:var(--radius-md);flex-shrink:0;"></div></div>
+                    <div class="info-box"><div class="info-box-text"><div class="skel" style="width:60%;height:10px;margin-bottom:8px;"></div><div class="skel" style="width:85%;height:14px;"></div></div><div class="skel" style="width:40px;height:40px;border-radius:var(--radius-md);flex-shrink:0;"></div></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- ===== REAL CONTENT (تا لود کامل، مخفی) ===== -->
+    <div class="container hidden" id="profileContainer">
+        <aside class="sidebar">
+            <div class="user-info-side">
+                <div class="avatar-wrap">
+                    <div class="avatar"><i class="fas fa-user"></i></div>
+                    <span class="avatar-online-dot" aria-hidden="true"></span>
+                </div>
+                <h3 id="side-name" style="margin: 0 0 4px; font-weight: 900; color: var(--text-primary); font-size: 16px;">کاربر مهمان</h3>
+                <p id="side-email" style="margin: 0; font-size: 13px; color: var(--text-secondary); font-weight: 700;"></p>
+            </div>
+
+            <div class="menu-overflow-wrap">
+                <div class="menu-item active" onclick="showSection('personal', this)">
+                    <span class="menu-icon-box"><i class="fas fa-id-card"></i></span> اطلاعات حساب
+                </div>
+                <div class="menu-item" onclick="showSection('orders', this)">
+                    <span class="menu-icon-box"><i class="fas fa-shopping-bag"></i></span> سفارشات من
+                </div>
+                <div class="menu-item" onclick="showSection('favs', this)">
+                    <span class="menu-icon-box"><i class="fas fa-heart"></i></span> علاقه‌مندی‌ها
+                </div>
+                <div class="menu-item" onclick="showSection('wallet', this)">
+                    <span class="menu-icon-box"><i class="fas fa-wallet"></i></span> کیف پول
+                </div>
+            </div>
+ 
+            <button onclick="logout()" class="log-out">
+                <i class="fas fa-sign-out-alt"></i> خروج از حساب
+            </button>
+        </aside>
+ 
+        <main class="main-content">
+            <div id="sec-personal" class="card">
+                <div class="section-title-row">
+                    <div class="section-title-v2"><span class="st-dot"></span> اطلاعات شخصی</div>
+                    <button class="btn-action btn-edit" id="edit-btn" onclick="toggleEdit(true)">
+                        <i class="fas fa-pen" style="color: white;"></i> ویرایش اطلاعات
+                    </button>
+                    <button class="btn-action btn-save" id="save-btn" onclick="saveUserData()">
+                        <i class="fas fa-check" style="color: white;"></i> ذخیره تغییرات
+                    </button>
+                </div>
+
+                <div class="info-grid-v2">
+                    <div class="info-box">
+                        <div class="info-box-text">
+                            <label>شماره موبایل</label>
+                            <span id="v-mobile"></span>
+                            <input type="text" id="i-mobile" inputmode="numeric" maxlength="11" placeholder="09xxxxxxxxx">
+                        </div>
+                        <div class="info-box-icon ib-blue"><i class="fas fa-mobile-alt"></i></div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-box-text">
+                            <label>کد ملی</label>
+                            <span id="v-melli"></span>
+                            <input type="text" id="i-melli">
+                        </div>
+                        <div class="info-box-icon ib-green"><i class="fas fa-id-card"></i></div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-box-text">
+                            <label>نام و نام خانوادگی</label>
+                            <span id="v-name"></span>
+                            <input type="text" id="i-name">
+                        </div>
+                        <div class="info-box-icon ib-purple"><i class="fas fa-user"></i></div>
+                    </div>
+                    <div class="info-box full-width">
+                        <div class="info-box-text">
+                            <label>ایمیل</label>
+                            <span id="v-email"></span>
+                            <input type="email" id="i-email">
+                        </div>
+                        <div class="info-box-icon ib-blue"><i class="fas fa-envelope"></i></div>
+                    </div>
+                    <div class="info-box full-width">
+                        <div class="info-box-text">
+                            <label>آدرس پستی مرسولات</label>
+                            <span id="v-address"></span>
+                            <input type="text" id="i-address">
+                        </div>
+                        <div class="info-box-icon ib-indigo"><i class="fas fa-map-marker-alt"></i></div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-box-text">
+                            <label>تاریخ عضویت</label>
+                            <span id="v-date"></span>
+                        </div>
+                        <div class="info-box-icon ib-pink"><i class="fas fa-calendar-alt"></i></div>
+                    </div>
+                    <div class="info-box">
+                        <div class="info-box-text">
+                            <label>کد پستی</label>
+                            <span id="v-post"></span>
+                            <input type="text" id="i-post">
+                        </div>
+                        <div class="info-box-icon ib-orange"><i class="fas fa-envelope-open-text"></i></div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div id="sec-wallet" class="card hidden">
+                <div class="section-title">کیف پول و باشگاه مشتریان</div>
+                <div class="stat-grid">
+                    <div class="stat-box">
+                        <div style="font-size:12px; font-weight:700; color:var(--text-muted);">موجودی قابل برداشت</div>
+                        <div class="stat-value text-green"><span id="v-wallet">0</span> <small style="font-size:14px; font-weight:700;">تومان</small></div>
+                    </div>
+                    <div class="stat-box">
+                        <div style="font-size:12px; font-weight:700; color:var(--text-muted);">امتیاز باشگاه مشتریان</div>
+                        <div class="stat-value text-orange"><span id="v-points">0</span> <small style="font-size:14px; font-weight:700;">امتیاز</small></div>
+                    </div>
+                </div>
+            </div>
+ 
+            <div id="sec-orders" class="card hidden">
+                <div class="section-title">سفارشات من</div>
+                <div class="order-tabs">
+                    <button class="order-tab-btn active" onclick="filterOrders('current')">سفارشات جاری</button>
+                    <button class="order-tab-btn" onclick="filterOrders('delivered')">تحویل داده شده</button>
+                </div>
+                <div id="orders-list">
+                    <div style="text-align:center; padding:40px; font-weight:700; color:var(--text-muted);">هنوز سفارشی ثبت نکرده‌اید.</div>
+                </div>
+            </div>
+ 
+            <div id="sec-favs" class="card hidden">
+                <div class="section-title">لیست علاقه‌مندی‌ها</div>
+                <div id="favs-list" class="wishlist-grid">
+                    <div style="text-align:center; padding:40px; font-weight:700; color:var(--text-muted); grid-column: 1/-1;">لیست علاقه‌مندی‌های شما خالی است.</div>
+                </div>
+            </div>
+        </main>
+    </div>
+ 
+    <nav class="mobile-nav" aria-label="ناوبری پایین">
+        <a href="index.html" class="mn-item" aria-label="خانه">
+            <i class="fas fa-home"></i>
+            <span>خانه</span>
+        </a>
+        <div class="mn-item" onclick="window.location.href='index.html'" aria-label="دسته‌بندی">
+            <i class="fas fa-th-large"></i>
+            <span>دسته‌بندی</span>
+        </div>
+        <a href="sabad.html" class="mn-item" aria-label="سبد خرید">
+            <div class="mn-cart-wrap">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <span>سبد</span>
+        </a>
+        <a href="profile.html" class="mn-item active" aria-label="حساب کاربری">
+            <i class="far fa-user"></i>
+            <span>حساب</span>
+        </a>
+    </nav>
+ 
+    <!-- FIREBASE BRIDGE -->
+    <script type="module" src="Js/firebase-bridge.js"></script>
+    <script type="module" src="Js/profile.js"></script>
+    <script src="Js/all.js" defer></script>
+</body>
+</html>

@@ -1,0 +1,342 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>سبد خرید | PnySHOP</title>
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com;
+        style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+        font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:;
+        img-src 'self' data: https: blob:;
+        connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+        upgrade-insecure-requests;
+    ">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="icon" type="image/png" href="img/f0909d6eae7ee548665693cfbe823b078cf70ede_1774984328.png">   
+    <link rel="stylesheet" href="Css/style.css">
+    
+    <script>
+        (function() {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+    <link rel="stylesheet" href="Css/cart.css">
+    <style>
+        .cart-loading-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--text-muted);
+            font-weight: 700;
+        }
+ 
+        .cart-loading-state .loading-spinner {
+            font-size: 28px;
+            display: block;
+            margin-bottom: 14px;
+        }
+    </style>
+</head>
+<body>
+        <div class="loading-screen" id="loadingScreen">
+        <div class="loader-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+ 
+    <div class="toast" id="toast">
+        <i class="fas fa-info-circle"></i>
+        <span id="toastMsg">پیام تستی</span>
+    </div>
+ 
+ 
+    <header class="main-header" id="mainHeader">
+    <div class="header-inner">
+        <a class="logo-btn">
+            <img src="img/Pnyshop-img-logo.png" alt="pnyshop" class="logo-img">
+            <span class="logo-text"></span>
+        </a>
+ 
+        <div class="search-container">
+            <div class="search-wrap">
+                <i class="fas fa-search s-icon"></i>
+                <label for="mainSearch" class="visually-hidden">جستجوی محصول</label>
+                <input type="text" id="mainSearch" placeholder="جستجوی محصول، برند، دسته‌بندی..." autocomplete="off" spellcheck="false" aria-label="جستجو" role="combobox" aria-expanded="false" aria-controls="searchDropdown">
+                <button type="button" id="clearSearch" aria-label="پاک کردن جستجو">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+            <div id="searchDropdown" class="search-dropdown" role="listbox"></div>
+        </div>
+ 
+        <div class="header-actions">
+                <button type="button" class="theme-switch-pill theme-d" id="themeToggle" onclick="toggleTheme()" role="switch" aria-checked="false" aria-label="تغییر حالت شب/روز">
+                    <span class="tsp-track">
+                        <span class="tsp-thumb"><i class="fas fa-moon"></i></span>
+                        <span class="tsp-label" id="themeLabel">حالت شب</span>
+                    </span>
+                </button>
+
+            <a href="login.html" class="h-user-btn" id="authLink" aria-label="ورود">
+                <i class="far fa-user"></i>
+                <span id="userLabel" class="skeleton user-label-skeleton"></span>
+            </a>
+            <div class="h-divider"></div>
+            <a href="sabad.html" class="h-action-btn" aria-label="سبد خرید">
+                <i class="fas fa-shopping-cart"></i>
+                <span class="h-badge" id="headerCartCount">۰</span>
+            </a>
+            <button class="h-action-btn" id="mobileTheme" onclick="toggleTheme()" aria-label="تغییر تم" style="display:none;">
+                <i class="fas fa-moon"></i>
+            </button>
+        </div>
+    </div>
+</header>
+ 
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">در حال انتقال به درگاه پرداخت...</div>
+    </div>
+
+    <!-- ===== SKELETON (تا لود کامل سبد از Firestore) — دقیقاً همان الگوی profileSkeleton/profileContainer در profile.html ===== -->
+    <div class="container" id="cartSkeletonContainer">
+        <div class="cart-main-col">
+            <div class="cart-bulk-bar">
+                <div class="skel" style="width:120px;height:16px;"></div>
+                <div class="skel" style="width:90px;height:16px;"></div>
+            </div>
+            <div class="cart-items-section" id="cartSkeletonItems">
+                <!-- ۳ ردیف اسکلتون آیتم، دقیقاً هم‌ساختار با .cart-item-v2 واقعی -->
+                <div class="cart-item-v2">
+                    <div class="civ2-img-wrap"><div class="skel" style="width:100%;height:100%;"></div></div>
+                    <div class="civ2-info">
+                        <div class="skel" style="width:70px;height:16px;border-radius:999px;"></div>
+                        <div class="skel" style="width:60%;height:16px;"></div>
+                        <div class="skel" style="width:40%;height:12px;"></div>
+                        <div style="display:flex;gap:8px;margin-top:4px;">
+                            <div class="skel" style="width:30px;height:30px;border-radius:50%;"></div>
+                            <div class="skel" style="width:30px;height:30px;border-radius:50%;"></div>
+                            <div class="skel" style="width:30px;height:30px;border-radius:50%;"></div>
+                        </div>
+                    </div>
+                    <div class="civ2-left-col">
+                        <div class="civ2-top-row">
+                            <div class="skel" style="width:34px;height:34px;border-radius:8px;"></div>
+                            <div class="skel" style="width:88px;height:34px;border-radius:8px;"></div>
+                        </div>
+                        <div class="skel" style="width:90px;height:22px;"></div>
+                    </div>
+                </div>
+                <div class="cart-item-v2">
+                    <div class="civ2-img-wrap"><div class="skel" style="width:100%;height:100%;"></div></div>
+                    <div class="civ2-info">
+                        <div class="skel" style="width:70px;height:16px;border-radius:999px;"></div>
+                        <div class="skel" style="width:55%;height:16px;"></div>
+                        <div class="skel" style="width:35%;height:12px;"></div>
+                        <div style="display:flex;gap:8px;margin-top:4px;">
+                            <div class="skel" style="width:30px;height:30px;border-radius:50%;"></div>
+                            <div class="skel" style="width:30px;height:30px;border-radius:50%;"></div>
+                            <div class="skel" style="width:30px;height:30px;border-radius:50%;"></div>
+                        </div>
+                    </div>
+                    <div class="civ2-left-col">
+                        <div class="civ2-top-row">
+                            <div class="skel" style="width:34px;height:34px;border-radius:8px;"></div>
+                            <div class="skel" style="width:88px;height:34px;border-radius:8px;"></div>
+                        </div>
+                        <div class="skel" style="width:90px;height:22px;"></div>
+                    </div>
+                </div>
+                <div class="cart-item-v2">
+                    <div class="civ2-img-wrap"><div class="skel" style="width:100%;height:100%;"></div></div>
+                    <div class="civ2-info">
+                        <div class="skel" style="width:70px;height:16px;border-radius:999px;"></div>
+                        <div class="skel" style="width:65%;height:16px;"></div>
+                        <div class="skel" style="width:30%;height:12px;"></div>
+                        <div style="display:flex;gap:8px;margin-top:4px;">
+                            <div class="skel" style="width:30px;height:30px;border-radius:50%;"></div>
+                            <div class="skel" style="width:30px;height:30px;border-radius:50%;"></div>
+                            <div class="skel" style="width:30px;height:30px;border-radius:50%;"></div>
+                        </div>
+                    </div>
+                    <div class="civ2-left-col">
+                        <div class="civ2-top-row">
+                            <div class="skel" style="width:34px;height:34px;border-radius:8px;"></div>
+                            <div class="skel" style="width:88px;height:34px;border-radius:8px;"></div>
+                        </div>
+                        <div class="skel" style="width:90px;height:22px;"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <aside class="cart-sidebar">
+            <div class="summary-card">
+                <div class="skel" style="width:130px;height:20px;margin-bottom:20px;"></div>
+                <div class="skel" style="width:100%;height:14px;margin-bottom:14px;"></div>
+                <div class="skel" style="width:100%;height:14px;margin-bottom:14px;"></div>
+                <div class="skel" style="width:100%;height:14px;margin-bottom:14px;"></div>
+                <div class="skel" style="width:100%;height:14px;margin-bottom:20px;"></div>
+                <div class="skel" style="width:100%;height:60px;border-radius:var(--radius-md);margin-bottom:20px;"></div>
+                <div class="skel" style="width:60%;height:24px;margin-bottom:20px;"></div>
+                <div class="skel" style="width:100%;height:48px;border-radius:var(--radius-md);margin-bottom:16px;"></div>
+                <div class="skel" style="width:100%;height:70px;border-radius:var(--radius-md);"></div>
+            </div>
+        </aside>
+    </div>
+
+    <!-- ===== REAL CONTENT (تا لود کامل، hidden) ===== -->
+    <div class="container hidden" id="mainContainer">
+        <div class="cart-main-col">
+            <div class="cart-trust-bar" id="cartTrustBar">
+                <div class="ctb-item">
+                    <span class="ctb-icon"><i class="fas fa-headset"></i></span>
+                    <div class="ctb-text"><b>پشتیبانی ۲۴/۷</b><span>همیشه در کنار شما</span></div>
+                </div>
+                <div class="ctb-item">
+                    <span class="ctb-icon"><i class="fas fa-shield-alt"></i></span>
+                    <div class="ctb-text"><b>ضمانت اصالت</b><span>کالاهای اصل با گارانتی معتبر</span></div>
+                </div>
+                <div class="ctb-item">
+                    <span class="ctb-icon"><i class="fas fa-lock" style="color: rgb(64, 149, 64);"></i></span>
+                    <div class="ctb-text"><b>پرداخت امن</b><span>اطلاعات شما محفوظ است</span></div>
+                </div>
+                <div class="ctb-item">
+                    <span class="ctb-icon"><i class="fas fa-truck"></i></span>
+                    <div class="ctb-text"><b>ارسال سریع</b><span>۱ تا ۳ روز کاری</span></div>
+                </div>
+            </div>
+
+            <div class="cart-bulk-bar" id="cartBulkBar">
+                <button type="button" class="cart-bulk-delete" id="cartBulkDeleteBtn" onclick="removeSelectedItems()" disabled>
+                    <i class="fas fa-trash"></i> حذف موارد انتخابی
+                </button>
+                <label class="cart-select-all">
+                    <span>انتخاب همه</span>
+                    <input type="checkbox" id="selectAllItemsCb" onchange="toggleSelectAllItems(this)">
+                </label>
+            </div>
+
+            <div class="cart-items-section" id="cartItemsContainer"></div>
+
+            <div class="cart-bottom-badges" id="cartBottomBadges">
+                <div class="cbb-item">
+                    <span class="cbb-icon"><i class="fas fa-star"></i></span>
+                    <div class="cbb-text"><b id="cbbPoints">۰ امتیاز</b><span>امتیاز با خرید این سفارش</span></div>
+                </div>
+                <div class="cbb-item">
+                    <span class="cbb-icon"><i class="fas fa-truck"></i></span>
+                    <div class="cbb-text"><b>ارسال رایگان</b><span>برای شما</span></div>
+                </div>
+                <div class="cbb-item">
+                    <span class="cbb-icon"><i class="fas fa-award"></i></span>
+                    <div class="cbb-text"><b>تضمین بهترین قیمت</b><span>همیشه با ماست</span></div>
+                </div>
+                <div class="cbb-item">
+                    <span class="cbb-icon"><i class="fas fa-undo"></i></span>
+                    <div class="cbb-text"><b>۷ روز ضمانت بازگشت</b><span>بدون سوال از شما</span></div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="cart-sidebar" id="cartSidebarReal">
+            <div class="summary-card">
+                <h3><span class="sc-icon"><i class="fas fa-file-invoice"></i></span> خلاصه سفارش</h3>
+
+                <div class="summary-row">
+                    <span>تعداد کالاها:</span>
+                    <span id="summaryCount">0</span>
+                </div>
+                <div class="summary-row">
+                    <span>جمع کل کالاها:</span>
+                    <span id="summarySubtotal">0 تومان</span>
+                </div>
+                <div class="summary-row row-success">
+                    <span>سود شما از تخفیف‌ها:</span>
+                    <span id="summaryDiscount">0 تومان</span>
+                </div>
+                <div class="summary-row row-success">
+                    <span>هزینه ارسال:</span>
+                    <span id="summaryShipping" style="color: red;">رایگان</span>
+                </div>
+                <div class="summary-row" id="couponSummaryRow" style="display:none;">
+                    <span id="couponSummaryLabel">تخفیف کد:</span>
+                    <span id="summaryCouponDiscount">0 تومان</span>
+                </div>
+
+                <div class="discount-accordion" id="discountAccordion">
+                    <button type="button" class="da-head" onclick="toggleDiscountBox()">
+                        <span><i class="fas fa-tags"></i> کد تخفیف / کارت هدیه</span>
+                        <i class="fas fa-chevron-up da-chevron"></i>
+                    </button>
+                    <div class="da-body">
+                        <div class="discount-box">
+                            <input type="text" id="discountInput" class="discount-input" placeholder="کد تخفیف را وارد کنید" autocomplete="off" aria-label="کد تخفیف" onkeydown="if(event.key==='Enter'){event.preventDefault();applyDiscount();}">
+                            <button type="button" class="discount-btn" onclick="applyDiscount()">اعمال</button>
+                        </div>
+                        <div class="da-hint"><i class="fas fa-gift"></i> با خرید بیشتر، امتیاز و تخفیف بگیرید!</div>
+                    </div>
+                </div>
+
+                <div class="summary-row total">
+                    <span>مبلغ قابل پرداخت:</span>
+                    <span class="total-amount" id="summaryTotal">0 تومان</span>
+                </div>
+
+                <button class="checkout-btn" id="checkoutBtn"   onclick="processCheckout()">
+                    <i class="fas fa-lock" style="color: rgb(255, 255, 255);"></i> تکمیل خرید و پرداخت <i class="fas fa-arrow-left"></i>
+                </button>
+
+                <div class="secure-pay-note"><i class="fas fa-lock"></i> پرداخت امن با درگاه‌های بانکی معتبر</div>
+
+                <div class="club-banner" onclick="window.location.href='profile.html'">
+                    <div class="club-banner-icon"><i class="fas fa-gift"></i></div>
+                    <div class="club-banner-text">
+                        <b>با عضویت در باشگاه مشتریان</b>
+                        <span>امتیاز بگیرید و تخفیف‌های ویژه دریافت کنید</span>
+                    </div>
+                    <button type="button" class="club-banner-btn">عضویت رایگان</button>
+                </div>
+            </div>
+        </aside>
+    </div>
+ 
+    
+    <section class="container suggestions-section" id="suggestionsSection" style="display: none;">
+        <div class="section-title">پیشنهاد برای تکمیل سبد خرید</div>
+        <div class="suggestion-grid" id="suggestionGrid"></div>
+    </section>
+ 
+    <nav class="mobile-nav" aria-label="ناوبری پایین">
+        <a href="index.html" class="mn-item" aria-label="خانه">
+            <i class="fas fa-home"></i>
+            <span>خانه</span>
+        </a>
+        <div class="mn-item" onclick="window.location.href='index.html'" aria-label="دسته‌بندی">
+            <i class="fas fa-th-large"></i>
+            <span>دسته‌بندی</span>
+        </div>
+        <a href="sabad.html" class="mn-item active" aria-label="سبد خرید">
+            <div class="mn-cart-wrap">
+                <i class="fas fa-shopping-cart"></i>
+            </div>
+            <span>سبد</span>
+        </a>
+        <a href="profile.html" class="mn-item" aria-label="حساب کاربری">
+            <i class="far fa-user"></i>
+            <span>حساب</span>
+        </a>
+    </nav>
+    <script type="module" src="Js/cart.js"></script>
+    <script type="module" src="Js/firebase-bridge.js"></script>
+    <script src="Js/all.js"></script>
+</body>
+</html>

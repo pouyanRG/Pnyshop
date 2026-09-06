@@ -1,0 +1,261 @@
+rules_version = '2';
+ 
+service cloud.firestore {
+  match /databases/{database}/documents {
+ 
+    // ============================================================
+    // تابع کمکی: آیا کاربر لاگین‌کرده، ادمین است؟
+    // (بر اساس وجود سند در کالکشن admins/{uid})
+    // ============================================================
+    function isSignedIn() {
+      return request.auth != null;
+    }
+ 
+    function isAdmin() {
+      return isSignedIn() &&
+        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+ 
+    function isOwner(uid) {
+      return isSignedIn() && request.auth.uid == uid;
+    }
+ 
+    // ============================================================
+    // FIX (سخت‌گیری بیشتر / defense-in-depth):
+    // قبلاً products/coupons هیچ اعتبارسنجی schema نداشتند — فقط
+    // isAdmin() چک می‌شد. یعنی یک باگ کلاینت یا یک نشست ادمین
+    // compromise‌شده می‌توانست سند کاملاً ناقص/نامعتبر (بدون نام،
+    // قیمت منفی، رشته‌ی چند مگابایتی) بنویسد. این توابع کمکی حداقل
+    // نوع/محدوده‌ی داده را تضمین می‌کنند، بدون اینکه آن‌قدر سخت‌گیر
+    // باشند که فرم فعلی admin.html (ویزارد ۵مرحله‌ای) را بشکنند.
+    // ============================================================
+    function isValidProduct(data) {
+      return data.name is string && data.name.size() > 0 && data.name.size() <= 200 &&
+        data.price is number && data.price >= 0 &&
+        data.stock is number && data.stock >= 0 &&
+        (!('discount' in data) || (data.discount is number && data.discount >= 0 && data.discount <= 100)) &&
+        (!('description' in data) || (data.description is string && data.description.size() <= 8000)) &&
+        (!('gallery' in data) || (data.gallery is list && data.gallery.size() <= 15)) &&
+        (!('colors' in data) || (data.colors is list && data.colors.size() <= 40)) &&
+        (!('brand' in data) || data.brand is string) &&
+        (!('category' in data) || (data.category is string && data.category.size() <= 200));
+    }
+ 
+    function isValidCoupon(data) {
+      return data.code is string && data.code.size() > 0 && data.code.size() <= 40 &&
+        data.discountType in ['percent', 'fixed'] &&
+        data.discountValue is number && data.discountValue >= 0 &&
+        data.active is bool &&
+        (!('minAmount' in data) || data.minAmount is number) &&
+        (!('usedCount' in data) || data.usedCount is number);
+    }
+ 
+    // ============================================================
+    // admins/{uid}
+    // فقط خواندنِ سند خودِ کاربر مجاز است (برای چک isAdmin در کلاینت)
+    // نوشتن هرگز از کلاینت مجاز نیست — فقط از Firebase Console/Admin SDK
+    // ============================================================
+    match /admins/{uid} {
+      allow get: if isOwner(uid);
+      allow list: if false;
+      allow write: if false;
+    }
+ 
+    // ============================================================
+    // products/{docId}
+    // خواندن برای همه آزاد (ویترین فروشگاه)
+    // نوشتن فقط برای ادمین
+    // ============================================================
+    match /products/{docId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidProduct(request.resource.data);
+      allow delete: if isAdmin();
+    }
+ 
+    // ============================================================
+    // settings/{docId}  (categoryTree, amazingTimer, ...)
+    // خواندن برای همه آزاد، نوشتن فقط ادمین
+    // ============================================================
+    match /settings/{docId} {
+      allow read: if true;
+      allow write: if isAdmin();
+    }
+ 
+    // ============================================================
+    // users/{uid}
+    // هر کاربر فقط سند خودش را می‌خواند/می‌نویسد
+    // ادمین به همه‌ی اسناد کاربران دسترسی کامل دارد (برای پنل مدیریت)
+    //
+    // اصلاحات امنیتی نسبت به نسخه‌ی قبلی:
+    //  ۱) createdAt دیگر توسط کاربر قابل تغییر نیست — قبلاً کاربر می‌توانست
+    //     تاریخ عضویت خودش را دستکاری کند و محدودیت audience کدهای تخفیف
+    //     (newUsers/oldUsers که در checkout.html بر پایه‌ی createdAt محاسبه
+    //     می‌شود) را دور بزند.
+    //  ۲) اندازه‌ی آرایه‌ی cart محدود شده تا سند غول‌آسا/پرهزینه ساخته نشود.
+    //  ۳) wallet/points فقط قابل کاهش‌اند (بدون تغییر نسبت به قبل).
+    //  ۴) [جدید] محدودیت اندازه‌ی cart/wishlist اکنون روی create هم اعمال
+    //     می‌شود، نه فقط update — قبلاً کاربر می‌توانست همان لحظه‌ی ساخت
+    //     پروفایل، سبد/علاقه‌مندی غول‌آسا (تا سقف ۱MB سند Firestore) بسازد.
+    //  ۵) [جدید] فیلد email در لحظه‌ی ساخت پروفایل باید یا خالی باشد یا
+    //     دقیقاً برابر ایمیل واقعی توکن احراز هویت — قبلاً هیچ الزامی
+    //     نبود و کاربر می‌توانست ایمیل فرد دیگری را در پروفایل خودش جا
+    //     بزند (identity spoofing در داده‌ی نمایشی). ویرایش بعدی ایمیل
+    //     در update عمداً دست‌نخورده مانده چون profile.html به‌صورت قانونی
+    //     اجازه‌ی ویرایش این فیلدِ نمایشی/تماس را می‌دهد.
+    // ============================================================
+    match /users/{uid} {
+      allow read: if isOwner(uid) || isAdmin();
+ 
+      allow create: if isOwner(uid) &&
+        request.resource.data.wallet == 0 &&
+        request.resource.data.points == 0 &&
+        (!('cart' in request.resource.data) || request.resource.data.cart.size() <= 200) &&
+        (!('wishlist' in request.resource.data) || request.resource.data.wishlist.size() <= 500) &&
+        (
+          !('email' in request.resource.data) ||
+          request.resource.data.email == '' ||
+          request.resource.data.email == request.auth.token.get('email', null)
+        );
+ 
+      allow update: if isAdmin() || (
+        isOwner(uid) &&
+        request.resource.data.get('createdAt', null) == resource.data.get('createdAt', null) &&
+        (!('cart' in request.resource.data) || request.resource.data.cart.size() <= 200) &&
+        (!('wishlist' in request.resource.data) || request.resource.data.wishlist.size() <= 500) &&
+        (
+          (request.resource.data.wallet == resource.data.wallet &&
+           request.resource.data.points == resource.data.points) ||
+          (request.resource.data.wallet <= resource.data.wallet &&
+           request.resource.data.points <= resource.data.points &&
+           request.resource.data.wallet >= 0 &&
+           request.resource.data.points >= 0)
+        )
+      );
+ 
+      allow delete: if isAdmin();
+    }
+ 
+    // ============================================================
+    // coupons/{couponId}
+    // خواندن برای همه آزاد است (جهت بررسی اعتبار کد در سبد خرید)
+    //
+    // 🔴 اصلاح امنیتی حیاتی (نسخه‌ی قبلی این‌جا آسیب‌پذیر بود):
+    // قبلاً هر کاربر لاگین‌شده می‌توانست به‌تنهایی و بدون هیچ سفارش
+    // واقعی، به‌صورت مکرر usedCount یک کد تخفیف را ۱ واحد ۱ واحد بالا
+    // ببرد (هیچ ارتباطی بین این افزایش و ثبت یک سفارش واقعی وجود
+    // نداشت). یک مهاجم می‌توانست با چند خط اسکریپت، سقف usageLimit یک
+    // کد تخفیف را بدون خرید هیچ محصولی «بسوزاند» و آن را برای مشتریان
+    // واقعی غیرقابل استفاده کند (griefing / Denial of Service روی یک
+    // قابلیت تجاری). این مسیر کاملاً حذف شد.
+    //
+    // نتیجه: از این پس usedCount فقط توسط ادمین (یا در آینده یک Cloud
+    // Function که هنگام ثبت واقعی سفارش، به‌صورت تراکنشی/اتمیک هم
+    // سفارش را می‌سازد و هم usedCount کوپن مربوطه را با Admin SDK بالا
+    // می‌برد) قابل تغییر است. تا پیاده‌سازی آن Cloud Function، شمارش
+    // خودکار استفاده از کد غیرفعال می‌ماند (safe default)، نه سوءاستفاده.
+    // ============================================================
+    match /coupons/{couponId} {
+      allow read: if true;
+      allow create, update: if isAdmin() && isValidCoupon(request.resource.data);
+      allow delete: if isAdmin();
+    }
+ 
+    // ============================================================
+    // orders/{docId}
+    //
+    // 🔴 اصلاح امنیتی حیاتی (بحرانی‌ترین یافته‌ی این بازبینی):
+    // نسخه‌ی قبلی به مالکِ سفارش اجازه می‌داد خودش status سفارش را از
+    // 'pending_payment' به 'paid' تغییر دهد. چون totalAmount هم در create
+    // در برابر قیمت واقعی محصولات هیچ اعتبارسنجی نمی‌شود (Firestore
+    // Rules به‌تنهایی نمی‌تواند مبلغ را در برابر قیمت زنده‌ی هر آیتم در
+    // کالکشن products چک کند)، این یعنی هر کاربر لاگین‌شده می‌توانست:
+    //   ۱) سفارشی با items واقعی (گران) اما totalAmount دلخواه/ناچیز بسازد،
+    //   ۲) بلافاصله همان سفارش را خودش 'paid' علامت بزند،
+    //   ۳) و در پنل ادمین دقیقاً مثل یک سفارشِ واقعاً پرداخت‌شده دیده شود.
+    // این معادل «خرید مجانی/جعل پرداخت» است — برای یک فروشگاه واقعی
+    // بحرانی‌ترین نوع آسیب‌پذیری (کلاهبرداری مالی مستقیم).
+    //
+    // ⚠️ توجه مهم: تا زمانی که یک درگاه پرداخت واقعی + یک Cloud Function
+    // برای verify-payment (که با Admin SDK - نه از کلاینت - وضعیت را
+    // 'paid' می‌کند) پیاده‌سازی شود، هیچ سفارشی دیگر به‌صورت خودکار
+    // 'paid' نمی‌شود؛ سفارش‌ها در pending_payment می‌مانند تا ادمین از
+    // پنل مدیریت آن‌ها را (پس از بررسی واقعی پرداخت) دستی paid کند. این
+    // یعنی جریان فعلی checkout.html (که ظاهراً شبیه‌سازی کلاینت‌ساید
+    // است) از کار می‌افتد و باید با یک درگاه واقعی جایگزین شود — این
+    // هزینه‌ی لازم برای بستن یک حفره‌ی مالی جدی است.
+    //
+    // بقیه‌ی اصلاحات (بدون تغییر نسبت به نسخه‌ی قبلی):
+    //  ۱) هنگام ساخت سفارش، status فقط می‌تواند 'pending_payment' باشد.
+    //  ۲) totalAmount و items حداقل از نظر نوع/وجود اعتبارسنجی می‌شوند
+    //     (اعتبارسنجی کامل مبلغ همچنان نیازمند Cloud Function است).
+    //  ۳) [جدید] مالکِ سفارش اکنون اجازه دارد فقط وقتی سفارش هنوز
+    //     pending_payment است، آن را لغو (حذف) کند — این باگ را هم رفع
+    //     می‌کند که دکمه‌ی «لغو سفارش» در profile.html همیشه با
+    //     permission-denied شکست می‌خورد چون این قانون قبلاً کاملاً غایب
+    //     بود. لغو سفارش‌های paid/processing/shipped/delivered همچنان
+    //     فقط با ادمین ممکن است (تا منطق بازگشت وجه به‌درستی و دستی
+    //     بررسی شود).
+    // ============================================================
+    match /orders/{docId} {
+      allow read: if isAdmin() ||
+        (isSignedIn() && resource.data.userId == request.auth.uid);
+ 
+      allow create: if isAdmin() || (
+        isSignedIn() &&
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status == 'pending_payment' &&
+        request.resource.data.totalAmount is number &&
+        request.resource.data.totalAmount > 0 &&
+        request.resource.data.items is list &&
+        request.resource.data.items.size() > 0 &&
+        request.resource.data.items.size() <= 50
+      );
+ 
+      // فقط self-cancel قبل از پرداخت مجاز است. انتقال به 'paid' دیگر
+      // هرگز از کلاینت (حتی برای مالک سفارش) ممکن نیست — فقط isAdmin()
+      // یا در آینده یک Cloud Function با Admin SDK (که این قوانین را
+      // اصلاً دور می‌زند) می‌تواند سفارش را paid کند.
+      allow update: if isAdmin() || (
+        isSignedIn() &&
+        resource.data.userId == request.auth.uid &&
+        resource.data.status == 'pending_payment' &&
+        request.resource.data.status == 'failed_payment' &&
+        request.resource.data.diff(resource.data).affectedKeys()
+          .hasOnly(['status', 'failureReason'])
+      );
+ 
+      allow delete: if isAdmin() || (
+        isSignedIn() &&
+        resource.data.userId == request.auth.uid &&
+        resource.data.status == 'pending_payment'
+      );
+    }
+ 
+    // ============================================================
+    // auditLogs/{docId}
+    // 🟡 این مسیر در نسخه‌ی قبلی فایل rules اصلاً تعریف نشده بود؛ چون
+    // پیش‌فرض کلی پایین فایل (catch-all) همه‌چیز را deny می‌کند، تمام
+    // خواندن/نوشتن‌های admin.html روی این کالکشن (writeAuditLog /
+    // loadAuditLog) با permission-denied شکست می‌خوردند — یعنی «گزارش
+    // فعالیت‌ها»ی پنل ادمین هیچ‌وقت واقعاً کار نمی‌کرد و صرفاً حس کاذب
+    // وجود یک audit trail می‌داد. این‌جا اصلاح شد:
+    //  - فقط ادمین می‌تواند بخواند/بنویسد.
+    //  - عمداً update/delete مجاز نیست: لاگ‌های رخداد باید تغییرناپذیر
+    //    (immutable) باشند، وگرنه یک ادمین مخرب/نشست هک‌شده می‌تواند
+    //    ردپای خودش را از گزارش فعالیت‌ها پاک کند.
+    // ============================================================
+    match /auditLogs/{docId} {
+      allow read: if isAdmin();
+      allow create: if isAdmin();
+      allow update, delete: if false;
+    }
+ 
+    // ============================================================
+    // پیش‌فرض: هر مسیر دیگری که صراحتاً بالا تعریف نشده، مسدود است
+    // ============================================================
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
+ 

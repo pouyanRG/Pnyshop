@@ -1,0 +1,191 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>ورود / ثبت‌نام | SHOP</title>
+    <meta name="description" content="ورود یا ثبت‌نام در فروشگاه اینترنتی SHOP">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+ 
+    <!-- سیاست‌های امنیتی (CSP) -->
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com;
+        style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+        font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:;
+        img-src 'self' data: https: blob:;
+        connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com;
+        frame-src 'self' https://accounts.google.com https://pnyshops.firebaseapp.com https://*.firebaseapp.com;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+        upgrade-insecure-requests;
+    ">
+ 
+    <!-- فونت و آیکون‌های خارجی -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" crossorigin="anonymous" referrerpolicy="no-referrer">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+ 
+    <!-- آیکون سایت (مطمئن شو فایل logo.png درون پوشه img وجود داشته باشه) -->
+    <link rel="icon" type="image/png" href="img/logo.png">
+ 
+    <!-- اسکریپت جلوگیری از پرش تم (Theme Flash) -->
+    <script>
+        (function () {
+            const savedTheme = localStorage.getItem('theme') || 'light';
+            document.documentElement.setAttribute('data-theme', savedTheme);
+        })();
+    </script>
+ 
+    <!-- استایل‌های داخلی سایت -->
+    <link rel="stylesheet" href="Css/style.css">
+    <link rel="stylesheet" href="Css/auth.css">
+</head>
+<body>
+    <div class="loading-screen" id="loadingScreen">
+        <div class="loader-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+ 
+    <button class="theme-toggle-fab" id="themeToggle" onclick="toggleTheme()" aria-label="تغییر حالت شب/روز">
+        <i class="fas fa-moon theme-icon-moon"></i>
+        <i class="fas fa-sun theme-icon-sun" style="color: ;"></i>
+    </button>
+ 
+    <div class="toast" id="loginToast" role="status" aria-live="polite"></div>
+ 
+    <div class="auth-shell">
+        <div class="auth-container">
+            <a href="index.html" class="back-to-shop">
+                <i class="fas fa-arrow-right"></i> بازگشت به فروشگاه
+                <img src="img/Glossy-Blue-pnyshop-Logo.png" class="logo-img">
+            </a>
+            
+ 
+            <div class="auth-tabs" role="tablist" aria-label="ورود یا ثبت‌نام">
+                <button class="auth-tab-btn active" id="tabLoginBtn" role="tab" aria-selected="true" aria-controls="panel-login" onclick="switchTab('login')">ورود</button>
+                <button class="auth-tab-btn" id="tabRegisterBtn" role="tab" aria-selected="false" aria-controls="panel-register" onclick="switchTab('register')">ثبت‌نام</button>
+            </div>
+ 
+            <!-- ===== LOGIN PANEL ===== -->
+            <div id="panel-login" class="form-panel active" role="tabpanel" aria-labelledby="tabLoginBtn">
+                <p class="subtitle">با ایمیل و رمز عبورت وارد حساب کاربری شو.</p>
+ 
+                <form id="loginForm" novalidate>
+                    <div class="form-group">
+                        <label for="login-email">ایمیل</label>
+                        <div class="input-wrapper">
+                            <input type="email" id="login-email" placeholder="example@mail.com" autocomplete="username" aria-invalid="false" aria-describedby="err-login-email" required>
+                            <i class="fas fa-envelope leading-icon"></i>
+                        </div>
+                        <div class="field-error-msg" id="err-login-email" role="alert" aria-live="assertive"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="login-pass">رمز عبور</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="login-pass" placeholder="••••••••" autocomplete="current-password" aria-invalid="false" aria-describedby="err-login-pass" required>
+                            <i class="fas fa-lock leading-icon"></i>
+                            <i class="fas fa-eye toggle-pass-btn" onclick="togglePassVisibility('login-pass', this)" role="button" tabindex="0" aria-label="نمایش/مخفی کردن رمز عبور"></i>
+                        </div>
+                        <div class="field-error-msg" id="err-login-pass" role="alert" aria-live="assertive"></div>
+                    </div>
+ 
+                    <span class="forgot-pass-link" onclick="handleForgotPassword()" role="button" tabindex="0">رمز عبور را فراموش کرده‌اید؟</span>
+ 
+                    <!-- honeypot: از دید کاربر واقعی و screen reader مخفی است -->
+                    <div class="hp-field" aria-hidden="true">
+                        <input type="text" id="login-hp" tabindex="-1" autocomplete="off" aria-hidden="true">
+                    </div>
+ 
+                    <button type="submit" class="btn-action" id="loginBtn">
+                        <span class="btn-label">ورود به حساب</span> 
+                        <i class="fas fa-sign-in-alt"></i>
+                    </button>
+                </form>
+ 
+                <div class="divider">یا</div>
+ 
+                <button class="btn-social" id="googleLoginBtn" onclick="handleGoogleAuth()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" onerror="this.outerHTML='&lt;i class=\'fab fa-google\' style=\'font-size:16px;color:#ea4335;\'&gt;&lt;/i&gt;'">
+                    ورود / ثبت‌نام با گوگل
+                </button>
+            </div>
+ 
+            <!-- ===== REGISTER PANEL ===== -->
+            <div id="panel-register" class="form-panel" role="tabpanel" aria-labelledby="tabRegisterBtn">
+                <p class="subtitle">یک حساب کاربری جدید در SHOP بساز.</p>
+ 
+                <form id="registerForm" novalidate>
+                    <div class="form-group">
+                        <label for="reg-name">نام و نام‌خانوادگی</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="reg-name" placeholder="مثال: علی محمدی" aria-invalid="false" aria-describedby="err-reg-name" required>
+                            <i class="fas fa-user leading-icon"></i>
+                        </div>
+                        <div class="field-error-msg" id="err-reg-name" role="alert" aria-live="assertive"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-email">ایمیل</label>
+                        <div class="input-wrapper">
+                            <input type="email" id="reg-email" placeholder="example@mail.com" autocomplete="username" aria-invalid="false" aria-describedby="err-reg-email" required>
+                            <i class="fas fa-envelope leading-icon"></i>
+                        </div>
+                        <div class="field-error-msg" id="err-reg-email" role="alert" aria-live="assertive"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-mobile">شماره موبایل (اختیاری)</label>
+                        <div class="input-wrapper">
+                            <input type="text" id="reg-mobile" placeholder="09123456789" maxlength="11" inputmode="numeric" aria-invalid="false" aria-describedby="err-reg-mobile" oninput="sanitizeMobileInput(this)">
+                            <i class="fas fa-mobile-alt leading-icon"></i>
+                        </div>
+                        <div class="field-error-msg" id="err-reg-mobile" role="alert" aria-live="assertive"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-pass">تعیین رمز عبور</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="reg-pass" placeholder="حداقل ۸ کاراکتر، شامل حرف و عدد" oninput="checkStrength(this.value)" autocomplete="new-password" aria-invalid="false" aria-describedby="err-reg-pass strengthHint" required>
+                            <i class="fas fa-lock leading-icon"></i>
+                            <i class="fas fa-eye toggle-pass-btn" onclick="togglePassVisibility('reg-pass', this)" role="button" tabindex="0" aria-label="نمایش/مخفی کردن رمز عبور"></i>
+                        </div>
+                        <div class="password-strength"><div id="strengthBar" class="strength-bar"></div></div>
+                        <div class="strength-hint" id="strengthHint" aria-live="polite">حداقل ۸ کاراکتر، شامل حداقل یک حرف و یک عدد</div>
+                        <div class="field-error-msg" id="err-reg-pass" role="alert" aria-live="assertive"></div>
+                    </div>
+                    <div class="form-group">
+                        <label for="reg-pass-confirm">تکرار رمز عبور</label>
+                        <div class="input-wrapper">
+                            <input type="password" id="reg-pass-confirm" autocomplete="new-password" aria-invalid="false" aria-describedby="err-reg-pass-confirm" required>
+                            <i class="fas fa-check-double leading-icon"></i>
+                            <i class="fas fa-eye toggle-pass-btn" onclick="togglePassVisibility('reg-pass-confirm', this)" role="button" tabindex="0" aria-label="نمایش/مخفی کردن رمز عبور"></i>
+                        </div>
+                        <div class="field-error-msg" id="err-reg-pass-confirm" role="alert" aria-live="assertive"></div>
+                    </div>
+ 
+                    <!-- honeypot: از دید کاربر واقعی و screen reader مخفی است -->
+                    <div class="hp-field" aria-hidden="true"><input type="text" id="reg-hp" tabindex="-1" autocomplete="off" aria-hidden="true"></div>
+ 
+                    <button type="submit" class="btn-action" id="registerBtn">
+                        <span class="btn-label">ایجاد حساب و ورود</span> <i class="fas fa-user-check"></i>
+                    </button>
+                </form>
+ 
+                <div class="divider">یا</div>
+ 
+                <button class="btn-social" id="googleRegisterBtn" onclick="handleGoogleAuth()">
+                    <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" alt="" onerror="this.outerHTML='&lt;i class=\'fab fa-google\' style=\'font-size:16px;color:#ea4335;\'&gt;&lt;/i&gt;'">
+                    ثبت‌نام سریع با گوگل
+                </button>
+            </div>
+ 
+            <p class="legal-note">
+                با ورود به سایت، <a href="#">شرایط خدمات</a> و <a href="#">سیاست حریم خصوصی</a> را می‌پذیرید.
+            </p>
+        </div>
+    </div>
+    <script type="module" src="Js/login.js"></script>
+    <script src="Js/all.js" defer></script>
+</body>
+</html>

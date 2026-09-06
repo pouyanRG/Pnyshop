@@ -1,0 +1,930 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>پنل ادمین</title>
+    <meta http-equiv="Content-Security-Policy" content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com;
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
+        font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:;
+        img-src 'self' data: https: blob:;
+        connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com;
+        object-src 'none';
+        base-uri 'self';
+        form-action 'self';
+        frame-ancestors 'self';
+        upgrade-insecure-requests;
+    ">
+    <meta name="referrer" content="strict-origin-when-cross-origin">
+
+    <link href="https://fonts.googleapis.com/css2?family=Vazirmatn:wght@300;400;700;900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+    <link rel="icon" type="image/png" href="img/f0909d6eae7ee548665693cfbe823b078cf70ede_1774984328.png">
+    <link rel="stylesheet" href="/Css/admin.css">
+    <style>
+        .order-summary-footer {
+            margin-top: 20px;
+            padding-top: 15px;
+            border-top: 2px dashed var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+        }
+
+        .hot-checkbox {
+            justify-content: flex-start;
+            align-items: center;
+            padding-top: 24px;
+        }
+
+        .hot-checkbox label {
+            margin: 0;
+            cursor: pointer;
+        }
+
+        #configWarningBanner {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+
+    <!-- ===== AUTH CHECKING SCREEN (shown while Firebase determines auth state) ===== -->
+    <div id="authCheckingScreen">
+        <div class="auth-spinner"></div>
+        <div class="auth-checking-text">در حال بررسی دسترسی مدیریت...</div>
+    </div>
+
+    <!-- ===== AUTH GATE (login form for admins) ===== -->
+    <div id="authGateOverlay">
+        <div class="auth-gate-card">
+            <div class="auth-gate-icon"><i class="fas fa-user-shield"></i></div>
+            <h2 id="authGateTitle">ورود مدیریت</h2>
+            <p class="sub" id="authGateSubtitle">برای دسترسی به پنل ادمین وارد شوید</p>
+
+            <div class="auth-gate-error" id="authGateError"></div>
+
+            <form class="auth-gate-form" id="authGateForm">
+                <div class="form-group">
+                    <label>ایمیل مدیر</label>
+                    <input type="email" id="admin-email" placeholder="admin@example.com" required autocomplete="username">
+                </div>
+                <div class="form-group">
+                    <label>رمز عبور</label>
+                    <input type="password" id="admin-password" placeholder="••••••••" required autocomplete="current-password">
+                </div>
+                <button type="submit" class="auth-gate-btn" id="authGateSubmitBtn">
+                    <i class="fas fa-sign-in-alt"></i> ورود به پنل
+                </button>
+            </form>
+
+            <div class="auth-gate-status">
+                <i class="fas fa-shield-alt"></i> این پنل فقط برای حساب‌های تأییدشده در Firestore قابل دسترسی است
+            </div>
+        </div>
+    </div>
+
+    <!-- ===== ADMIN APP ROOT (hidden until authenticated + authorized) ===== -->
+    <div id="adminAppRoot">
+
+        <!-- ===== MOBILE TOPBAR (فقط زیر ۹۰۰px) ===== -->
+        <div class="mobile-topbar">
+            <button type="button" class="hamburger-btn" onclick="toggleSidebar(true)" aria-label="باز کردن منو">
+                <i class="fas fa-bars"></i>
+            </button>
+            <div class="mt-brand"><i class="fas fa-store"></i> پنل مدیریت SHOP</div>
+            <div style="width:40px;"></div>
+        </div>
+        <div class="sidebar-overlay" id="sidebarOverlay" onclick="toggleSidebar(false)"></div>
+
+        <!-- ===== SIDEBAR ===== -->
+        <aside class="admin-sidebar" id="adminSidebar">
+            <div class="sidebar-header" style="display:flex;align-items:center;">
+                <div>
+                    <h3>SHOP</h3>
+                    <small>پنل مدیریت</small>
+                </div>
+                <button type="button" class="sidebar-close-btn" onclick="toggleSidebar(false)" aria-label="بستن منو"><i class="fas fa-times"></i></button>
+            </div>
+            <ul class="admin-menu">
+                <li onclick="showTab('products', this)" class="active">
+                    <i class="fas fa-layer-group"></i> مدیریت انبار کالا
+                </li>
+                <li onclick="showTab('coupons', this)">
+                    <i class="fas fa-ticket-alt"></i> کدهای تخفیف
+                </li>
+                <li onclick="showTab('slider', this)">
+                    <i class="fas fa-photo-video"></i> ویترین اسلایدر
+                </li>
+                <li onclick="showTab('orders', this)">
+                    <i class="fas fa-shopping-basket"></i> سفارشات کاربران
+                </li>
+                <li onclick="showTab('reports', this)">
+                    <i class="fas fa-chart-line"></i> گزارشات مالی
+                </li>
+                <li onclick="showTab('audit', this)">
+                    <i class="fas fa-history"></i> گزارش فعالیت‌ها
+                </li>
+                <li onclick="location.href='index.html'" style="margin-top: 50px; background: rgba(255,183,77,0.1); color: #e09400;">
+                    <i class="fas fa-external-link-alt"></i> بازگشت به فروشگاه
+                </li>
+            </ul>
+            <div style="padding:10px 15px;font-size:11px;color:var(--text-light);border-top:1px solid var(--border-color);margin-bottom:6px;">
+                <i class="fas fa-user-circle"></i> <span id="adminEmailLabel">--</span>
+            </div>
+            <div class="admin-menu-logout" onclick="adminLogout()">
+                <i class="fas fa-sign-out-alt"></i> خروج از پنل
+            </div>
+        </aside>
+
+        <!-- ===== MAIN CONTENT ===== -->
+        <main class="admin-main">
+
+            <!-- Page Header -->
+            <div class="page-header">
+                <div>
+                    <h2 id="tab-title">مدیریت انبار کالا</h2>
+                    <span id="current-date" style="font-size: 13px; color: var(--text-light);"></span>
+                </div>
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <div style="text-align: left;">
+                        <div style="font-weight: 800; font-size: 14px;">Admin</div>
+                        <small style="color: var(--admin-primary); font-size: 11px;">● Online</small>
+                    </div>
+                    <div style="width: 45px; height: 45px; background: rgba(99,102,241,0.1); border-radius: 50%; display: grid; place-items: center; color: var(--admin-primary); font-size: 18px; border: 2px solid rgba(99,102,241,0.2);">
+                        <i class="fas fa-user-shield"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- بنر هشدار پیکربندی (مثلاً کلید ImgBB تنظیم نشده) — پیش از هر تلاش آپلود نمایش داده می‌شود -->
+            <div id="configWarningBanner" style="display:none;"></div>
+
+            <!-- Stats -->
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div style="font-size: 36px; color: var(--info);"><i class="fas fa-box-open"></i></div>
+                    <div>
+                        <small style="font-size: 12px; color: var(--text-light); font-weight: 600;">تنوع محصولات</small>
+                        <div id="stat-total" style="font-size: 28px; font-weight: 900; color: var(--text-main);">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div style="font-size: 36px; color: var(--warning);"><i class="fas fa-images"></i></div>
+                    <div>
+                        <small style="font-size: 12px; color: var(--text-light); font-weight: 600;">اسلایدهای فعال</small>
+                        <div id="stat-slides" style="font-size: 28px; font-weight: 900; color: var(--text-main);">0</div>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <div style="font-size: 36px; color: var(--admin-success);"><i class="fas fa-shopping-cart"></i></div>
+                    <div>
+                        <small style="font-size: 12px; color: var(--text-light); font-weight: 600;">کل سفارشات</small>
+                        <div id="stat-orders" style="font-size: 28px; font-weight: 900; color: var(--text-main);">0</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== DASHBOARD CHARTS (Chart.js) ===== -->
+            <div class="admin-card">
+                <div class="section-title">
+                    <i class="fas fa-chart-pie" style="color: var(--admin-accent);"></i> نمای کلی عملکرد فروشگاه
+                    <span id="chartsLoadingBadge" style="font-size:11px;color:var(--text-light);font-weight:600;margin-right:auto;"><i class="fas fa-spinner fa-spin"></i> در حال محاسبه...</span>
+                </div>
+                <div class="charts-grid">
+                    <div class="chart-card-box"><canvas id="revenueChart"></canvas></div>
+                    <div class="chart-card-box"><canvas id="statusChart"></canvas></div>
+                </div>
+            </div>
+
+            <!-- ===== TAB: PRODUCTS ===== -->
+            <div id="tab-products" class="tab-content active">
+
+                <!-- Product Form -->
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-plus-circle" style="color: var(--admin-success);"></i> تعریف / ویرایش محصول
+                    </div>
+                    <!-- Wizard Stepper Header -->
+                    <div class="wizard-steps-bar" id="wizardStepsBar">
+                        <div class="wizard-step-dot-wrap active" data-step="1" onclick="wizardGoTo(1)">
+                            <div class="wizard-step-dot">۱</div><div class="wizard-step-label">اطلاعات پایه</div>
+                        </div>
+                        <div class="wizard-step-line" id="wline-1"></div>
+                        <div class="wizard-step-dot-wrap" data-step="2" onclick="wizardGoTo(2)">
+                            <div class="wizard-step-dot">۲</div><div class="wizard-step-label">دسته‌بندی</div>
+                        </div>
+                        <div class="wizard-step-line" id="wline-2"></div>
+                        <div class="wizard-step-dot-wrap" data-step="3" onclick="wizardGoTo(3)">
+                            <div class="wizard-step-dot">۳</div><div class="wizard-step-label">رسانه</div>
+                        </div>
+                        <div class="wizard-step-line" id="wline-3"></div>
+                        <div class="wizard-step-dot-wrap" data-step="4" onclick="wizardGoTo(4)">
+                            <div class="wizard-step-dot">۴</div><div class="wizard-step-label">ویژگی‌ها</div>
+                        </div>
+                        <div class="wizard-step-line" id="wline-4"></div>
+                        <div class="wizard-step-dot-wrap" data-step="5" onclick="wizardGoTo(5)">
+                            <div class="wizard-step-dot">۵</div><div class="wizard-step-label">تأیید نهایی</div>
+                        </div>
+                    </div>
+
+                    <form id="productForm">
+                        <input type="hidden" id="p-id">
+                        <input type="hidden" id="p-docid">
+
+                        <!-- ===== STEP 1: اطلاعات پایه ===== -->
+                        <div class="wizard-pane active" data-pane="1">
+                        <div class="input-grid">
+
+                            <div class="form-group">
+                                <label>نام کالا</label>
+                                <input type="text" id="p-name" placeholder="مثلاً: گوشی سامسونگ S23" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>قیمت فروش (تومان)</label>
+                                <input type="number" id="p-price" placeholder="مثلاً: 1000000" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>موجودی انبار (عدد)</label>
+                                <input type="number" id="p-stock" placeholder="مثلاً: 50" value="0" min="0" required>
+                            </div>
+
+                            <div class="form-group">
+                                <label>درصد تخفیف</label>
+                                <input type="number" id="p-discount" value="0" min="0" max="100" placeholder="مثلاً: 10">
+                            </div>
+
+                            <div class="form-group">
+                                <label>برند محصول</label>
+                                <input type="text" id="p-brand" placeholder="مثلاً: Apple">
+                            </div>
+
+                            <div class="form-group">
+                                <label>امتیاز محصول (0-5)</label>
+                                <input type="number" id="p-rating" value="0" min="0" max="5" step="0.1" placeholder="مثلاً: 4.5">
+                            </div>
+
+                            <div class="form-group">
+                                <label>تعداد دیدگاه‌ها</label>
+                                <input type="number" id="p-reviews" value="0" min="0" placeholder="مثلاً: 10">
+                            </div>
+
+                            <div class="form-group hot-checkbox">
+                                <input type="checkbox" id="p-hot">
+                                <label for="p-hot">این کالا در بخش فروش ویژه است</label>
+                            </div>
+                        </div>
+                        <div class="wizard-nav-bar">
+                            <span></span>
+                            <button type="button" class="wizard-btn primary" onclick="wizardNext(1)">مرحله بعد <i class="fas fa-arrow-left"></i></button>
+                        </div>
+                        </div>
+
+                        <!-- ===== STEP 2: دسته‌بندی ===== -->
+                        <div class="wizard-pane" data-pane="2">
+                        <div class="input-grid">
+                            <div class="form-group full-width">
+                                <label><i class="fas fa-sitemap"></i> انتخاب سلسله‌مراتبی دسته‌بندی (۵ سطح)</label>
+                                <div class="category-cascade">
+                                    <select id="cat-l1" onchange="onCascadeChange(0)" required title="سطح اول دسته‌بندی">
+                                        <option value="">دسته اصلی را انتخاب کنید</option>
+                                    </select>
+                                    <select id="cat-l2" onchange="onCascadeChange(1)" disabled title="سطح دوم دسته‌بندی">
+                                        <option value="">ابتدا سطح قبلی را انتخاب کنید...</option>
+                                    </select>
+                                    <select id="cat-l3" onchange="onCascadeChange(2)" disabled title="سطح سوم دسته‌بندی">
+                                        <option value="">ابتدا سطح قبلی را انتخاب کنید...</option>
+                                    </select>
+                                    <select id="cat-l4" onchange="onCascadeChange(3)" disabled title="سطح چهارم دسته‌بندی">
+                                        <option value="">ابتدا سطح قبلی را انتخاب کنید...</option>
+                                    </select>
+                                    <select id="cat-l5" onchange="onCascadeChange(4)" disabled title="سطح پنجم دسته‌بندی">
+                                        <option value="">ابتدا سطح قبلی را انتخاب کنید...</option>
+                                    </select>
+                                </div>
+                                <div id="breadcrumb-display" class="breadcrumb-preview">
+                                    <i class="fas fa-link"></i> مسیر نهایی: هنوز انتخاب نشده
+                                </div>
+                            </div>
+                        </div>
+                        <div class="wizard-nav-bar">
+                            <button type="button" class="wizard-btn" onclick="wizardGoTo(1)"><i class="fas fa-arrow-right"></i> مرحله قبل</button>
+                            <button type="button" class="wizard-btn primary" onclick="wizardNext(2)">مرحله بعد <i class="fas fa-arrow-left"></i></button>
+                        </div>
+                        </div>
+
+                        <!-- ===== STEP 3: رسانه ===== -->
+                        <div class="wizard-pane" data-pane="3">
+                        <div class="input-grid">
+                            <!-- Main Image -->
+                            <div class="form-group full-width" style="background: #f1f5f9; padding: 20px; border-radius: 15px; border: 1px dashed #cbd5e1;">
+                                <label style="color: var(--admin-primary); font-weight: 900;">تصویر اصلی محصول</label>
+                                <div style="font-size:11px;color:var(--text-light);margin-bottom:8px;">
+                                    <i class="fas fa-info-circle"></i> اگر عکسی وارد نکنید، به‌صورت خودکار از یک تصویر «یافت نشد» ثابت استفاده می‌شود.
+                                </div>
+                                <div class="image-input-type-selector">
+                                    <button type="button" class="type-btn active" onclick="toggleInputSource('product', 'file')">آپلود فایل</button>
+                                    <button type="button" class="type-btn" onclick="toggleInputSource('product', 'link')">لینک مستقیم</button>
+                                </div>
+                                <div id="product-file-container">
+                                    <input type="file" id="p-image-file" accept="image/*" title="انتخاب تصویر اصلی محصول">
+                                </div>
+                                <div id="product-link-container" class="hidden">
+                                    <input type="url" id="p-image-link" placeholder="https://site.com/main-image.jpg">
+                                </div>
+                            </div>
+
+                            <!-- Gallery -->
+                            <div class="form-group full-width" style="background: var(--white); border: 2px solid #f1f5f9; padding: 20px; border-radius: 15px;">
+                                <label><i class="fas fa-images"></i> گالری تصاویر فرعی (تا 7 عدد)</label>
+                                <div style="font-size:11px;color:var(--text-light);margin-bottom:8px;">
+                                    <i class="fas fa-info-circle"></i> فقط به ازای هر لینک/فایلی که پر کنید یک عکس فرعی اضافه می‌شود؛ فیلدهای خالی نادیده گرفته می‌شوند.
+                                </div>
+                                <div class="image-input-type-selector">
+                                    <button type="button" class="type-btn gallery-type active" onclick="toggleGallerySource('file')">آپلود فایل</button>
+                                    <button type="button" class="type-btn gallery-type" onclick="toggleGallerySource('link')">لینک مستقیم</button>
+                                </div>
+                                <div id="gallery-file-container">
+                                    <input type="file" id="p-gallery-files" accept="image/*" multiple title="انتخاب تصاویر فرعی محصول">
+                                </div>
+                                <div id="gallery-link-container" class="hidden">
+                                    <div id="gallery-links-wrapper"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="wizard-nav-bar">
+                            <button type="button" class="wizard-btn" onclick="wizardGoTo(2)"><i class="fas fa-arrow-right"></i> مرحله قبل</button>
+                            <button type="button" class="wizard-btn primary" onclick="wizardNext(3)">مرحله بعد <i class="fas fa-arrow-left"></i></button>
+                        </div>
+                        </div>
+
+                        <!-- ===== STEP 4: ویژگی‌ها (رنگ، مشخصات، توضیحات) ===== -->
+                        <div class="wizard-pane" data-pane="4">
+                        <div class="input-grid">
+                            <!-- Colors -->
+                            <div class="form-group full-width">
+                                <label>رنگ‌های موجود برای این محصول</label>
+                                <div class="color-manager">
+                                    <div class="preset-colors-container">
+                                        <label class="preset-colors-label">۱۰ رنگ پرطرفدار (برای افزودن سریع کلیک کنید):</label>
+                                        <div class="preset-colors-grid">
+                                            <button type="button" class="type-btn preset-color-btn" onclick="addPresetColor(0)"><span class="preset-swatch" style="background:#000000;"></span> مشکی</button>
+                                            <button type="button" class="type-btn preset-color-btn" onclick="addPresetColor(1)"><span class="preset-swatch" style="background:#ffffff;"></span> سفید</button>
+                                            <button type="button" class="type-btn preset-color-btn" onclick="addPresetColor(2)"><span class="preset-swatch" style="background:#e74c3c;"></span> قرمز</button>
+                                            <button type="button" class="type-btn preset-color-btn" onclick="addPresetColor(3)"><span class="preset-swatch" style="background:#2563eb;"></span> آبی</button>
+                                            <button type="button" class="type-btn preset-color-btn" onclick="addPresetColor(4)"><span class="preset-swatch" style="background:#16a34a;"></span> سبز</button>
+                                            <button type="button" class="type-btn preset-color-btn" onclick="addPresetColor(5)"><span class="preset-swatch" style="background:#facc15;"></span> زرد</button>
+                                            <button type="button" class="type-btn preset-color-btn" onclick="addPresetColor(6)"><span class="preset-swatch" style="background:#ec4899;"></span> صورتی</button>
+                                            <button type="button" class="type-btn preset-color-btn" onclick="addPresetColor(7)"><span class="preset-swatch" style="background:#9333ea;"></span> بنفش</button>
+                                            <button type="button" class="type-btn preset-color-btn" onclick="addPresetColor(8)"><span class="preset-swatch" style="background:#f97316;"></span> نارنجی</button>
+                                            <button type="button" class="type-btn preset-color-btn" onclick="addPresetColor(9)"><span class="preset-swatch" style="background:#6b7280;"></span> طوسی</button>
+                                        </div>
+                                    </div>
+                                    <div class="color-list" id="colorListContainer"></div>
+                                    <div class="color-inputs">
+                                        <input type="text" id="newColorName" placeholder="نام رنگ (مثلاً: مشکی)">
+                                        <input type="color" id="newColorCode" value="#000000" class="color-input" title="کد رنگ را انتخاب کنید">
+                                        <button type="button" class="type-btn primary-btn" onclick="addColor()">
+                                            <i class="fas fa-plus"></i> افزودن
+                                        </button>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <!-- Specifications -->
+                            <div class="form-group full-width">
+                                <label><i class="fas fa-cogs"></i> مشخصات فنی محصول</label>
+                                <div style="background: #f9f9f9; padding: 15px; border-radius: 10px; border: 1px solid var(--border-color);">
+                                    <div class="specs-input-group">
+                                        <input type="text" id="spec-key" placeholder="نام مشخصه (مثلاً: پردازنده)">
+                                        <input type="text" id="spec-value" placeholder="مقدار (مثلاً: Intel Core i7)">
+                                        <button type="button" class="type-btn" onclick="addSpec()" style="background: var(--admin-primary); color: white; border-color: var(--admin-primary); white-space: nowrap;">
+                                            <i class="fas fa-plus"></i> اضافه
+                                        </button>
+                                    </div>
+                                    <div class="specs-list" id="specsList"></div>
+                                </div>
+                            </div>
+
+                            <!-- Description -->
+                            <div class="form-group full-width">
+                                <label>توضیحات فنی و معرفی محصول</label>
+                                <textarea id="p-desc" rows="4" placeholder="جزئیات محصول را وارد کنید..."></textarea>
+                            </div>
+                        </div>
+                        <div class="wizard-nav-bar">
+                            <button type="button" class="wizard-btn" onclick="wizardGoTo(3)"><i class="fas fa-arrow-right"></i> مرحله قبل</button>
+                            <button type="button" class="wizard-btn primary" onclick="wizardNext(4)">مرحله بعد <i class="fas fa-arrow-left"></i></button>
+                        </div>
+                        </div>
+
+                        <!-- ===== STEP 5: تأیید نهایی ===== -->
+                        <div class="wizard-pane" data-pane="5">
+                            <div class="section-title" style="font-size:14px;"><i class="fas fa-clipboard-check" style="color:var(--admin-success);"></i> پیش از ذخیره، اطلاعات را مرور کنید</div>
+                            <div class="wizard-review-box" id="wizardReviewBox"></div>
+                            <div class="wizard-nav-bar">
+                                <button type="button" class="wizard-btn" onclick="wizardGoTo(4)"><i class="fas fa-arrow-right"></i> مرحله قبل</button>
+                                <button type="submit" class="btn-submit" id="submitBtn" style="width:auto;margin:0;padding:12px 28px;">
+                                    <i class="fas fa-cloud-upload-alt"></i> ذخیره محصول
+                                </button>
+                            </div>
+                        </div>
+
+                    </form>
+                </div>
+
+                <!-- Products Table -->
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-list-ul" style="color: var(--admin-accent);"></i> لیست موجودی انبار
+                        <span id="productsLoadingBadge" style="font-size:11px;color:var(--text-light);font-weight:600;margin-right:auto;"><i class="fas fa-spinner fa-spin"></i> در حال بارگذاری از Firestore...</span>
+                    </div>
+                    <div id="productsStatusBox" style="display:none;margin-bottom:14px;"></div>
+                    <div style="display:flex;flex-wrap:wrap;gap:12px;margin-bottom:16px;align-items:center;">
+                        <div style="flex:1;min-width:220px;position:relative;">
+                            <input type="text" id="prod-search-input" placeholder="جستجو در نام یا برند کالا..." oninput="onProductsFilterChange()" style="width:100%;padding-left:36px;">
+                            <i class="fas fa-search" style="position:absolute;top:50%;left:12px;transform:translateY(-50%);color:var(--text-light);font-size:13px;pointer-events:none;"></i>
+                        </div>
+                        <select id="prod-cat-filter" onchange="onProductsFilterChange()" style="min-width:190px;">
+                            <option value="">همه دسته‌بندی‌ها</option>
+                        </select>
+                        <span id="prod-filter-count" style="font-size:12px;color:var(--text-light);font-weight:700;white-space:nowrap;"></span>
+                    </div>
+
+                    <!-- Bulk actions bar (فعال می‌شود وقتی حداقل یک کالا تیک بخورد) -->
+                    <div class="bulk-actions-bar" id="bulkActionsBar">
+                        <span class="bulk-count" id="bulkSelectedCount">۰ کالا انتخاب شده</span>
+                        <select id="bulkCategorySelect"></select>
+                        <button type="button" class="wizard-btn primary" onclick="applyBulkCategoryChange()"><i class="fas fa-folder-tree"></i> تغییر دسته‌بندی گروهی</button>
+                        <button type="button" class="wizard-btn" style="border-color:var(--danger);color:var(--danger);" onclick="applyBulkDelete()"><i class="fas fa-trash"></i> حذف گروهی</button>
+                    </div>
+
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th style="width:36px;"><input type="checkbox" class="select-all-cb" id="selectAllProductsCb" onchange="toggleSelectAllProducts(this)" aria-label="انتخاب همه"></th>
+                                    <th>نمای کالا</th>
+                                    <th>مشخصات کالا</th>
+                                    <th>دسته و مسیر</th>
+                                    <th>قیمت و موجودی</th>
+                                    <th>مدیریت</th>
+                                </tr>
+                            </thead>
+                            <tbody id="productTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div id="prod-pagination" style="display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px;margin-top:18px;"></div>
+                </div>
+            </div>
+
+            <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-star" style="color: var(--warning);"></i> مدیریت ویترین ویژه
+                    </div>
+                    <p style="font-size:12px;color:var(--text-light);margin-bottom:15px;">حداکثر ۴ کارت. تصویر، عنوان و قیمت/متن هر کارت کاملاً دلخواه شماست.</p>
+                    <div class="input-grid">
+                        <div class="form-group">
+                            <label>عنوان روی تصویر</label>
+                            <input type="text" id="sp-title" placeholder="مثلاً: کاپشن چرم بدون یقه">
+                        </div>
+                        <div class="form-group">
+                            <label>متن قیمت/برچسب</label>
+                            <input type="text" id="sp-price" placeholder="مثلاً: 2,560,000 تومان">
+                        </div>
+                        <div class="form-group">
+                            <label>لینک مقصد (اختیاری)</label>
+                            <input type="text" id="sp-link" placeholder="مثلاً: product.html?id=123">
+                        </div>
+                        <div class="form-group full-width" style="background:#f1f5f9;padding:20px;border-radius:15px;">
+                            <label>انتخاب منبع تصویر</label>
+                            <div class="image-input-type-selector">
+                                <button type="button" class="type-btn active" onclick="toggleInputSource('spotlight', 'file')">آپلود فایل</button>
+                                <button type="button" class="type-btn" onclick="toggleInputSource('spotlight', 'link')">لینک مستقیم</button>
+                            </div>
+                            <div id="spotlight-file-container">
+                                <input type="file" id="sp-image-file" accept="image/*">
+                            </div>
+                            <div id="spotlight-link-container" class="hidden">
+                                <input type="url" id="sp-image-link" placeholder="https://site.com/photo.jpg">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-submit" onclick="addSpotlightCard()">
+                        <i class="fas fa-plus"></i> اضافه کردن به ویترین ویژه
+                    </button>
+                    <div id="spotlightAdminList" class="slider-preview-grid" style="margin-top:20px;"></div>
+                </div>
+
+            <!-- ===== TAB: SLIDER ===== -->
+            <div id="tab-slider" class="tab-content">
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-clock" style="color: var(--danger);"></i> تنظیمات تایمر پیشنهاد شگفت‌انگیز
+                    </div>
+                    <p style="font-size:12px;color:var(--text-light);margin-bottom:15px;">
+                        تاریخ شروع و پایان کمپین «قسطی شگفت» را به تقویم شمسی وارد کنید. شمارش معکوس همیشه از ساعت ۰۰:۰۰ روز شروع آغاز می‌شود.
+                    </p>
+                    <div class="input-grid">
+                        <div class="form-group">
+                            <label>سال شروع</label>
+                            <input type="number" id="timer-start-y" placeholder="1405" onchange="onTimerDateFieldChange()">
+                        </div>
+                        <div class="form-group">
+                            <label>ماه شروع</label>
+                            <select id="timer-start-m" title="ماه شروع" onchange="onTimerDateFieldChange()">
+                                <option value="">انتخاب ماه</option>
+                                <option value="1">فروردین</option>
+                                <option value="2">اردیبهشت</option>
+                                <option value="3">خرداد</option>
+                                <option value="4">تیر</option>
+                                <option value="5">مرداد</option>
+                                <option value="6">شهریور</option>
+                                <option value="7">مهر</option>
+                                <option value="8">آبان</option>
+                                <option value="9">آذر</option>
+                                <option value="10">دی</option>
+                                <option value="11">بهمن</option>
+                                <option value="12">اسفند</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>روز شروع</label>
+                            <input type="number" id="timer-start-d" placeholder="1" min="1" max="31" oninput="onTimerDateFieldChange()">
+                        </div>
+                        <div class="form-group">
+                            <label>سال پایان</label>
+                            <input type="number" id="timer-end-y" placeholder="1405" onchange="onTimerDateFieldChange()">
+                        </div>
+                        <div class="form-group">
+                            <label>ماه پایان</label>
+                            <select id="timer-end-m" onchange="onTimerDateFieldChange()">
+                                <option value="">انتخاب ماه</option>
+                                <option value="1">فروردین</option>
+                                <option value="2">اردیبهشت</option>
+                                <option value="3">خرداد</option>
+                                <option value="4">تیر</option>
+                                <option value="5">مرداد</option>
+                                <option value="6">شهریور</option>
+                                <option value="7">مهر</option>
+                                <option value="8">آبان</option>
+                                <option value="9">آذر</option>
+                                <option value="10">دی</option>
+                                <option value="11">بهمن</option>
+                                <option value="12">اسفند</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>روز پایان</label>
+                            <input type="number" id="timer-end-d" placeholder="3" min="1" max="31" oninput="onTimerDateFieldChange()">
+                        </div>
+                    </div>
+                    <div id="timer-date-hint" style="font-size:11.5px;color:var(--text-light);margin-top:-6px;margin-bottom:14px;"></div>
+                    <button type="button" class="btn-submit" onclick="saveAmazingTimerSettings()">
+                        <i class="fas fa-save"></i> ذخیره تنظیمات تایمر
+                    </button>
+                    <div id="currentTimerDisplay" style="margin-top:15px;font-size:13px;color:var(--admin-primary);font-weight:700;background:rgba(99,102,241,0.06);padding:10px 14px;border-radius:10px;">
+                        هنوز تایمری تنظیم نشده است.
+                    </div>
+                </div>
+
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-magic" style="color: var(--info);"></i> افزودن اسلاید جدید
+                    </div>
+                    <div class="input-grid">
+                        <div class="form-group">
+                            <label>عنوان یا متن اسلاید (اختیاری)</label>
+                            <input type="text" id="s-title" placeholder="متنی که روی اسلاید نمایش داده شود">
+                        </div>
+                        <div class="form-group">
+                            <label>لینک مقصد (URL)</label>
+                            <input type="text" id="s-link" placeholder="https://...">
+                        </div>
+                        <div class="form-group full-width" style="background: #f1f5f9; padding: 20px; border-radius: 15px;">
+                            <label>انتخاب منبع تصویر</label>
+                            <div class="image-input-type-selector">
+                                <button type="button" class="type-btn active" onclick="toggleInputSource('slider', 'file')">آپلود فایل</button>
+                                <button type="button" class="type-btn" onclick="toggleInputSource('slider', 'link')">لینک مستقیم</button>
+                            </div>
+                            <div id="slider-file-container">
+                                <input type="file" id="s-image-file" accept="image/*">
+                            </div>
+                            <div id="slider-link-container" class="hidden">
+                                <input type="url" id="s-image-link" placeholder="https://site.com/banner.jpg">
+                            </div>
+                        </div>
+                    </div>
+                    <button type="button" class="btn-submit" onclick="addSingleSlide()">
+                        <i class="fas fa-plus"></i> اضافه کردن به لیست اسلایدها
+                    </button>
+                </div>
+
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-eye" style="color: var(--admin-success);"></i> پیش‌نمایش چیدمان اسلایدر
+                    </div>
+                    <div id="adminSliderList" class="slider-preview-grid"></div>
+                </div>
+            </div>
+
+            <!-- ===== TAB: COUPONS ===== -->
+            <div id="tab-coupons" class="tab-content">
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-plus-circle" style="color: var(--admin-success);"></i>
+                        <span id="couponFormTitle">تعریف / ویرایش کد تخفیف</span>
+                    </div>
+                    <form id="couponForm">
+                        <input type="hidden" id="cp-docid">
+                        <div class="input-grid">
+                            <div class="form-group">
+                                <label>کد تخفیف (مثلاً: WELCOME20)</label>
+                                <input type="text" id="cp-code" placeholder="حروف بزرگ انگلیسی و عدد" required style="text-transform:uppercase;">
+                            </div>
+                            <div class="form-group">
+                                <label>عنوان نمایشی (نام فروشگاه/برند روی کارت)</label>
+                                <input type="text" id="cp-title" placeholder="مثلاً: TAPSI SHOP">
+                            </div>
+                            <div class="form-group">
+                                <label>نوع تخفیف</label>
+                                <select id="cp-discount-type">
+                                    <option value="percent">درصدی (٪)</option>
+                                    <option value="fixed">مبلغ ثابت (تومان)</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label>مقدار تخفیف</label>
+                                <input type="number" id="cp-discount-value" min="0" required placeholder="مثلاً 20 یا 500000">
+                            </div>
+                            <div class="form-group">
+                                <label>متن کوتاه نمایشی مقدار (روی کارت)</label>
+                                <input type="text" id="cp-value-label" placeholder="مثلاً: ۱ میلیون تومان">
+                            </div>
+                            <div class="form-group">
+                                <label>حداقل مبلغ سبد خرید (تومان)</label>
+                                <input type="number" id="cp-min-amount" min="0" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label>سقف مبلغ تخفیف (برای نوع درصدی — اختیاری)</label>
+                                <input type="number" id="cp-max-discount" min="0" placeholder="بدون محدودیت">
+                            </div>
+                            <div class="form-group">
+                                <label>محدودیت تعداد استفاده کل (اختیاری)</label>
+                                <input type="number" id="cp-usage-limit" min="0" placeholder="نامحدود">
+                            </div>
+                            <div class="form-group">
+                                <label>ترتیب نمایش (عدد کوچک‌تر = جلوتر)</label>
+                                <input type="number" id="cp-order" value="0">
+                            </div>
+                            <div class="form-group">
+                                <label>تاریخ شروع اعتبار</label>
+                                <input type="date" id="cp-start-date">
+                            </div>
+                            <div class="form-group">
+                                <label>تاریخ پایان اعتبار</label>
+                                <input type="date" id="cp-end-date">
+                            </div>
+                            <div class="form-group">
+                                <label>محدوده کاربری (audience)</label>
+                                <select id="cp-audience">
+                                    <option value="all">همه کاربران</option>
+                                    <option value="newUsers">فقط کاربران تازه‌عضو</option>
+                                    <option value="oldUsers">فقط کاربران قدیمی</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="cp-audience-days-wrap" style="display:none;">
+                                <label>حد آستانه (روز)</label>
+                                <input type="number" id="cp-audience-days" min="1" placeholder="مثلاً 30 یا 365">
+                            </div>
+                            <div class="form-group">
+                                <label>محدوده کالا (scope)</label>
+                                <select id="cp-scope" onchange="onCouponScopeChange()">
+                                    <option value="all">همه کالاها</option>
+                                    <option value="category">فقط یک دسته‌بندی خاص</option>
+                                </select>
+                            </div>
+                            <div class="form-group" id="cp-scope-cat-wrap" style="display:none;">
+                                <label>دسته‌بندی مجاز</label>
+                                <select id="cp-scope-category">
+                                    <option value="">انتخاب کنید</option>
+                                </select>
+                            </div>
+                            <div class="form-group full-width" style="background:#f1f5f9;padding:16px 20px;border-radius:15px;">
+                                <label>آیکون کارت</label>
+                                <div class="image-input-type-selector">
+                                    <button type="button" class="type-btn active" onclick="toggleInputSource('coupon', 'file')">آپلود فایل</button>
+                                    <button type="button" class="type-btn" onclick="toggleInputSource('coupon', 'link')">لینک مستقیم</button>
+                                </div>
+                                <div id="coupon-file-container">
+                                    <input type="file" id="cp-icon-file" accept="image/*">
+                                </div>
+                                <div id="coupon-link-container" class="hidden">
+                                    <input type="url" id="cp-icon-link" placeholder="https://site.com/icon.png">
+                                </div>
+                            </div>
+                            <div class="form-group hot-checkbox" style="align-items:center;padding-top:24px;">
+                                <input type="checkbox" id="cp-active" checked>
+                                <label for="cp-active" style="margin:0;cursor:pointer;">این کد تخفیف فعال است</label>
+                            </div>
+                        </div>
+                        <button type="submit" class="btn-submit" id="couponSubmitBtn">
+                            <i class="fas fa-cloud-upload-alt"></i> ذخیره کد تخفیف
+                        </button>
+                        <button type="button" class="wizard-btn" id="couponCancelEditBtn" onclick="resetCouponForm()" style="display:none;margin-top:10px;width:100%;justify-content:center;">
+                            انصراف از ویرایش
+                        </button>
+                    </form>
+                </div>
+
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-list-ul" style="color: var(--admin-accent);"></i> لیست کدهای تخفیف
+                    </div>
+                    <div id="couponsStatusBox" style="display:none;margin-bottom:14px;"></div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>ترتیب</th>
+                                    <th>کد</th>
+                                    <th>مقدار / شرط</th>
+                                    <th>محدوده کاربری / کالا</th>
+                                    <th>بازه اعتبار</th>
+                                    <th>وضعیت</th>
+                                    <th>مدیریت</th>
+                                </tr>
+                            </thead>
+                            <tbody id="couponsTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+
+            <!-- ===== TAB: ORDERS ===== -->
+            <div id="tab-orders" class="tab-content">
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-receipt" style="color: var(--admin-success);"></i> مدیریت سفارشات پرداخت شده
+                        <span id="ordersLoadingBadge" style="font-size:11px;color:var(--text-light);font-weight:600;margin-right:auto;display:none;"><i class="fas fa-spinner fa-spin"></i> در حال دریافت از Firestore...</span>
+                    </div>
+                    <div id="ordersStatusBox" style="display:none;margin-bottom:14px;"></div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>شماره سفارش</th>
+                                    <th>مشتری</th>
+                                    <th>تاریخ</th>
+                                    <th>مبلغ کل</th>
+                                    <th>وضعیت</th>
+                                    <th>عملیات</th>
+                                </tr>
+                            </thead>
+                            <tbody id="ordersTableBody"></tbody>
+                        </table>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;align-items:center;margin-top:16px;flex-wrap:wrap;gap:10px;">
+                        <span id="ordersPageLabel" style="font-size:12px;color:var(--text-light);font-weight:700;"></span>
+                        <div style="display:flex;gap:8px;">
+                            <button type="button" class="action-btn edit-btn" id="ordersPrevBtn" onclick="goToOrdersPage('prev')" disabled><i class="fas fa-chevron-right"></i> قبلی</button>
+                            <button type="button" class="action-btn edit-btn" id="ordersNextBtn" onclick="goToOrdersPage('next')" disabled>بعدی <i class="fas fa-chevron-left"></i></button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== TAB: REPORTS ===== -->
+            <div id="tab-reports" class="tab-content">
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-chart-pie" style="color: var(--admin-accent);"></i> گزارشات مالی و عملکرد
+                    </div>
+                    <div class="stats-grid">
+                        <div class="stat-card" style="border-right: 4px solid var(--admin-success);">
+                            <div>
+                                <small style="font-size:12px;color:var(--text-light);font-weight:600;">مجموع فروش کل</small>
+                                <div id="report-total-sales" style="font-size:22px;font-weight:900;color:var(--admin-success);">0 تومان</div>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="border-right: 4px solid var(--admin-accent);">
+                            <div>
+                                <small style="font-size:12px;color:var(--text-light);font-weight:600;">تعداد سفارشات تحویل شده</small>
+                                <div id="report-delivered-count" style="font-size:22px;font-weight:900;color:var(--admin-accent);">0</div>
+                            </div>
+                        </div>
+                        <div class="stat-card" style="border-right: 4px solid var(--warning);">
+                            <div>
+                                <small style="font-size:12px;color:var(--text-light);font-weight:600;">میانگین مبلغ هر سفارش</small>
+                                <div id="report-average-order" style="font-size:22px;font-weight:900;color:var(--warning);">0 تومان</div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="section-title" style="margin-top: 30px;">
+                        <i class="fas fa-history" style="color: var(--text-light);"></i> تاریخچه سفارشات تحویل داده شده
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                                <tr>
+                                    <th>شماره سفارش</th>
+                                    <th>مشتری</th>
+                                    <th>تاریخ تحویل</th>
+                                    <th>مبلغ</th>
+                                </tr>
+                            </thead>
+                            <tbody id="deliveredOrdersTableBody"></tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ===== TAB: AUDIT LOG ===== -->
+            <div id="tab-audit" class="tab-content">
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-history" style="color: var(--admin-accent);"></i> گزارش فعالیت‌های اخیر پنل مدیریت
+                        <span id="auditLoadingBadge" style="font-size:11px;color:var(--text-light);font-weight:600;margin-right:auto;display:none;"><i class="fas fa-spinner fa-spin"></i> در حال دریافت...</span>
+                    </div>
+                    <p style="font-size:12px;color:var(--text-light);margin-bottom:16px;">
+                        هر تغییری که روی محصولات، سفارشات یا کدهای تخفیف انجام شود (توسط هر مدیری) در این‌جا با زمان و شرح عملیات ثبت می‌شود.
+                    </p>
+                    <div id="auditStatusBox" style="display:none;margin-bottom:14px;"></div>
+                    <div id="auditLogList"></div>
+                </div>
+            </div>
+
+        </main>
+
+        <!-- ===== ORDER DETAILS MODAL ===== -->
+        <div class="modal-overlay" id="orderModal">
+            <div class="modal-content">
+                <span class="close-modal" onclick="closeOrderModal()"><i class="fas fa-times"></i></span>
+                <h2 style="margin-top: 0; color: var(--admin-primary); font-size: 20px;">
+                    <i class="fas fa-receipt"></i> جزئیات سفارش
+                </h2>
+
+                <div class="order-details-grid">
+                    <div class="detail-box">
+                        <div class="detail-label">شماره سفارش</div>
+                        <div class="detail-value" id="modal-order-id">#000000</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">تاریخ ثبت سفارش</div>
+                        <div class="detail-value" id="modal-order-date">--/--/----</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">اطلاعات مشتری</div>
+                        <div class="detail-value" id="modal-user-name">نام مشتری</div>
+                        <div class="detail-subtext" id="modal-user-mobile">0912...</div>
+                    </div>
+                    <div class="detail-box">
+                        <div class="detail-label">آدرس و کد پستی</div>
+                        <div class="detail-value" id="modal-address" style="font-size:12px;line-height:1.6;">--</div>
+                        <div style="font-size:12px;color:var(--text-light);margin-top:4px;" id="modal-postal-code">کد پستی: --</div>
+                    </div>
+                </div>
+
+                <div class="section-title" style="font-size:15px;">
+                    <i class="fas fa-box" style="color:var(--admin-accent);"></i> محصولات سفارش داده شده:
+                </div>
+                <div class="order-products-list" id="modal-products-list"></div>
+
+                <div style="margin-top:20px;padding-top:15px;border-top:2px dashed var(--border-color);display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:15px;">
+                    <div>
+                        <div style="font-size:12px;color:var(--text-light);font-weight:600;">مبلغ قابل پرداخت</div>
+                        <div style="font-size:22px;font-weight:900;color:var(--admin-primary);" id="modal-total-amount">0 تومان</div>
+                    </div>
+                    <div style="text-align:left;">
+                        <div style="font-size:12px;color:var(--text-light);margin-bottom:6px;font-weight:600;">تغییر وضعیت سفارش:</div>
+                        <select id="modal-status-select" onchange="updateOrderStatus(this.value)" style="padding:8px 12px;border-radius:8px;border:1.5px solid var(--border-color);font-family:inherit;font-size:13px;">
+                            <option value="paid">پرداخت شده (آماده پردازش)</option>
+                            <option value="processing">پردازش انبار</option>
+                            <option value="shipped">ارسال شده</option>
+                            <option value="delivered">تحویل داده شده</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Toast -->
+        <div id="toast" class="toast"></div>
+
+    </div>
+
+   
+    <script src="Js/admin.js"></script>
+    <script type="module" src="Js/admin-bridge.js"></script>
+
+</body>
+</html>

@@ -1,0 +1,334 @@
+<!DOCTYPE html>
+<html lang="fa" dir="rtl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title> تسویه حساب</title>
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" type="image/png" href="img/f0909d6eae7ee548665693cfbe823b078cf70ede_1774984328.png">
+    <link rel="stylesheet" href="Css/style.css">
+    <link rel="stylesheet" href="Css/skeleton.css">
+    
+    <style>
+        :root {
+            --primary: #736be8;
+            --primary-hover: #6057d8;
+            --secondary: #19bfd3;
+            --bg-body: #f5f5f5;
+            --white: #ffffff;
+            --text-main: #3f404d;
+            --text-light: #81858b;
+            --border-color: #e0e0e2;
+            --radius-md: 12px;
+            --radius-lg: 16px;
+            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
+            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
+            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
+            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
+        }
+
+        * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
+        
+        body {
+            font-family: 'Vazirmatn', sans-serif;
+            background-color: var(--bg-body);
+            margin: 0;
+            color: var(--text-main);
+            padding-bottom: 50px;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            display: grid;
+            grid-template-columns: 1.8fr 1.2fr;
+            gap: 30px;
+        }
+
+        @media(max-width: 900px) { .container { grid-template-columns: 1fr; } }
+
+        .card {
+            background: var(--white);
+            border-radius: var(--radius-lg);
+            padding: 30px;
+            box-shadow: var(--shadow-md);
+            margin-bottom: 25px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .section-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 25px;
+            padding-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .section-title { font-size: 18px; font-weight: 800; color: var(--text-main); margin: 0; }
+        .icon-badge { width: 36px; height: 36px; background: rgba(25, 191, 211, 0.1); color: var(--secondary); border-radius: 10px; display: flex; align-items: center; justify-content: center; font-size: 16px; }
+
+        .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+        .full-width { grid-column: span 2; }
+        .form-group { margin-bottom: 20px; }
+        label { display: block; font-size: 13px; font-weight: 700; color: var(--text-light); margin-bottom: 8px; }
+        input, select, textarea { width: 100%; padding: 12px 16px; border: 2px solid var(--border-color); border-radius: var(--radius-md); font-family: inherit; font-size: 14px; transition: var(--transition); background: #fafafa; }
+        input:focus, select:focus, textarea:focus { border-color: var(--secondary); background: var(--white); box-shadow: 0 0 0 4px rgba(25, 191, 211, 0.1); }
+        textarea { resize: vertical; min-height: 100px; }
+
+        .payment-options { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 15px; margin-top: 15px; }
+        .payment-card { border: 2px solid var(--border-color); border-radius: var(--radius-md); padding: 20px; cursor: pointer; text-align: center; transition: var(--transition); position: relative; background: var(--white); }
+        .payment-card:hover { border-color: var(--secondary); transform: translateY(-2px); box-shadow: var(--shadow-sm); }
+        .payment-card.active { border-color: var(--primary); background: rgba(239, 57, 78, 0.03); }
+        .payment-card i { font-size: 28px; margin-bottom: 10px; display: block; color: #555; }
+        .payment-card.active i { color: var(--primary); }
+        .payment-card span { font-weight: 700; font-size: 14px; display: block; }
+        .check-icon { position: absolute; top: 10px; left: 10px; background: var(--primary); color: white; width: 24px; height: 24px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 12px; transform: scale(0); transition: var(--transition); }
+        .payment-card.active .check-icon { transform: scale(1); }
+
+        .summary-sidebar { position: sticky; top: 30px; height: fit-content; }
+        .summary-item { display: flex; justify-content: space-between; align-items: center; padding: 12px 0; border-bottom: 1px dashed var(--border-color); font-size: 14px; }
+        .item-info { display: flex; gap: 10px; align-items: center; }
+        .item-img-mini { width: 40px; height: 40px; border-radius: 8px; object-fit: cover; background: #eee; }
+        .item-details h4 { margin: 0; font-size: 13px; font-weight: 700; }
+        .item-details p { margin: 2px 0 0; font-size: 11px; color: var(--text-light); }
+        .summary-row { display: flex; justify-content: space-between; margin-bottom: 10px; font-size: 14px; color: var(--text-light); }
+        
+        .summary-row.total { 
+            border-top: 2px dashed var(--border-color);
+            padding-top: 20px; 
+            margin-top: 20px; 
+            color: var(--text-main); 
+            font-weight: 900; 
+            font-size: 18px; 
+            align-items: center; }
+
+        .total-amount { color: var(--text-main); font-size: 22px; }
+        
+        .btn-checkout {
+            background: var(--primary);
+            color: #ffffff;
+            box-shadow: 0 4px 12px rgba(115, 107, 232, 0.3);
+            border: none;
+            padding: 10px 18px;
+            border-radius: var(--radius-md);
+            font-family: inherit;
+            font-size: 13px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            white-space: nowrap;
+        }
+        .btn-checkout:hover { background: var(--primary-hover); }
+        .btn-checkout:disabled { background: #b9b6ee; cursor: not-allowed; }
+
+        /* Loading Overlay */
+        .loading-overlay { position: fixed; inset: 0; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); z-index: 2000; display: none; flex-direction: column; align-items: center; justify-content: center; text-align: center; }
+        .spinner { width: 60px; height: 60px; border: 4px solid #f3f3f3; border-top: 4px solid var(--primary); border-radius: 50%; animation: spin 1s linear infinite; margin-bottom: 20px; }
+        .loading-text { font-size: 18px; font-weight: 800; color: var(--text-main); margin-bottom: 5px; }
+        .sub-text { font-size: 14px; color: var(--text-light); margin-top: 5px; }
+        .status-code { font-family: monospace; font-size: 12px; color: var(--secondary); margin-top: 10px; background: #f0f9fa; padding: 4px 8px; border-radius: 4px; display: inline-block; }
+        
+        @keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }
+
+        /* Toast */
+        .toast { position: fixed; bottom: 30px; left: 50%; transform: translateX(-50%) translateY(100px); background: #333; color: #fff; padding: 14px 28px; border-radius: 50px; box-shadow: var(--shadow-lg); z-index: 3000; transition: transform 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275); font-size: 14px; display: flex; align-items: center; gap: 12px; min-width: 320px; justify-content: center; font-weight: 500; }
+        .toast.show { transform: translateX(-50%) translateY(0); }
+        .toast.success { background: #00b894; }
+        .toast.error { background: var(--primary); }
+
+
+        .coupon-box {
+    border: 1.5px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 10px;
+    margin: 20px 0;
+    transition: var(--transition);
+    background: #fafafa;
+}
+    .coupon-box.is-error { border-color: #ef394e; background: rgba(239,57,78,0.04); }
+    .coupon-box.is-success { border-color: #00b894; background: rgba(0,184,148,0.05); }
+
+    .coupon-input-row { display: flex; gap: 8px; }
+    .coupon-input-row input {
+        flex: 1; border: none; background: transparent;
+        padding: 8px 10px; font-family: inherit; font-size: 13px; color: var(--text-main);
+    }
+    .coupon-input-row input:focus { box-shadow: none; background: transparent; }
+    .coupon-input-row button {
+        background: var(--text-main); color: #fff; border: none;
+        padding: 0 16px; border-radius: 8px; font-size: 12px; font-weight: 700;
+        cursor: pointer; transition: var(--transition); white-space: nowrap;
+    }
+    .coupon-input-row button:hover { opacity: 0.85; }
+    .coupon-input-row button:disabled { background: #b9b6ee; cursor: not-allowed; }
+    .coupon-input-row button.remove-mode { background: #ef394e; }
+
+    .coupon-message { font-size: 11.5px; font-weight: 600; margin-top: 6px; padding: 0 4px; min-height: 14px; }
+    .coupon-message.error-text { color: #ef394e; }
+    .coupon-message.success-text { color: #00b894; }
+
+    .summary-row.coupon-saved { color: #00b894 !important; display: none; }
+    .summary-row.coupon-saved span:last-child { color: #00b894 !important; font-weight: 800; }
+    </style>
+</head>
+<body>
+
+        <div class="loading-screen" id="loadingScreen">
+        <div class="loader-dots">
+            <div class="dot"></div>
+            <div class="dot"></div>
+            <div class="dot"></div>
+        </div>
+    </div>
+
+    <!-- Loading Overlay -->
+    <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text" id="loadingText">در حال برقراری ارتباط...</div>
+        <div class="sub-text" id="subText">لطفاً صبر کنید</div>
+        <div class="status-code" id="txnCode">TXN_ID: ---</div>
+    </div>
+
+    <!-- Toast -->
+    <div id="toast" class="toast">
+        <i class="fas fa-check-circle"></i>
+        <span id="toastMsg">پیام سیستم</span>
+    </div>
+
+    <div class="container">
+        <!-- Left Column: Forms -->
+        <div class="main-forms">
+            <div class="page-header" style="margin-bottom: 30px;">
+                <h1 style="font-size: 24px; font-weight: 900; margin: 0;">تکمیل سفارش</h1>
+                <div style="color: var(--text-light); font-size: 14px; margin-top: 5px;">اطلاعات ارسال و پرداخت</div>
+            </div>
+
+            <!-- Shipping Info -->
+            <div class="card">
+                <div class="section-header">
+                    <div class="icon-badge"><i class="fas fa-truck"></i></div>
+                    <h2 class="section-title">آدرس و اطلاعات ارسال</h2>
+                </div>
+                
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label>نام و نام خانوادگی</label>
+                        <input type="text" id="ship-name" readonly placeholder="از حساب کاربری بارگذاری شد">
+                    </div>
+                    <div class="form-group">
+                        <label>شماره موبایل</label>
+                        <input type="text" id="ship-phone" readonly placeholder="از حساب کاربری بارگذاری شد">
+                    </div>
+                    <div class="form-group full-width">
+                        <label>آدرس دقیق پستی</label>
+                        <textarea id="ship-address" rows="3" placeholder="استان، شهر، خیابان، کوچه، پلاک، واحد..."></textarea>
+                    </div>
+                    <div class="form-group">
+                        <label>کد پستی (10رقم)</label>
+                        <input type="number" id="ship-postal" placeholder="مثال: 1234567890" maxlength="10">
+                    </div>
+                    <div class="form-group">
+                        <label>روش ارسال</label>
+                        <select id="shipping-method">
+                            <option value="post">پست پیشتاز (۳۵,۰۰۰ تومان - ۲ تا ۴ روز)</option>
+                            <option value="tipax">تیپاکس (۴۵,۰۰۰ تومان - ۱ تا 2 روز)</option>
+                            <option value="free">رایگان (برای سفارشات بالای ۱ میلیون تومان)</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Payment Method -->
+            <div class="card">
+                <div class="section-header">
+                    <div class="icon-badge"><i class="fas fa-credit-card"></i></div>
+                    <h2 class="section-title">انتخاب درگاه پرداخت</h2>
+                </div>
+                <p style="font-size: 13px; color: var(--text-light); margin-bottom: 15px;">پرداخت امن و تضمین شده با نماد اعتماد الکترونیک</p>
+                
+                <div class="payment-options">
+                    <div class="payment-card active" onclick="selectPayment('zarinpal', this)">
+                        <i class="fas fa-university"></i>
+                        <span>زرین‌پال</span>
+                    </div>
+                    <div class="payment-card" onclick="selectPayment('melat', this)">
+                        <i class="fas fa-building"></i>
+                        <span>بانک ملت</span>
+                    </div>
+                    <div class="payment-card" onclick="selectPayment('peyping', this)">
+                        <i class="fas fa-wallet"></i>
+                        <span>پی‌پینگ</span>
+                    </div>
+                </div>
+                <input type="hidden" id="selected-payment-gateway" value="zarinpal">
+            </div>
+        </div>
+
+        <!-- Right Column: Summary -->
+        <aside class="order-summary">
+            <div class="summary-sidebar">
+                <div class="card">
+                    <div class="section-header">
+                        <div class="icon-badge" style="background: rgba(239, 57, 78, 0.1); color: var(--primary);"><i class="fas fa-receipt"></i></div>
+                        <h2 class="section-title">خلاصه سفارش</h2>
+                    </div>
+                    
+                    <div id="summary-items">
+                        <!-- Items injected by JS -->
+                    </div>
+                    
+                    <div class="coupon-box" id="couponBox">
+                        <div class="coupon-input-row">
+                            <input type="text" id="couponInput" placeholder="کد تخفیف دارید؟" autocomplete="off">
+                            <button type="button" id="couponBtn" onclick="handleCouponButtonClick()">اعمال</button>
+                        </div>
+                        <div class="coupon-message" id="couponMessage"></div>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>جمع کل کالاها:</span>
+                        <span id="subtotal">0 تومان</span>
+                    </div>
+
+                    <div class="summary-row">
+                        <span>هزینه ارسال:</span>
+                        <span id="shipping-cost">0 تومان</span>
+                    </div>
+                    <div class="summary-row" style="color:#ff1212;">
+                        <span>تخفیف:</span>
+                        <span id="discount-val">0 تومان</span>
+                    </div>
+                    <div class="summary-row coupon-saved" id="couponSavedRow">
+                        <span>تخفیف کد تخفیف:</span>
+                        <span id="coupon-saved-val">0 تومان</span>
+                    </div>
+
+                    <div class="summary-row total">
+                        <span>قابل پرداخت:</span>
+                        <span class="total-amount" id="final-total">0 تومان</span>
+                    </div>
+
+                    <button class="btn-checkout" id="payBtn" onclick="processOrder()">
+                        <i class="fas fa-lock"></i> پرداخت و ثبت سفارش
+                    </button>
+                    
+                    <div style="margin-top: 15px; text-align: center; font-size: 11px; color: var(--text-light);">
+                        <i class="fas fa-shield-alt"></i> اطلاعات شما رمزنگاری و محفوظ است
+                    </div>
+                </div>
+            </div>
+        </aside>
+    </div>
+    <script type="module" src="Js/firebase-bridge.js"></script>
+    <script src="Js/checkout.js"></script>
+    <script src="Js/all.js"></script>
+    <script type="module" src="Js/skeleton.js"></script>
+</body>
+</html>
