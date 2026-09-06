@@ -2318,19 +2318,21 @@
 /* ==========================================================
    AI FAB → ICON
    ========================================================== */
- 
-.ai-fab svg {
-    width: 26px;
-    height: 26px;
+.ai-fab-img {
+    width: 30px;
+    height: 30px;
+    object-fit: contain;
+    display: block;
 }
- 
 @media (min-width: 769px) {
-    .ai-fab {
-        bottom: var(--space-8);
- 
-        width: 64px;
-        height: 64px;
-    }
+    .ai-fab-img { width: 36px; height: 36px; }
+}
+
+.dnav-ai-icon {
+    width: 16px;
+    height: 16px;
+    object-fit: contain;
+    vertical-align: -2px;
 }
 /* =============================================
    DESKTOP OVERRIDES
