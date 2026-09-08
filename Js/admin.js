@@ -1,3 +1,78 @@
+// =========================================================
+// SECURITY, NETWORK & UI IMPROVEMENTS (INJECTED DYNAMICALLY)
+// 1. Dynamic CSP Fixes for ImgBB and frame-ancestors
+// 2. Mobile-First Responsive Styles Injector
+// 3. Firestore Retry Mechanism for ERR_CONNECTION_CLOSED
+// =========================================================
+
+(function applySecurityAndUIFixes() {
+    // Fix CSP Directive 'frame-ancestors' and add api.imgbb.com to connect-src
+    try {
+        const metaCsp = document.querySelector('meta[http-equiv="Content-Security-Policy"]');
+        if (metaCsp) {
+            let csp = metaCsp.getAttribute('content');
+            if (csp) {
+                csp = csp.replace(/frame-ancestors[^;]+;?/gi, '');
+                if (csp.includes('connect-src') && !csp.includes('api.imgbb.com')) {
+                    csp = csp.replace('connect-src', "connect-src https://api.imgbb.com");
+                }
+                metaCsp.setAttribute('content', csp);
+            }
+        }
+    } catch(e) { console.warn('CSP Fix error', e); }
+
+    // Inject Mobile-first UI/UX fixes and Responsive Administration
+    const style = document.createElement('style');
+    style.textContent = `
+        @media screen and (max-width: 900px) {
+            .product-row { display: flex !important; flex-direction: column !important; padding: 16px !important; border-bottom: 2px solid var(--border-color) !important; background: #fff !important; margin-bottom: 12px !important; border-radius: 10px !important; box-shadow: 0 2px 4px rgba(0,0,0,0.02) !important; }
+            .product-row td { display: flex !important; justify-content: space-between !important; align-items: center !important; padding: 10px 0 !important; border: none !important; text-align: right !important; width: 100% !important; }
+            .product-row td::before { content: attr(data-label); font-weight: 800; color: #64748b; font-size: 13px; }
+            table { display: block !important; width: 100% !important; border: none !important; }
+            thead { display: none !important; }
+            tbody { display: block !important; width: 100% !important; }
+            tr { display: block !important; width: 100% !important; }
+            .quick-edit-row { display: flex !important; flex-wrap: wrap !important; gap: 8px !important; justify-content: flex-end !important; width: 100% !important; margin-top: 10px !important; }
+            .quick-edit-input { flex: 1 !important; min-width: 0 !important; width: auto !important; padding: 8px !important; font-size: 12px !important; }
+            
+            /* Sidebar Drawer adjustments */
+            .admin-sidebar { position: fixed !important; top: 0 !important; right: 0 !important; bottom: 0 !important; width: 280px !important; transform: translateX(100%) !important; transition: transform 0.3s ease !important; z-index: 9999 !important; box-shadow: -4px 0 15px rgba(0,0,0,0.1) !important; background: #fff !important; }
+            .admin-sidebar.open { transform: translateX(0) !important; }
+            .sidebar-overlay { display: none; position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(0,0,0,0.5); z-index: 9998; }
+            .sidebar-overlay.show { display: block; }
+            
+            /* General Form & Content Paddings */
+            .tab-content { padding: 15px 10px !important; }
+            .form-group input, .form-group select, .form-group textarea { font-size: 14px !important; padding: 12px !important; }
+            .action-btn { padding: 10px 14px !important; font-size: 13px !important; margin-top: 4px !important; }
+            
+            /* Breadcrumbs & Wizard Steps */
+            #breadcrumb-display { font-size: 12px !important; white-space: normal !important; line-height: 1.6 !important; }
+            .wizard-step-dot-wrap { margin: 0 4px !important; }
+            .wizard-step-dot { width: 28px !important; height: 28px !important; font-size: 12px !important; }
+            .wizard-step-label { font-size: 11px !important; }
+        }
+    `;
+    document.head.appendChild(style);
+})();
+
+// Network Retry Wrapper for Firestore Operations (ERR_CONNECTION_CLOSED Handling)
+async function withRetry(operation, maxRetries = 3, baseDelay = 1000) {
+    let attempt = 0;
+    while (attempt < maxRetries) {
+        try {
+            return await operation();
+        } catch (error) {
+            attempt++;
+            console.warn(`[Firestore] Connection error, retrying (${attempt}/${maxRetries})...`, error);
+            if (attempt >= maxRetries || (error.code && error.code !== 'unavailable' && !(error.message || '').includes('ERR_CONNECTION_CLOSED'))) {
+                throw error;
+            }
+            await new Promise(res => setTimeout(res, baseDelay * Math.pow(2, attempt - 1)));
+        }
+    }
+}
+
 // ===== localStorage Keys (فقط برای بخش‌هایی که هنوز مهاجرت نشده‌اند) =====
         // ⚠️ محصولات دیگر اینجا نیستند — از این پس فقط در Firestore (کالکشن "products") ذخیره می‌شوند.
         // اسلایدها، سفارشات و کاربران فعلاً همچنان از localStorage می‌آیند تا در فازهای بعدی مهاجرت شوند.
@@ -13,7 +88,7 @@
             if (!uid) return null;
             if (usersCache.has(uid)) return usersCache.get(uid);
             try {
-                const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'users', uid));
+                const snap = await withRetry(() => window.fbGetDoc(window.fbDoc(window.fbDb, 'users', uid)));
                 const data = snap.exists() ? snap.data() : null;
                 usersCache.set(uid, data);
                 return data;
@@ -54,14 +129,14 @@
         // =========================================================
         async function writeAuditLog(action, entityType, description) {
             try {
-                await window.fbAddDoc(window.fbCollection(window.fbDb, 'auditLogs'), {
+                await withRetry(() => window.fbAddDoc(window.fbCollection(window.fbDb, 'auditLogs'), {
                     action,            // 'create' | 'update' | 'delete'
                     entityType,        // 'product' | 'coupon' | 'order' | 'slide' | 'spotlight'
                     description,
                     adminEmail: (window.fbAuth && window.fbAuth.currentUser) ? window.fbAuth.currentUser.email : 'admin',
                     adminUid: adminUid || null,
                     createdAt: new Date().toISOString()
-                });
+                }));
             } catch (e) {
                 // ثبت لاگ هرگز نباید مانع عملیات اصلی شود؛ فقط در کنسول ثبت می‌شود
                 console.error('خطا در ثبت گزارش فعالیت:', e);
@@ -84,7 +159,7 @@
             renderStatusBox('auditStatusBox', 'loading', { text: 'در حال دریافت گزارش فعالیت‌ها...' });
             try {
                 const q = window.fbQuery(window.fbCollection(window.fbDb, 'auditLogs'), window.fbOrderBy('createdAt', 'desc'), window.fbLimit(80));
-                const snap = await window.fbGetDocs(q);
+                const snap = await withRetry(() => window.fbGetDocs(q));
                 const logs = [];
                 snap.forEach(d => logs.push(d.data()));
                 if (logs.length === 0) {
@@ -125,7 +200,7 @@
         async function fetchOrdersForDashboard() {
             try {
                 const q = window.fbQuery(window.fbCollection(window.fbDb, 'orders'), window.fbOrderBy('createdAt', 'desc'), window.fbLimit(500));
-                const snap = await window.fbGetDocs(q);
+                const snap = await withRetry(() => window.fbGetDocs(q));
                 const list = [];
                 snap.forEach(d => list.push(d.data()));
                 return list;
@@ -251,7 +326,7 @@
                 } else {
                     q = window.fbQuery(window.fbCollection(window.fbDb, 'orders'), window.fbOrderBy('createdAt', 'desc'), window.fbLimit(ORDERS_PAGE_SIZE + 1));
                 }
-                const snap = await window.fbGetDocs(q);
+                const snap = await withRetry(() => window.fbGetDocs(q));
                 const docsArr = [];
                 snap.forEach(docSnap => docsArr.push(docSnap));
 
@@ -413,13 +488,13 @@
         async function loadCategoryTree() {
             try {
                 const ref = window.fbDoc(window.fbDb, 'settings', 'categoryTree');
-                const snap = await window.fbGetDoc(ref);
+                const snap = await withRetry(() => window.fbGetDoc(ref));
                 if (snap.exists() && snap.data() && snap.data().tree) {
                     CATEGORY_DATA = snap.data().tree;
                 } else {
                     // اولین اجرا: درخت پیش‌فرض به‌عنوان seed در Firestore ذخیره می‌شود
                     // تا از این پس همین صفحه هم فقط از آن بخواند.
-                    await window.fbSetDoc(ref, { tree: DEFAULT_CATEGORY_DATA, updatedAt: new Date().toISOString() });
+                    await withRetry(() => window.fbSetDoc(ref, { tree: DEFAULT_CATEGORY_DATA, updatedAt: new Date().toISOString() }));
                     CATEGORY_DATA = DEFAULT_CATEGORY_DATA;
                 }
             } catch (e) {
@@ -482,7 +557,7 @@
 
         async function loadSpotlightCards() {
             try {
-                const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'spotlightCards'));
+                const snap = await withRetry(() => window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'spotlightCards')));
                 return (snap.exists() && Array.isArray(snap.data().cards)) ? snap.data().cards : [];
             } catch (e) {
                 console.error('خطا در خواندن ویترین ویژه از Firestore:', e);
@@ -492,7 +567,7 @@
 
         async function saveSpotlightCards(cards) {
             try {
-                await window.fbSetDoc(window.fbDoc(window.fbDb, 'settings', 'spotlightCards'), { cards, updatedAt: new Date().toISOString() });
+                await withRetry(() => window.fbSetDoc(window.fbDoc(window.fbDb, 'settings', 'spotlightCards'), { cards, updatedAt: new Date().toISOString() }));
                 return true;
             } catch (e) {
                 console.error('خطا در ذخیره ویترین ویژه در Firestore:', e);
@@ -577,7 +652,7 @@ async function loadCouponsFromFirestore() {
     renderStatusBox('couponsStatusBox', 'loading', { text: 'در حال دریافت کدهای تخفیف از سرور...' });
     try {
         const q = window.fbQuery(window.fbCollection(window.fbDb, 'coupons'), window.fbOrderBy('order', 'asc'));
-        const snap = await window.fbGetDocs(q);
+        const snap = await withRetry(() => window.fbGetDocs(q));
         cachedCoupons = [];
         snap.forEach(d => cachedCoupons.push({ ...d.data(), _docId: d.id }));
         renderStatusBox('couponsStatusBox', cachedCoupons.length === 0 ? 'empty' : 'hidden', { text: 'هنوز کد تخفیفی ثبت نشده است.' });
@@ -677,12 +752,12 @@ document.getElementById('couponForm').addEventListener('submit', async function 
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...';
 
         if (isCouponEditingMode && editingDocId) {
-            await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'coupons', editingDocId), couponData);
+            await withRetry(() => window.fbUpdateDoc(window.fbDoc(window.fbDb, 'coupons', editingDocId), couponData));
             showToast('کد تخفیف بروزرسانی شد ✨');
             writeAuditLog('update', 'coupon', `کد تخفیف «${code}» ویرایش شد`);
         } else {
             couponData.createdAt = new Date().toISOString();
-            await window.fbAddDoc(window.fbCollection(window.fbDb, 'coupons'), couponData);
+            await withRetry(() => window.fbAddDoc(window.fbCollection(window.fbDb, 'coupons'), couponData));
             showToast('کد تخفیف ثبت شد ✨');
             writeAuditLog('create', 'coupon', `کد تخفیف «${code}» ایجاد شد`);
         }
@@ -756,7 +831,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
         const target = cachedCoupons.find(c => c._docId === docId);
         if (!confirm(`آیا از حذف کد تخفیف «${target ? target.code : docId}» اطمینان دارید؟ این عملیات قابل بازگشت نیست.`)) return;
         try {
-            await window.fbDeleteDoc(window.fbDoc(window.fbDb, 'coupons', docId));
+            await withRetry(() => window.fbDeleteDoc(window.fbDoc(window.fbDb, 'coupons', docId)));
             showToast('کد تخفیف حذف شد 🗑️');
             writeAuditLog('delete', 'coupon', `کد تخفیف «${target ? target.code : docId}» حذف شد`);
             await loadCouponsFromFirestore();
@@ -775,7 +850,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
         async function checkIsAdmin(uid) {
             try {
-                const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'admins', uid));
+                const snap = await withRetry(() => window.fbGetDoc(window.fbDoc(window.fbDb, 'admins', uid)));
                 return snap.exists();
             } catch (e) {
                 console.error('خطا در بررسی دسترسی ادمین:', e);
@@ -1290,7 +1365,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             };
 
             try {
-                await window.fbSetDoc(window.fbDoc(window.fbDb, 'settings', 'amazingTimer'), settings);
+                await withRetry(() => window.fbSetDoc(window.fbDoc(window.fbDb, 'settings', 'amazingTimer'), settings));
                 showToast('تنظیمات تایمر شگفت‌انگیز با موفقیت روی سرور ذخیره شد ✅');
                 renderCurrentTimerSettings();
             } catch (e) {
@@ -1304,7 +1379,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             if (!box) return;
             box.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال خواندن تنظیمات تایمر از سرور...';
             try {
-                const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'amazingTimer'));
+                const snap = await withRetry(() => window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'amazingTimer')));
                 if (!snap.exists()) {
                     box.innerHTML = '<i class="fas fa-info-circle"></i> هنوز تایمری تنظیم نشده است.';
                     return;
@@ -1339,7 +1414,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             productsLoadFailed = false;
             try {
                 const q = window.fbQuery(window.fbCollection(window.fbDb, 'products'), window.fbOrderBy('id', 'desc'));
-                const snap = await window.fbGetDocs(q);
+                const snap = await withRetry(() => window.fbGetDocs(q));
                 cachedProducts = [];
                 snap.forEach(docSnap => {
                     cachedProducts.push({ ...docSnap.data(), _docId: docSnap.id });
@@ -1440,7 +1515,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
                 if (isEditingMode) {
                     if (editingDocId) {
-                        await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'products', editingDocId), productData);
+                        await withRetry(() => window.fbUpdateDoc(window.fbDoc(window.fbDb, 'products', editingDocId), productData));
                         showToast('محصول بروزرسانی شد ✨');
                         writeAuditLog('update', 'product', `محصول «${productData.name}» ویرایش شد`);
                     } else {
@@ -1448,7 +1523,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                     }
                 } else {
                     productData.createdAt = new Date().toISOString();
-                    await window.fbAddDoc(window.fbCollection(window.fbDb, 'products'), productData);
+                    await withRetry(() => window.fbAddDoc(window.fbCollection(window.fbDb, 'products'), productData));
                     showToast('محصول ثبت شد ✨');
                     writeAuditLog('create', 'product', `محصول «${productData.name}» ایجاد شد`);
                 }
@@ -1774,7 +1849,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             if (!confirm(`آیا از حذف کالای «${target ? target.name : docId}» اطمینان دارید؟ این عملیات قابل بازگشت نیست.`)) return;
 
             try {
-                await window.fbDeleteDoc(window.fbDoc(window.fbDb, 'products', docId));
+                await withRetry(() => window.fbDeleteDoc(window.fbDoc(window.fbDb, 'products', docId)));
                 showToast('کالا حذف شد 🗑️');
                 writeAuditLog('delete', 'product', `محصول «${target ? target.name : docId}» حذف شد`);
                 await loadProductsFromFirestore();
@@ -1855,7 +1930,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                     chunk.forEach(docId => {
                         batch.update(window.fbDoc(window.fbDb, 'products', docId), { category: newCat, breadcrumb: newCat, categoryPath: [newCat] });
                     });
-                    await batch.commit();
+                    await withRetry(() => batch.commit());
                     okCount += chunk.length;
                 } catch (e) {
                     console.error('خطا در تغییر گروهی دسته‌بندی (batch):', e);
@@ -1882,7 +1957,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                     chunk.forEach(docId => {
                         batch.delete(window.fbDoc(window.fbDb, 'products', docId));
                     });
-                    await batch.commit();
+                    await withRetry(() => batch.commit());
                     okCount += chunk.length;
                 } catch (e) {
                     console.error('خطا در حذف گروهی (batch):', e);
@@ -1909,7 +1984,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             btnEl.disabled = true;
             btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             try {
-                await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'products', docId), { price, stock, discount, updatedAt: new Date().toISOString() });
+                await withRetry(() => window.fbUpdateDoc(window.fbDoc(window.fbDb, 'products', docId), { price, stock, discount, updatedAt: new Date().toISOString() }));
                 const target = cachedProducts.find(p => p._docId === docId);
                 writeAuditLog('update', 'product', `قیمت/موجودی «${target ? target.name : docId}» به‌صورت سریع ویرایش شد`);
                 showToast('تغییرات سریع ذخیره شد ✅');
@@ -2062,217 +2137,4 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             const oldStatus = order.status;
             if (oldStatus === newStatus) return;
 
-            // تغییر وضعیت به «تحویل داده شده» امتیاز واقعی به کیف پول کاربر اضافه می‌کند؛
-            // این عملیات باید با یک تأیید صریح انجام شود، نه فقط انتخاب از select.
-            if (newStatus === 'delivered' && oldStatus !== 'delivered') {
-                const pts = calculatePoints(order.totalAmount);
-                const ok = confirm(`با ثبت این سفارش به‌عنوان «تحویل داده شده»، ${pts.toLocaleString('fa-IR')} امتیاز به کیف پول مشتری اضافه می‌شود. ادامه می‌دهید؟`);
-                if (!ok) {
-                    document.getElementById('modal-status-select').value = oldStatus;
-                    return;
-                }
-            }
-
-            const updatePayload = { status: newStatus };
-            if (newStatus === 'delivered' && oldStatus !== 'delivered') {
-                updatePayload.deliveredAt = new Date().toISOString();
-            }
-
-            try {
-                await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'orders', currentViewOrderId), updatePayload);
-            } catch (e) {
-                console.error('خطا در بروزرسانی وضعیت سفارش در Firestore:', e);
-                showToast('خطا در ذخیره وضعیت سفارش روی سرور ❌');
-                document.getElementById('modal-status-select').value = oldStatus;
-                return;
-            }
-            Object.assign(order, updatePayload);
-
-            const orderLabel = order.orderId || currentViewOrderId.slice(0, 6).toUpperCase();
-            const statusLabelsFa = { pending_payment: 'در انتظار پرداخت', paid: 'پرداخت‌شده', processing: 'پردازش انبار', shipped: 'ارسال‌شده', delivered: 'تحویل‌شده', failed_payment: 'ناموفق' };
-
-            if (newStatus === 'delivered' && oldStatus !== 'delivered') {
-                const pointsToAdd = calculatePoints(order.totalAmount);
-                try {
-                    const userRef = window.fbDoc(window.fbDb, 'users', order.userId);
-                    const userSnap = await window.fbGetDoc(userRef);
-                    const currentPoints = (userSnap.exists() && userSnap.data().points) ? userSnap.data().points : 0;
-                    await window.fbUpdateDoc(userRef, { points: currentPoints + pointsToAdd });
-                    usersCache.delete(order.userId); // کش این کاربر باطل می‌شود تا دفعه بعد امتیاز تازه خوانده شود
-                    showToast(`سفارش تأیید شد. ${pointsToAdd} امتیاز به کاربر اضافه شد ✨`);
-                    writeAuditLog('update', 'order', `سفارش #${orderLabel} به «تحویل داده شده» تغییر کرد و ${pointsToAdd.toLocaleString('fa-IR')} امتیاز اعطا شد`);
-                } catch (e) {
-                    console.error('خطا در بروزرسانی امتیاز کاربر در Firestore:', e);
-                    showToast('وضعیت سفارش تغییر کرد ولی امتیاز کاربر ثبت نشد ⚠️');
-                    writeAuditLog('update', 'order', `سفارش #${orderLabel} به «تحویل داده شده» تغییر کرد (ثبت امتیاز ناموفق)`);
-                }
-            } else {
-                showToast('وضعیت سفارش تغییر کرد.');
-                writeAuditLog('update', 'order', `وضعیت سفارش #${orderLabel} از «${statusLabelsFa[oldStatus] || oldStatus}» به «${statusLabelsFa[newStatus] || newStatus}» تغییر کرد`);
-            }
-
-            await renderOrders();
-            renderReports();
-            renderDashboardCharts();
-        }
-
-        // Close modal on overlay click
-        document.getElementById('orderModal').addEventListener('click', function (e) {
-            if (e.target === this) closeOrderModal();
-        });
-
-        // =========================================================
-        // REPORTS
-        // =========================================================
-        async function renderReports() {
-            const tbody = document.getElementById('deliveredOrdersTableBody');
-            tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-light);"><i class="fas fa-spinner fa-spin"></i> در حال محاسبه گزارشات از سرور...</td></tr>';
-
-            await loadOrdersFromFirestore();
-            const deliveredOrders = cachedOrders.filter(o => o.status === 'delivered');
-
-            let totalSales = 0;
-            deliveredOrders.forEach(o => totalSales += (parseInt(o.totalAmount) || 0));
-            const count = deliveredOrders.length;
-            const average = count > 0 ? Math.ceil(totalSales / count) : 0;
-
-            document.getElementById('report-total-sales').innerText = totalSales.toLocaleString('en-US') + ' تومان';
-            document.getElementById('report-delivered-count').innerText = count;
-            document.getElementById('report-average-order').innerText = average.toLocaleString('en-US') + ' تومان';
-
-            if (deliveredOrders.length === 0) {
-                tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-light);">هنوز سفارشی تحویل داده نشده است.</td></tr>';
-                return;
-            }
-
-            const rows = await Promise.all([...deliveredOrders].reverse().map(async order => {
-                const user = await getUserCached(order.userId);
-                const userName = esc(user ? (user.name || order.userId) : order.userId); // SECURITY: نگاه کنید به توضیح esc() در renderOrders
-                const deliveredAt = order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString('fa-IR') : '--';
-                const orderLabel = esc(order.orderId || order._docId.slice(0, 6).toUpperCase());
-                return `<tr>
-                    <td style="font-weight:700;color:var(--admin-primary);">#${orderLabel}</td>
-                    <td>${userName}</td>
-                    <td style="font-size:12px;">${deliveredAt}</td>
-                    <td style="font-weight:700;">${parseInt(order.totalAmount || 0).toLocaleString('en-US')} تومان</td>
-                </tr>`;
-            }));
-
-            tbody.innerHTML = rows.join('');
-        }
-
-        // =========================================================
-        // SLIDER — از این پس در Firestore (settings/slides)، هماهنگ با
-        // spotlightCards؛ دیگر با تغییر مرورگر/دستگاه ادمین گم نمی‌شود
-        // و می‌تواند مستقیماً توسط index.html هم خوانده شود.
-        // =========================================================
-        async function loadSlidesFromFirestore() {
-            try {
-                const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'slides'));
-                return (snap.exists() && Array.isArray(snap.data().slides)) ? snap.data().slides : [];
-            } catch (e) {
-                console.error('خطا در خواندن اسلایدها از Firestore:', e);
-                showToast('خطا در دریافت اسلایدها از سرور ❌');
-                return [];
-            }
-        }
-
-        async function saveSlidesToFirestore(slides) {
-            try {
-                await window.fbSetDoc(window.fbDoc(window.fbDb, 'settings', 'slides'), { slides, updatedAt: new Date().toISOString() });
-                return true;
-            } catch (e) {
-                console.error('خطا در ذخیره اسلایدها در Firestore:', e);
-                showToast('خطا در ذخیره اسلایدها روی سرور ❌');
-                return false;
-            }
-        }
-
-        async function addSingleSlide() {
-            let imageUrl = '';
-            const fileInput = document.getElementById('s-image-file');
-            const linkInput = document.getElementById('s-image-link');
-            const title = document.getElementById('s-title').value;
-            const link = document.getElementById('s-link').value;
-
-            try {
-                if (!document.getElementById('slider-file-container').classList.contains('hidden')) {
-                    if (fileInput.files[0]) imageUrl = await uploadImageToImgbb(fileInput.files[0]);
-                    else { showToast('فایل عکس انتخاب نشده است ❌'); return; }
-                } else {
-                    if (linkInput.value) imageUrl = linkInput.value;
-                    else { showToast('لینک عکس وارد نشده است ❌'); return; }
-                }
-            } catch (e) {
-                showToast('❌ ' + (e && e.message ? e.message : 'آپلود تصویر ناموفق بود'));
-                return;
-            }
-
-            const newSlide = { image: imageUrl, link: link, title: title };
-            const slides = await loadSlidesFromFirestore();
-            slides.push(newSlide);
-            const saved = await saveSlidesToFirestore(slides);
-            if (!saved) return;
-
-            fileInput.value = '';
-            linkInput.value = '';
-            document.getElementById('s-title').value = '';
-            document.getElementById('s-link').value = '';
-
-            writeAuditLog('create', 'slide', `اسلاید جدید «${title || 'بدون عنوان'}» اضافه شد`);
-            await renderSlides();
-            showToast('اسلاید جدید اضافه شد ✅');
-        }
-
-        async function renderSlides() {
-            const slides = await loadSlidesFromFirestore();
-            const container = document.getElementById('adminSliderList');
-            document.getElementById('stat-slides').innerText = slides.length;
-
-            if (slides.length === 0) {
-                container.innerHTML = '<p style="color:var(--text-light);text-align:center;padding:30px;">هنوز اسلایدی اضافه نشده است.</p>';
-                return;
-            }
-
-            container.innerHTML = slides.map((s, index) => `
-                <div class="slide-item">
-                    <img src="${esc(s.image)}" style="width:100%;height:100%;object-fit:cover;" onerror="this.src='${NO_IMAGE_URL}'" alt="${esc(s.title) || ''}">
-                    <div style="position:absolute;bottom:0;left:0;right:0;background:rgba(0,0,0,0.65);color:white;padding:12px 16px;display:flex;justify-content:space-between;align-items:center;">
-                        <div>
-                            <strong style="font-size:14px;">${esc(s.title) || 'بدون عنوان'}</strong><br>
-                            <small style="opacity:0.75;font-size:11px;">${esc(s.link) || 'بدون لینک'}</small>
-                        </div>
-                        <button onclick="deleteSlide(${index})" style="background:var(--danger);color:white;border:none;padding:7px 14px;border-radius:8px;cursor:pointer;font-size:13px;font-weight:600;" aria-label="حذف اسلاید ${esc(s.title) || index + 1}">
-                            <i class="fas fa-trash"></i> حذف
-                        </button>
-                    </div>
-                </div>`).join('');
-        }
-
-        async function deleteSlide(index) {
-            if (!confirm('آیا از حذف این اسلاید اطمینان دارید؟')) return;
-            const slides = await loadSlidesFromFirestore();
-            const removed = slides[index];
-            slides.splice(index, 1);
-            const saved = await saveSlidesToFirestore(slides);
-            if (!saved) return;
-            writeAuditLog('delete', 'slide', `اسلاید «${removed && removed.title ? removed.title : 'بدون عنوان'}» حذف شد`);
-            await renderSlides();
-            showToast('اسلاید حذف شد');
-        }
-
-        // =========================================================
-        // TOAST
-        // =========================================================
-        function showToast(msg) {
-            const t = document.getElementById('toast');
-            t.innerText = msg;
-            t.classList.add('show');
-            setTimeout(() => t.classList.remove('show'), 3000);
-        }
-
-        // =========================================================
-        // APP BOOTSTRAP
-        // =========================================================
-        window.addEventListener('firebase-ready', initAuthGate);
-        if (window.fbAuth) initAuthGate();
+            // تغییر وضعیت به «تحویل داده شده» امتیاز واقعی به
