@@ -378,11 +378,6 @@ i[class*="fa-wallet"] {
     .wishlist-img-wrapper { height: 130px; }
     .wishlist-title { font-size: 12px; height: 34px; }
     .final-price { font-size: 14px; }
-    .logo-text { display: none; }
-    .h-user-btn { display: none; }
-    .h-divider { display: none; }
-    .header-actions .theme-d { display: none; }
-    #mobileTheme { display: flex !important; }
 }
 @media (min-width: 769px) { .mobile-nav { display: none; } }
 

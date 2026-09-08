@@ -78,8 +78,7 @@ i[class*="fa-undo"] {
 
 
 /* Neutral Icons */
-i[class^="fa-shopping-cart"],
-i[class*="fa-shopping-cart"],
+
 i[class^="fa-file-invoice"],
 i[class*="fa-file-invoice"],
 i[class^="fa-lock"],
@@ -267,11 +266,6 @@ i[class*="fa-lock"] {
             .summary-card { position: static; margin-top: var(--space-2); }
         }
         @media (max-width: 768px) {
-            .logo-text { display: none; }
-            .h-user-btn { display: none; }
-            .h-divider { display: none; }
-            .header-actions .theme-d { display: none; }
-            #mobileTheme { display: flex !important; }
             
             .cart-header-sub { padding: var(--space-3) var(--space-4); }
             .header-title { font-size: var(--font-lg); }
@@ -315,11 +309,7 @@ i[class*="fa-lock"] {
     display:flex; align-items:center; justify-content:center; font-size:15px;
 }
 .header-cart-icon i{ color:var(--primary); }
-.header-cart-icon .h-badge{
-    position:absolute; top:-6px; left:-6px; background:var(--danger); color:#fff;
-    font-size:9px; font-weight:800; min-width:16px; height:16px; border-radius:50%;
-    display:flex; align-items:center; justify-content:center; padding:0 3px;
-}
+
 .header-subtitle{ font-size:var(--font-xs); color:var(--text-muted); font-weight:700; }
 
 /* ---- Main column wrapper ---- */
