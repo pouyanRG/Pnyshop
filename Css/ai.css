@@ -865,13 +865,12 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 .ai-msg-row.bot .ai-msg-bubble {
     
     color: var(--ai-bot-text);
-    border: 1px solid var(--ai-border);
     border-top-right-radius: 4px;
-    box-shadow: var(--ai-shadow-sm);
+
 }
 
 .ai-msg-row.user .ai-msg-bubble {
-   
+    background: var(--ai-user-bubble);
     color: var(--ai-user-text);
     border-top-left-radius: 4px;
 }
