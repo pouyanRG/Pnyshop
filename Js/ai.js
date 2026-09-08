@@ -38,11 +38,49 @@ function toggleTheme() {
 }
 
 /* =========================================================
+   MOBILE DRAWER TOGGLE LOGIC
+   ========================================================= */
+function openDrawer() {
+    const sidebar = document.getElementById('aiSidebar');
+    const backdrop = document.getElementById('aiDrawerBackdrop');
+    sidebar?.classList.add('open');
+    backdrop?.classList.add('active');
+}
+
+function closeDrawer() {
+    const sidebar = document.getElementById('aiSidebar');
+    const backdrop = document.getElementById('aiDrawerBackdrop');
+    sidebar?.classList.remove('open');
+    backdrop?.classList.remove('active');
+}
+
+/* =========================================================
+   AUTO-RESIZE TEXTAREA LOGIC
+   ========================================================= */
+function setupAutoResizeInput() {
+    const input = document.getElementById('aiChatInput');
+    if (!input) return;
+
+    input.addEventListener('input', () => {
+        input.style.height = 'auto';
+        input.style.height = `${Math.min(input.scrollHeight, 160)}px`;
+    });
+
+    input.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            handleSend();
+        }
+    });
+}
+
+/* =========================================================
    INIT & FIREBASE BINDING
    ========================================================= */
 document.addEventListener('DOMContentLoaded', () => {
     applyTheme(state.theme);
     bindStaticUI();
+    setupAutoResizeInput();
 });
 
 let appInitialized = false;
@@ -119,21 +157,36 @@ function updateUserUI() {
 function bindStaticUI() {
     document.getElementById('navTheme')?.addEventListener('click', toggleTheme);
     document.getElementById('aiThemeToggleMobile')?.addEventListener('click', toggleTheme);
+
+    // Mobile Drawer Controls
+    document.getElementById('aiMobileMenuBtn')?.addEventListener('click', openDrawer);
+    document.getElementById('aiDrawerClose')?.addEventListener('click', closeDrawer);
+    document.getElementById('aiDrawerBackdrop')?.addEventListener('click', closeDrawer);
+
     document.getElementById('aiMobileUserBtn')?.addEventListener('click', () => {
         window.location.href = state.user ? 'profile.html' : 'login.html';
     });
+
     document.getElementById('qcSearch')?.addEventListener('click', () => {
         const inp = document.getElementById('aiChatInput');
-        if (inp) { inp.focus(); inp.placeholder = 'چه محصولی مد نظرتان است؟...'; }
-    });
-    document.querySelectorAll('[data-quick]').forEach(btn => {
-        btn.addEventListener('click', () => sendQuick(btn.dataset.quick));
+        if (inp) {
+            inp.focus();
+            inp.placeholder = 'چه محصولی مد نظرتان است؟...';
+        }
     });
 
-    const input = document.getElementById('aiChatInput');
+    document.querySelectorAll('[data-quick]').forEach(btn => {
+        btn.addEventListener('click', () => {
+            closeDrawer();
+            sendQuick(btn.dataset.quick);
+        });
+    });
+
+    // New Chat Button
+    document.getElementById('navNewChat')?.addEventListener('click', startNewChat);
+
     const sendBtn = document.getElementById('aiSendBtn');
     sendBtn?.addEventListener('click', handleSend);
-    input?.addEventListener('keydown', e => { if (e.key === 'Enter') handleSend(); });
 
     document.getElementById('aiSuggestNext')?.addEventListener('click', () => scrollSuggest(1));
     document.getElementById('aiSuggestPrev')?.addEventListener('click', () => scrollSuggest(-1));
@@ -142,6 +195,19 @@ function bindStaticUI() {
 function scrollSuggest(dir) {
     const row = document.getElementById('aiSuggestScroll');
     if (row) row.scrollBy({ left: dir * 220, behavior: 'smooth' });
+}
+
+function startNewChat() {
+    chatHistory.length = 0;
+    state.chatStarted = false;
+    const log = document.getElementById('aiChatLog');
+    const hero = document.getElementById('aiHero');
+    if (log) {
+        log.innerHTML = '';
+        log.setAttribute('hidden', 'true');
+    }
+    if (hero) hero.style.display = 'flex';
+    closeDrawer();
 }
 
 /* =========================================================
@@ -210,19 +276,47 @@ window.aiToggleWish = toggleWish;
 function ensureChatVisible() {
     if (state.chatStarted) return;
     state.chatStarted = true;
-    document.getElementById('aiChatLog')?.removeAttribute('hidden');
+    const hero = document.getElementById('aiHero');
+    const log = document.getElementById('aiChatLog');
+    if (hero) hero.style.display = 'none';
+    if (log) log.removeAttribute('hidden');
 }
 
 function appendMessage(role, innerHtml) {
     ensureChatVisible();
     const log = document.getElementById('aiChatLog');
     if (!log) return;
+
     const row = document.createElement('div');
     row.className = `ai-msg-row ${role}`;
-    const avatarIcon = role === 'bot' ? 'fa-robot' : 'fa-user';
-    row.innerHTML = `<div class="ai-msg-avatar"><i class="fas ${avatarIcon}"></i></div><div class="ai-msg-bubble">${innerHtml}</div>`;
+    
+    const avatarHtml = role === 'bot'
+        ? `<img src="img/Minimal Three-Colour Sparkle Cluster.png" alt="AI" class="ai-avatar-img">`
+        : `<i class="fas fa-user"></i>`;
+
+    const actionsHtml = role === 'bot'
+        ? `<div class="ai-msg-actions">
+            <button type="button" class="ai-action-btn" onclick="window.aiCopyMsg(this)" title="کپی پیام"><i class="far fa-copy"></i> کپی</button>
+           </div>`
+        : '';
+
+    row.innerHTML = `
+        <div class="ai-msg-avatar">${avatarHtml}</div>
+        <div class="ai-msg-content">
+            <div class="ai-msg-bubble">${innerHtml}</div>
+            ${actionsHtml}
+        </div>
+    `;
+
     log.appendChild(row);
-    row.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    scrollToBottom();
+}
+
+function scrollToBottom() {
+    const scrollContainer = document.getElementById('aiMainScroll');
+    if (scrollContainer) {
+        scrollContainer.scrollTop = scrollContainer.scrollHeight;
+    }
 }
 
 function appendUserText(text) { appendMessage('user', `<p>${esc(text)}</p>`); }
@@ -239,11 +333,26 @@ function showTyping() {
     const row = document.createElement('div');
     row.className = 'ai-msg-row bot';
     row.id = 'aiTypingRow';
-    row.innerHTML = `<div class="ai-msg-avatar"><i class="fas fa-robot"></i></div><div class="ai-msg-bubble ai-typing"><span></span><span></span><span></span></div>`;
+    row.innerHTML = `
+        <div class="ai-msg-avatar"><img src="img/Minimal Three-Colour Sparkle Cluster.png" alt="AI" class="ai-avatar-img"></div>
+        <div class="ai-msg-content">
+            <div class="ai-msg-bubble ai-typing"><span></span><span></span><span></span></div>
+        </div>`;
     log.appendChild(row);
-    row.scrollIntoView({ behavior: 'smooth', block: 'end' });
+    scrollToBottom();
 }
+
 function hideTyping() { document.getElementById('aiTypingRow')?.remove(); }
+
+window.aiCopyMsg = function(btn) {
+    const bubble = btn.closest('.ai-msg-content')?.querySelector('.ai-msg-bubble');
+    if (bubble) {
+        navigator.clipboard.writeText(bubble.innerText);
+        btn.innerHTML = `<i class="fas fa-check"></i> کپی شد`;
+        setTimeout(() => { btn.innerHTML = `<i class="far fa-copy"></i> کپی`; }, 2000);
+    }
+};
+
 /* =========================================================
    GEMINI API CONNECTOR
    ========================================================= */
@@ -267,7 +376,6 @@ async function sendToGeminiAPI(userMessage) {
             })
         });
 
-        // بررسی استاتوس پاسخ قبل از پارس کردن JSON
         if (!response.ok) {
             const errorText = await response.text();
             console.error(`خطای سرور (Status ${response.status}):`, errorText);
@@ -297,10 +405,12 @@ async function handleSend() {
 
     appendUserText(text);
     input.value = '';
+    input.style.height = 'auto'; // Reset auto-resize height
+
     showTyping();
 
     const resp = await sendToGeminiAPI(text);
-    
+
     hideTyping();
     appendBotResponse(resp);
 }
