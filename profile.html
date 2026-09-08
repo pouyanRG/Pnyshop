@@ -50,6 +50,7 @@
     <div class="header-inner">
         <a href="index.html" class="logo-btn" aria-label="صفحه اصلی">
             <img src="img/Pnyshop-img-logo.png" alt="SHOP" class="logo-img">
+            <span class="logo-text"></span>
         </a>
  
         <div class="search-container">
@@ -70,15 +71,9 @@
                         <span class="tsp-label" id="themeLabel">حالت شب</span>
                     </span>
                 </button>
-            <a href="login.html" class="h-user-btn" id="authLink" aria-label="ورود">
-                <i class="far fa-user"></i>
-                <span id="userLabel" class="skeleton user-label-skeleton"></span>
-            </a>
-            <div class="h-divider"></div>
-            <a href="sabad.html" class="h-action-btn" aria-label="سبد خرید">
-                <i class="fas fa-shopping-cart"></i>
-                <span class="h-badge" id="headerCartCount">۰</span>
-            </a>
+
+
+
             <button class="h-action-btn" id="mobileTheme" onclick="toggleTheme()" aria-label="تغییر تم" style="display:none;">
                 <i class="fas fa-moon"></i>
             </button>
@@ -257,27 +252,23 @@
             </div>
         </main>
     </div>
- 
     <nav class="mobile-nav" aria-label="ناوبری پایین">
         <a href="index.html" class="mn-item" aria-label="خانه">
             <i class="fas fa-home"></i>
-            <span>خانه</span>
         </a>
-        <div class="mn-item" onclick="window.location.href='index.html'" aria-label="دسته‌بندی">
-            <i class="fas fa-th-large"></i>
-            <span>دسته‌بندی</span>
-        </div>
-        <a href="sabad.html" class="mn-item" aria-label="سبد خرید">
+        <a href="sabad.html" class="mn-item mn-item-featured" aria-label="سبد خرید">
             <div class="mn-cart-wrap">
                 <i class="fas fa-shopping-cart"></i>
+                
             </div>
-            <span>سبد</span>
+            <span></span>
         </a>
         <a href="profile.html" class="mn-item active" aria-label="حساب کاربری">
             <i class="far fa-user"></i>
-            <span>حساب</span>
+            
         </a>
     </nav>
+
  
     <!-- FIREBASE BRIDGE -->
     <script type="module" src="Js/firebase-bridge.js"></script>

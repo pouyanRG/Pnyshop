@@ -50,10 +50,6 @@
         </div>
     <header class="main-header" id="mainHeader">
         <div class="header-inner">
-            <a class="logo-btn">
-                <img src="img/Pnyshop-img-logo.png" alt="pnyshop" class="logo-img">
-                <span class="logo-text"></span>
-            </a>
     
             <div class="search-container">
                 <div class="search-wrap">
@@ -66,7 +62,6 @@
                 </div>
                 <div id="searchDropdown" class="search-dropdown" role="listbox"></div>
             </div>
-    
             <div class="header-actions">
                 <button type="button" class="theme-switch-pill theme-d" id="themeToggle" onclick="toggleTheme()" role="switch" aria-checked="false" aria-label="تغییر حالت شب/روز">
                     <span class="tsp-track">
@@ -74,8 +69,10 @@
                         <span class="tsp-label" id="themeLabel">حالت شب</span>
                     </span>
                 </button>
-                <div class="h-divider"></div>
-                <button class="h-action-btn" id="mobileTheme" onclick="toggleTheme()" aria-label="تغییر تم" style="display:none;">
+
+
+
+                <button class="h-action-btn" id="mobileTheme" onclick="toggleTheme()" aria-label="تغییر تم" hidden>
                     <i class="fas fa-moon"></i>
                 </button>
             </div>
@@ -198,16 +195,19 @@
         </div>
         <div class="lightbox-hint"><i class="fas fa-hand-pointer"></i> دو بار ضربه بزنید</div>
     </div>
- 
-    <nav class="mobile-nav" aria-label="ناوبری">
+
+    <nav class="mobile-nav" aria-label="ناوبری پایین">
         <a href="index.html" class="mn-item" aria-label="خانه"><i class="fas fa-home"></i><span>خانه</span></a>
-        <div class="mn-item" tabindex="0" role="button" onclick="window.location.href='index.html'" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();window.location.href='index.html'}" aria-label="دسته"><i class="fas fa-th-large"></i><span>دسته</span></div>
-        <a href="sabad.html" class="mn-item" aria-label="سبد">
+        <a href="sabad.html" class="mn-item mn-item-featured" aria-label="سبد">
             <div class="mn-cart-wrap"><i class="fas fa-shopping-cart"></i></div>
-            <span>سبد</span>
         </a>
-        <a href="profile.html" class="mn-item" aria-label="حساب"><i class="far fa-user"></i><span>حساب</span></a>
+        <a href="profile.html" class="mn-item" aria-label="حساب">
+            <i class="far fa-user"></i>
+           
+        </a>
     </nav>
+ 
+
  
     <div id="toast" class="toast"></div>
  
