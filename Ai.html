@@ -1,188 +1,246 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-    <head>
-        <meta charset="UTF-8">
-        <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-        <title>دستیار هوشمند SHOP</title>
-        <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
-        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
-        <link rel="icon" type="image/png" href="img/f0909d6eae7ee548665693cfbe823b078cf70ede_1774984328.png">
-        <link rel="stylesheet" href="Css/ai.css">
-    </head>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>دستیار هوشمند SHOP | چت آنلاین</title>
+    
+    <!-- فونت وزیرمتن و آیکون‌های FontAwesome -->
+    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" />
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css">
+    <link rel="icon" type="image/png" href="img/f0909d6eae7ee548665693cfbe823b078cf70ede_1774984328.png">
+    
+    <!-- استایل اصلی -->
+    <link rel="stylesheet" href="Css/ai.css">
+</head>
+<body>
+    <div class="ai-shell">
 
-    <body>
-        <div class="ai-shell">
-
-            <!-- ===================== SKELETON ===================== -->
-            <div class="ai-skeleton" id="aiSkeleton">
-                <aside class="ai-sidebar">
-                    <div class="ai-sidebar-header">
-                        <span class="skel-bar skel-circle" style="width:44px;height:44px;"></span>
-                        <div style="flex:1;">
-                            <span class="skel-bar" style="width:70%;height:14px;margin-bottom:8px;"></span>
-                            <span class="skel-bar" style="width:50%;height:10px;"></span>
-                        </div>
-                    </div>
-                    <nav class="ai-nav">
-                        <span class="skel-bar" style="height:40px;border-radius:10px;"></span>
-                        <span class="skel-bar" style="height:40px;border-radius:10px;"></span>
-                        <span class="skel-bar" style="height:40px;border-radius:10px;"></span>
-                        <span class="skel-bar" style="height:40px;border-radius:10px;"></span>
-                        <span class="skel-bar" style="height:40px;border-radius:10px;"></span>
-                    </nav>
-                    <div class="ai-sidebar-promo">
-                        <span class="skel-bar" style="width:100%;height:12px;margin-bottom:8px;"></span>
-                        <span class="skel-bar" style="width:90%;height:12px;margin-bottom:8px;"></span>
-                        <span class="skel-bar" style="width:60%;height:12px;"></span>
-                    </div>
-                    <div class="ai-sidebar-user">
-                        <span class="skel-bar skel-circle" style="width:38px;height:38px;"></span>
-                        <div style="flex:1;">
-                            <span class="skel-bar" style="width:70%;height:12px;margin-bottom:6px;"></span>
-                            <span class="skel-bar" style="width:50%;height:10px;"></span>
-                        </div>
-                    </div>
-                </aside>
-
-                <header class="ai-mobile-top">
-                    <span class="skel-bar skel-circle" style="width:34px;height:34px;"></span>
-                    <span class="skel-bar" style="width:120px;height:16px;"></span>
-                    <span class="skel-bar skel-circle" style="width:34px;height:34px;"></span>
-                </header>
-
-                <main class="ai-main">
-                    <div class="ai-hero">
-                        <span class="skel-bar" style="width:60%;height:22px;margin-bottom:10px;"></span>
-                        <span class="skel-bar" style="width:35%;height:14px;"></span>
-                    </div>
-                    <div class="ai-quick-grid">
-                        <span class="skel-bar" style="height:130px;border-radius:16px;"></span>
-                        <span class="skel-bar" style="height:130px;border-radius:16px;"></span>
-                        <span class="skel-bar" style="height:130px;border-radius:16px;"></span>
-                        <span class="skel-bar" style="height:130px;border-radius:16px;"></span>
-                    </div>
-                    <span class="skel-bar" style="width:220px;height:18px;margin:8px 0;"></span>
-                    <div class="ai-suggest-scroll">
-                        <span class="skel-bar" style="min-width:190px;height:230px;border-radius:16px;"></span>
-                        <span class="skel-bar" style="min-width:190px;height:230px;border-radius:16px;"></span>
-                        <span class="skel-bar" style="min-width:190px;height:230px;border-radius:16px;"></span>
-                        <span class="skel-bar" style="min-width:190px;height:230px;border-radius:16px;"></span>
-                    </div>
-                    <span class="skel-bar" style="width:100%;height:60px;border-radius:16px;"></span>
-                    <span class="skel-bar" style="width:100%;height:56px;border-radius:999px;margin-top:auto;"></span>
-                </main>
-            </div>
-
-            <!-- ===================== REAL APP (hidden until loaded) ===================== -->
-            <div class="ai-app hidden" id="aiApp">
-
-                <aside class="ai-sidebar" id="aiSidebar">
-                    <div class="ai-sidebar-header">
-                        <span class="ai-sidebar-avatar"><img src="img/Minimal Three-Colour Sparkle Cluster.png" alt="" class="ai-avatar-img"></span>
-                        <div>
-                            <div class="ai-sidebar-title">AI Chatbot</div>
-                            <div class="ai-sidebar-sub">دستیار هوشمند شما</div>
-                        </div>
-                    </div>
-
-                    <nav class="ai-nav">
-                        <button type="button" class="ai-nav-item active" id="navNewChat"><i class="fas fa-comment-dots"></i> گفتگوی جدید</button>
-                        <button type="button" class="ai-nav-item" data-quick="پیشنهاد بده"><i class="fas fa-box"></i> پیشنهاد محصول</button>
-                        <button type="button" class="ai-nav-item" data-quick="سفارش‌های من"><i class="fas fa-truck"></i> پیگیری سفارش</button>
-                        <button type="button" class="ai-nav-item" data-quick="راهنما"><i class="fas fa-circle-question"></i> سوالات متداول</button>
-                        <button type="button" class="ai-nav-item" id="navHistory"><i class="fas fa-clock-rotate-left"></i> تاریخچه گفتگوها</button>
-                        <button type="button" class="ai-nav-item" id="navTheme"><i class="fas fa-moon"></i> تنظیمات</button>
-                    </nav>
-
-                    <div class="ai-sidebar-promo">
-                        <i class="fas fa-wand-magic-sparkles"></i>
-                        <b>هوشمند و همیشه همراه</b>
-                        <span>هر سوالی درباره محصولات، سفارشات و خدمات ما دارید بپرسید.</span>
-                    </div>
-
-                    <a href="login.html" class="ai-sidebar-user" id="aiSidebarUser">
-                        <span class="ai-user-avatar"><i class="fas fa-user"></i></span>
-                        <span class="ai-user-text">
-                            <b id="aiUserName">کاربر مهمان</b>
-                            <span id="aiUserSub">ورود / ثبت‌نام</span>
-                        </span>
-                    </a>
-                </aside>
-
-                <header class="ai-mobile-top">
-                    <button type="button" class="ai-icon-btn" id="aiMobileUserBtn" aria-label="حساب کاربری"><i class="fas fa-user"></i></button>
-                    <div class="ai-mobile-title"><i class="fas fa-wand-magic-sparkles"></i> دستیار هوشمند</div>
-                    <button type="button" class="ai-icon-btn" id="aiThemeToggleMobile" aria-label="تغییر تم"><i class="fas fa-moon"></i></button>
-                </header>
-
-                <main class="ai-main">
-                    <div class="ai-hero" id="aiHero">
-                        <h1>سلام! من دستیار هوشمند شما هستم 👋</h1>
-                        <p>چه کمکی از دست من برمی‌آد؟</p>
-                    </div>
-
-                    <div class="ai-quick-grid" id="aiQuickGrid">
-                        <button type="button" class="ai-quick-card" id="qcSearch">
-                            <span class="qc-icon qc-blue"><i class="fas fa-magnifying-glass"></i></span>
-                            <b>جستجوی محصول</b><span>محصول مورد نظر خود را پیدا کنید</span>
-                        </button>
-                        <button type="button" class="ai-quick-card" data-quick="پیشنهاد بده">
-                            <span class="qc-icon qc-green"><i class="fas fa-bag-shopping"></i></span>
-                            <b>پیشنهاد محصول</b><span>پیشنهادهای اختصاصی متناسب با نیاز شما</span>
-                        </button>
-                        <button type="button" class="ai-quick-card" data-quick="سفارش‌های من">
-                            <span class="qc-icon qc-purple"><i class="fas fa-truck"></i></span>
-                            <b>پیگیری سفارش</b><span>وضعیت سفارش خود را بررسی کنید</span>
-                        </button>
-                        <button type="button" class="ai-quick-card" data-quick="راهنما">
-                            <span class="qc-icon qc-orange"><i class="fas fa-circle-question"></i></span>
-                            <b>سوالات متداول</b><span>پاسخ سوالات رایج را دریافت کنید</span>
-                        </button>
-                    </div>
-
-                    <section class="ai-suggest-section" id="aiSuggestSection">
-                        <div class="ai-suggest-head">
-                            <h2>پیشنهادات ویژه برای شما</h2>
-                            <div class="ai-suggest-nav">
-                                <button type="button" class="ai-sn-btn" id="aiSuggestPrev" aria-label="قبلی"><i class="fas fa-chevron-right"></i></button>
-                                <button type="button" class="ai-sn-btn" id="aiSuggestNext" aria-label="بعدی"><i class="fas fa-chevron-left"></i></button>
-                            </div>
-                        </div>
-                        <div class="ai-suggest-scroll" id="aiSuggestScroll"></div>
-                    </section>
-
-                    <div class="ai-upgrade-banner">
-                        <span class="ai-upgrade-icon"><i class="fas fa-crown"></i></span>
-                        <div class="ai-upgrade-text">
-                            <b>ویژگی‌های ویژه</b>
-                            <span>دسترسی به پیشنهادهای اختصاصی و پشتیبانی سریع‌تر</span>
-                        </div>
-                        <button type="button" class="ai-upgrade-btn"><i class="fas fa-chevron-right"></i> ارتقا به نسخه ویژه</button>
-                    </div>
-
-                    <div class="ai-chat-log" id="aiChatLog" hidden></div>
-
-                    <div class="ai-composer">
-                        <button type="button" class="ai-composer-icon" aria-label="پیوست"><i class="fas fa-paperclip"></i></button>
-                        <button type="button" class="ai-composer-icon" aria-label="ضبط صدا"><i class="fas fa-microphone"></i></button>
-                        <input type="text" id="aiChatInput" class="ai-composer-input" placeholder="پیام خود را بنویسید..." autocomplete="off">
-                        <button type="button" class="ai-send-btn" id="aiSendBtn" aria-label="ارسال"><i class="fas fa-paper-plane"></i></button>
-                    </div>
-                </main>
-            </div>
-
-            <!-- ===================== MOBILE BOTTOM NAV ===================== -->
-            <nav class="ai-mobile-nav">
-                <button type="button" class="ai-mn-item" data-action="settings"><i class="fas fa-gear"></i><span>تنظیمات</span></button>
-                <button type="button" class="ai-mn-item" data-action="chats"><i class="fas fa-comment"></i><span>چت‌ها</span></button>
-                <button type="button" class="ai-mn-item" data-action="wishlist"><i class="fas fa-heart"></i><span>علاقه‌مندی‌ها</span></button>
-                <button type="button" class="ai-mn-item" data-action="orders"><i class="fas fa-box"></i><span>سفارش‌ها</span></button>
-                <button type="button" class="ai-mn-item active" data-action="home"><i class="fas fa-house"></i><span>خانه</span></button>
-            </nav>
-
+        <!-- =============================================
+             SKELETON LOADING STATE
+             ============================================= -->
+        <div class="ai-skeleton" id="aiSkeleton">
+            <aside class="ai-skel-sidebar">
+                <div class="skel-bar skel-avatar"></div>
+                <div class="skel-bar skel-btn"></div>
+                <div class="skel-bar skel-btn"></div>
+                <div class="skel-bar skel-btn"></div>
+            </aside>
+            <main class="ai-skel-main">
+                <div class="skel-bar skel-title"></div>
+                <div class="skel-bar skel-card"></div>
+                <div class="skel-bar skel-input"></div>
+            </main>
         </div>
 
-        <script type="module" src="Js/ai.js"></script>
-        <script type="module" src="Js/firebase-bridge.js"></script>
-    </body>
+        <!-- =============================================
+             REAL APP INTERFACE
+             ============================================= -->
+        <div class="ai-app hidden" id="aiApp">
+
+            <!-- Backdrop برای بستن Drawer در موبایل -->
+            <div class="ai-drawer-backdrop" id="aiDrawerBackdrop"></div>
+
+            <!-- SIDEBAR / DRAWER -->
+            <aside class="ai-sidebar" id="aiSidebar">
+                <!-- هدر منوی جانبی -->
+                <div class="ai-sidebar-header">
+                    <div class="ai-brand-info">
+                        <span class="ai-sidebar-avatar">
+                            <img src="img/Minimal Three-Colour Sparkle Cluster.png" alt="AI Sparkle" class="ai-avatar-img">
+                        </span>
+                        <div>
+                            <h2 class="ai-sidebar-title">دستیار هوشمند</h2>
+                            <p class="ai-sidebar-sub">مدل فعال: Gemini Flash</p>
+                        </div>
+                    </div>
+                    <button type="button" class="ai-icon-btn ai-mobile-close" id="aiDrawerClose" aria-label="بستن منو">
+                        <i class="fas fa-times"></i>
+                    </button>
+                </div>
+
+                <!-- دکمه چت جدید -->
+                <button type="button" class="ai-btn-new-chat" id="navNewChat">
+                    <i class="fas fa-plus"></i>
+                    <span>گفتگوی جدید</span>
+                </button>
+
+                <!-- ناوبری و میانبرها -->
+                <nav class="ai-nav">
+                    <div class="ai-nav-label">دسترسی سریع</div>
+                    <button type="button" class="ai-nav-item active" id="navHome">
+                        <i class="fas fa-comment-dots"></i>
+                        <span>صفحه گفتگو</span>
+                    </button>
+                    <button type="button" class="ai-nav-item" data-quick="پیشنهاد بده">
+                        <i class="fas fa-magic"></i>
+                        <span>پیشنهاد هوشمند</span>
+                    </button>
+                    <button type="button" class="ai-nav-item" data-quick="سفارش‌های من">
+                        <i class="fas fa-box-archive"></i>
+                        <span>پیگیری سفارشات</span>
+                    </button>
+                    <button type="button" class="ai-nav-item" data-quick="راهنما">
+                        <i class="fas fa-circle-question"></i>
+                        <span>راهنما و سوالات</span>
+                    </button>
+                </nav>
+
+                <!-- تاریخچه گفتگوها -->
+                <div class="ai-history-section">
+                    <div class="ai-nav-label">تاریخچه گفتگوها</div>
+                    <div class="ai-history-list" id="aiHistoryList">
+                        <button type="button" class="ai-history-item active">
+                            <i class="far fa-message"></i>
+                            <span class="ai-history-title">گفتگوی فعلی</span>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- باکس ارتقا / اطلاعات -->
+                <div class="ai-sidebar-promo">
+                    <i class="fas fa-wand-magic-sparkles"></i>
+                    <b>پاسخگویی ۲۴/۷</b>
+                    <span>راهنمای خرید و پاسخ به تمامی سوالات شما.</span>
+                </div>
+
+                <!-- پروفایل کاربر در انتهای منو -->
+                <a href="login.html" class="ai-sidebar-user" id="aiSidebarUser">
+                    <span class="ai-user-avatar">
+                        <i class="fas fa-user"></i>
+                    </span>
+                    <span class="ai-user-text">
+                        <b id="aiUserName">کاربر مهمان</b>
+                        <span id="aiUserSub">ورود / ثبت‌نام</span>
+                    </span>
+                    <i class="fas fa-chevron-left ai-user-arrow"></i>
+                </a>
+            </aside>
+
+            <!-- MAIN CONTAINER -->
+            <div class="ai-main-wrapper">
+                
+                <!-- MOBILE HEADER -->
+                <header class="ai-mobile-top">
+                    <button type="button" class="ai-icon-btn" id="aiMobileMenuBtn" aria-label="منو">
+                        <i class="fas fa-bars"></i>
+                    </button>
+                    <div class="ai-mobile-title">
+                        <i class="fas fa-wand-magic-sparkles"></i>
+                        <span>دستیار هوشمند</span>
+                    </div>
+                    <div class="ai-mobile-actions">
+                        <button type="button" class="ai-icon-btn" id="aiThemeToggleMobile" aria-label="تغییر تم">
+                            <i class="fas fa-moon"></i>
+                        </button>
+                        <button type="button" class="ai-icon-btn" id="aiMobileUserBtn" aria-label="حساب کاربری">
+                            <i class="fas fa-user"></i>
+                        </button>
+                    </div>
+                </header>
+
+                <!-- DESKTOP TOP BAR -->
+                <header class="ai-desktop-top">
+                    <div class="ai-chat-model-selector">
+                        <span class="ai-model-badge"><i class="fas fa-sparkles"></i> Gemini AI</span>
+                    </div>
+                    <button type="button" class="ai-icon-btn" id="navTheme" aria-label="تغییر تم">
+                        <i class="fas fa-moon"></i>
+                    </button>
+                </header>
+
+                <!-- MAIN SCROLLABLE CONTENT AREA -->
+                <main class="ai-main" id="aiMainScroll">
+                    <div class="ai-content-container">
+
+                        <!-- WELCOME / HERO STATE -->
+                        <div class="ai-hero-wrapper" id="aiHero">
+                            <div class="ai-hero-avatar">
+                                <img src="img/Minimal Three-Colour Sparkle Cluster.png" alt="Logo">
+                            </div>
+                            <h1>سلام! چطور می‌توانم کمکتان کنم؟</h1>
+                            <p>پیشنهاد محصول، پیگیری سفارش یا پاسخ به سوالات شما در سریع‌ترین زمان ممکن</p>
+
+                            <!-- QUICK PROMPTS GRID -->
+                            <div class="ai-quick-grid" id="aiQuickGrid">
+                                <button type="button" class="ai-quick-card" id="qcSearch">
+                                    <div class="qc-header">
+                                        <span class="qc-icon qc-blue"><i class="fas fa-magnifying-glass"></i></span>
+                                        <b>جستجوی سریع</b>
+                                    </div>
+                                    <span>پیدا کردن بهترین محصولات موجود</span>
+                                </button>
+                                <button type="button" class="ai-quick-card" data-quick="پیشنهاد بده">
+                                    <div class="qc-header">
+                                        <span class="qc-icon qc-green"><i class="fas fa-bag-shopping"></i></span>
+                                        <b>پیشنهاد محصول</b>
+                                    </div>
+                                    <span>محصولات برتر متناسب با نیاز شما</span>
+                                </button>
+                                <button type="button" class="ai-quick-card" data-quick="سفارش‌های من">
+                                    <div class="qc-header">
+                                        <span class="qc-icon qc-purple"><i class="fas fa-truck"></i></span>
+                                        <b>پیگیری سفارش</b>
+                                    </div>
+                                    <span>بررسی آخرین وضعیت مرسوله‌ها</span>
+                                </button>
+                                <button type="button" class="ai-quick-card" data-quick="راهنما">
+                                    <div class="qc-header">
+                                        <span class="qc-icon qc-orange"><i class="fas fa-circle-question"></i></span>
+                                        <b>سوالات متداول</b>
+                                    </div>
+                                    <span>پاسخ به قوانین، ارسال و بازگشت کالا</span>
+                                </button>
+                            </div>
+
+                            <!-- SUGGESTIONS SLIDER -->
+                            <section class="ai-suggest-section" id="aiSuggestSection">
+                                <div class="ai-suggest-head">
+                                    <h2><i class="fas fa-fire text-orange"></i> پیشنهادهای ویژه فروشگاه</h2>
+                                    <div class="ai-suggest-nav">
+                                        <button type="button" class="ai-sn-btn" id="aiSuggestPrev" aria-label="قبلی">
+                                            <i class="fas fa-chevron-right"></i>
+                                        </button>
+                                        <button type="button" class="ai-sn-btn" id="aiSuggestNext" aria-label="بعدی">
+                                            <i class="fas fa-chevron-left"></i>
+                                        </button>
+                                    </div>
+                                </div>
+                                <div class="ai-suggest-scroll" id="aiSuggestScroll"></div>
+                            </section>
+                        </div>
+
+                        <!-- CHAT MESSAGES STREAM CONTAINER -->
+                        <div class="ai-chat-log" id="aiChatLog" hidden></div>
+
+                    </div>
+                </main>
+
+                <!-- FLOATING INPUT COMPOSER CONTAINER -->
+                <div class="ai-composer-wrapper">
+                    <div class="ai-composer">
+                        <div class="ai-composer-inner">
+                            <button type="button" class="ai-composer-btn" aria-label="پیوست فایل">
+                                <i class="fas fa-paperclip"></i>
+                            </button>
+                            <textarea id="aiChatInput" class="ai-composer-input" rows="1" placeholder="پیامی بنویسید..." dir="auto"></textarea>
+                            <button type="button" class="ai-send-btn" id="aiSendBtn" aria-label="ارسال پیام">
+                                <i class="fas fa-arrow-up"></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div class="ai-composer-footer">
+                        <span>هوش مصنوعی ممکن است خطا داشته باشد. اطلاعات مهم را بررسی کنید.</span>
+                    </div>
+                </div>
+
+            </div>
+
+        </div>
+    </div>
+
+    <!-- اسکریپت‌های پروژه -->
+    <script type="module" src="Js/ai.js"></script>
+    <script type="module" src="Js/firebase-bridge.js"></script>
+</body>
 </html>
