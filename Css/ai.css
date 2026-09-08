@@ -836,7 +836,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 
 .ai-msg-row.bot .ai-msg-avatar {
-    background: linear-gradient(135deg, var(--ai-primary), #8b5cf6);
+
     color: #ffffff;
 }
 
@@ -863,7 +863,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 
 .ai-msg-row.bot .ai-msg-bubble {
-    background: var(--ai-bot-bubble);
+    
     color: var(--ai-bot-text);
     border: 1px solid var(--ai-border);
     border-top-right-radius: 4px;
@@ -871,7 +871,7 @@ button { cursor: pointer; border: none; background: none; font-family: inherit; 
 }
 
 .ai-msg-row.user .ai-msg-bubble {
-    background: var(--ai-user-bubble);
+   
     color: var(--ai-user-text);
     border-top-left-radius: 4px;
 }
