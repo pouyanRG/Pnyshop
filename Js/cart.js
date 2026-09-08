@@ -26,15 +26,30 @@ function esc(str) {
     return String(str ?? '').replace(/[&<>"']/g, ch => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[ch]));
 }
 
-// --- INIT ---
+let lastHeaderScrollY = 0;
 document.addEventListener('DOMContentLoaded', () => {
     applyTheme(state.theme);
     initSearch();
 
     window.addEventListener('scroll', () => {
-        const h = document.getElementById('mainHeader');
-        if (window.scrollY > 10) h.classList.add('scrolled');
-        else h.classList.remove('scrolled');
+        const header = document.getElementById('mainHeader');
+        const bottomNav = document.querySelector('.mobile-nav');
+        const currentY = window.scrollY;
+
+        if (header) header.classList.toggle('scrolled', currentY > 10);
+
+        if (currentY <= 10) {
+            if (header) header.classList.remove('header-hidden');
+            if (bottomNav) bottomNav.classList.remove('mn-wide');
+        } else if (currentY > lastHeaderScrollY) {
+            if (header) header.classList.add('header-hidden');
+            if (bottomNav) bottomNav.classList.add('mn-wide');
+        } else if (currentY < lastHeaderScrollY) {
+            if (header) header.classList.remove('header-hidden');
+            if (bottomNav) bottomNav.classList.remove('mn-wide');
+        }
+
+        lastHeaderScrollY = currentY;
     }, { passive: true });
 });
 

@@ -683,6 +683,28 @@ document.addEventListener('DOMContentLoaded', () => {
     window.addEventListener('resize', () => { setMobileThemeBtn(); resetZoomOnResize(); });
 });
 
+let lastHeaderScrollY = 0;
+window.addEventListener('scroll', () => {
+    const header = document.getElementById('mainHeader');
+    const bottomNav = document.querySelector('.mobile-nav');
+    const currentY = window.scrollY;
+
+    if (header) header.classList.toggle('scrolled', currentY > 10);
+
+    if (currentY <= 10) {
+        if (header) header.classList.remove('header-hidden');
+        if (bottomNav) bottomNav.classList.remove('mn-wide');
+    } else if (currentY > lastHeaderScrollY) {
+        if (header) header.classList.add('header-hidden');
+        if (bottomNav) bottomNav.classList.add('mn-wide');
+    } else if (currentY < lastHeaderScrollY) {
+        if (header) header.classList.remove('header-hidden');
+        if (bottomNav) bottomNav.classList.remove('mn-wide');
+    }
+
+    lastHeaderScrollY = currentY;
+}, { passive: true });
+
 let isAppInitialized = false;
 
 function runInit() {
