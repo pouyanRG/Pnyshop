@@ -501,37 +501,79 @@
             }
         }
 
-        async function addSpotlightCard() {
-            const title = document.getElementById('sp-title').value.trim();
-            const price = document.getElementById('sp-price').value.trim();
-            const link = document.getElementById('sp-link').value.trim();
-            let imageUrl = '';
 
-            if (!document.getElementById('spotlight-file-container').classList.contains('hidden')) {
-                const fileInput = document.getElementById('sp-image-file');
-                if (fileInput.files[0]) imageUrl = await uploadImageToImgbb(fileInput.files[0]);
-                else { showToast('فایل عکس انتخاب نشده است ❌'); return; }
-            } else {
-                const linkInput = document.getElementById('sp-image-link');
-                if (linkInput.value) imageUrl = linkInput.value;
-                else { showToast('لینک عکس وارد نشده است ❌'); return; }
+        async function addSpotlightCard(btnEl) {
+            const original = btnEl ? btnEl.innerHTML : '';
+
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال آپلود...';
             }
-            if (!title) { showToast('عنوان را وارد کنید ⚠️'); return; }
 
-            let cards = await loadSpotlightCards();
-            if (cards.length >= 4) { showToast('حداکثر ۴ کارت مجاز است؛ یکی را حذف کنید ⚠️'); return; }
-            cards.push({ image: imageUrl, title, price, link });
+            try {
+                const title = document.getElementById('sp-title').value.trim();
+                const price = document.getElementById('sp-price').value.trim();
+                const link = document.getElementById('sp-link').value.trim();
+                let imageUrl = '';
 
-            if (await saveSpotlightCards(cards)) {
-                document.getElementById('sp-title').value = '';
-                document.getElementById('sp-price').value = '';
-                document.getElementById('sp-link').value = '';
-                document.getElementById('sp-image-file').value = '';
-                document.getElementById('sp-image-link').value = '';
-                showToast('به ویترین ویژه اضافه شد ✅');
-                renderSpotlightAdminList();
+                if (!document.getElementById('spotlight-file-container').classList.contains('hidden')) {
+                    const fileInput = document.getElementById('sp-image-file');
+
+                    if (fileInput.files[0]) {
+                        imageUrl = await uploadImageToImgbb(fileInput.files[0]);
+                    } else {
+                        showToast('فایل عکس انتخاب نشده است ❌');
+                        return;
+                    }
+                } else {
+                    const linkInput = document.getElementById('sp-image-link');
+
+                    if (linkInput.value) {
+                        imageUrl = linkInput.value;
+                    } else {
+                        showToast('لینک عکس وارد نشده است ❌');
+                        return;
+                    }
+                }
+
+                if (!title) {
+                    showToast('عنوان را وارد کنید ⚠️');
+                    return;
+                }
+
+                let cards = await loadSpotlightCards();
+
+                if (cards.length >= 4) {
+                    showToast('حداکثر ۴ کارت مجاز است؛ یکی را حذف کنید ⚠️');
+                    return;
+                }
+
+                cards.push({
+                    image: imageUrl,
+                    title,
+                    price,
+                    link
+                });
+
+                if (await saveSpotlightCards(cards)) {
+                    document.getElementById('sp-title').value = '';
+                    document.getElementById('sp-price').value = '';
+                    document.getElementById('sp-link').value = '';
+                    document.getElementById('sp-image-file').value = '';
+                    document.getElementById('sp-image-link').value = '';
+
+                    showToast('به ویترین ویژه اضافه شد ✅');
+                    renderSpotlightAdminList();
+                }
+
+            } finally {
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = original;
+                }
             }
         }
+    
 
         async function renderSpotlightAdminList() {
             const container = document.getElementById('spotlightAdminList');
@@ -2190,7 +2232,15 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
         }
 
-        async function addSingleSlide() {
+
+        async function addSingleSlide(btnEl) {
+            const original = btnEl ? btnEl.innerHTML : '';
+
+            if (btnEl) {
+                btnEl.disabled = true;
+                btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال آپلود...';
+            }
+
             let imageUrl = '';
             const fileInput = document.getElementById('s-image-file');
             const linkInput = document.getElementById('s-image-link');
@@ -2199,16 +2249,55 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
             try {
                 if (!document.getElementById('slider-file-container').classList.contains('hidden')) {
-                    if (fileInput.files[0]) imageUrl = await uploadImageToImgbb(fileInput.files[0]);
-                    else { showToast('فایل عکس انتخاب نشده است ❌'); return; }
+                    if (fileInput.files[0]) {
+                        imageUrl = await uploadImageToImgbb(fileInput.files[0]);
+                    } else {
+                        showToast('فایل عکس انتخاب نشده است ❌');
+
+                        if (btnEl) {
+                            btnEl.disabled = false;
+                            btnEl.innerHTML = original;
+                        }
+
+                        return;
+                    }
                 } else {
-                    if (linkInput.value) imageUrl = linkInput.value;
-                    else { showToast('لینک عکس وارد نشده است ❌'); return; }
+                    if (linkInput.value) {
+                        imageUrl = linkInput.value;
+                    } else {
+                        showToast('لینک عکس وارد نشده است ❌');
+
+                        if (btnEl) {
+                            btnEl.disabled = false;
+                            btnEl.innerHTML = original;
+                        }
+
+                        return;
+                    }
                 }
             } catch (e) {
                 showToast('❌ ' + (e && e.message ? e.message : 'آپلود تصویر ناموفق بود'));
+
+                if (btnEl) {
+                    btnEl.disabled = false;
+                    btnEl.innerHTML = original;
+                }
+
                 return;
             }
+
+            // ادامه منطق اضافه کردن اسلاید
+            // این قسمت را با کد فعلی خودت نگه دار
+            // ...
+
+            if (btnEl) {
+                btnEl.disabled = false;
+                btnEl.innerHTML = original;
+            }
+
+            showToast('اسلاید جدید اضافه شد ✅');
+        }
+
 
             const newSlide = { image: imageUrl, link: link, title: title };
             const slides = await loadSlidesFromFirestore();
