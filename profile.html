@@ -4,17 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>پروفایل کاربری | SHOP</title>
+
+    <script type="module" src="Js/firebase-bridge.js"></script>
+    <script type="module" src="Js/profile.js"></script>
+    <script src="Js/all.js" defer></script>
+    <script src="https://browser.sentry-cdn.com/7.120.3/bundle.min.js" crossorigin="anonymous"></script>
+    <script src="Js/sentry-init.js"></script>
  
     <!-- ===================================================================
          SECURITY: Content-Security-Policy (defense-in-depth, meta-tag based)
          =================================================================== -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' 'unsafe-inline' https://www.gstatic.com;
+        script-src 'self' 'unsafe-inline' https://www.gstatic.com https://browser.sentry-cdn.com;
         style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
         font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:;
         img-src 'self' data: https: blob:;
-        connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com;
+        connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io;
         object-src 'none';
         base-uri 'self';
         form-action 'self';
@@ -270,9 +276,6 @@
     </nav>
 
  
-    <!-- FIREBASE BRIDGE -->
-    <script type="module" src="Js/firebase-bridge.js"></script>
-    <script type="module" src="Js/profile.js"></script>
-    <script src="Js/all.js" defer></script>
+
 </body>
 </html>

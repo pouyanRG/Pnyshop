@@ -4,17 +4,23 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>ورود / ثبت‌نام | SHOP</title>
+
+    <script type="module" src="Js/login.js"></script>
+    <script src="Js/all.js" defer></script>
+    <script src="https://browser.sentry-cdn.com/7.120.3/bundle.min.js" crossorigin="anonymous"></script>
+    <script src="Js/sentry-init.js"></script>
+
     <meta name="description" content="ورود یا ثبت‌نام در فروشگاه اینترنتی SHOP">
     <meta name="referrer" content="strict-origin-when-cross-origin">
  
     <!-- سیاست‌های امنیتی (CSP) -->
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com;
+        script-src 'self' 'unsafe-inline' https://www.gstatic.com https://apis.google.com https://browser.sentry-cdn.com;
         style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
         font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:;
         img-src 'self' data: https: blob:;
-        connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com;
+        connect-src 'self' https://*.googleapis.com https://*.firebaseapp.com https://www.gstatic.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io;
         frame-src 'self' https://accounts.google.com https://pnyshops.firebaseapp.com https://*.firebaseapp.com;
         object-src 'none';
         base-uri 'self';
@@ -185,7 +191,5 @@
             </p>
         </div>
     </div>
-    <script type="module" src="Js/login.js"></script>
-    <script src="Js/all.js" defer></script>
 </body>
 </html>

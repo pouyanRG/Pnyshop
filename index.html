@@ -1,651 +1,652 @@
 <!DOCTYPE html>
 <html lang="fa" dir="rtl">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="icon"  type="image/x-icon" href="img/Glossy-Blue-pnyshop-Logo.png">
-    <title>pnyshop فروشگاه اینترنتی</title>
-    <meta http-equiv="Content-Security-Policy" content="
-        default-src 'self';
-        script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com;
-        style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
-        font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:;
-        img-src 'self' data: https: blob:;
-        connect-src 'self' https://*.firestore.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://pnyshops.firebaseapp.com;
-        object-src 'none';
-        base-uri 'self';
-        form-action 'self';
-        upgrade-insecure-requests;
-    ">
-    <meta name="referrer" content="strict-origin-when-cross-origin">
- 
-    <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
-    <link rel="stylesheet" href="Css/style.css">
-    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
-<link rel="stylesheet" href="Css/home.css">
-</head>
-<body>
- 
-    <div class="loading-screen" id="loadingScreen">
-        <div class="loader-dots">
-            <div class="dot"></div>
-            <div class="dot"></div>
-            <div class="dot"></div>
-        </div>
-    </div>
- 
-    <header class="main-header" id="mainHeader">
-        <div class="header-inner">
-            <a href="index.html" class="logo-btn">
-                <img src="img/Pnyshop-img-logo.png" alt="pnyshop" class="logo-img">
-                <span class="logo-text"></span>
-            </a>
-    
-            <div class="search-container">
-                <div class="search-wrap">
-                    <i class="fas fa-search s-icon"></i>
-                    <label for="mainSearch" class="visually-hidden">جستجوی محصول</label>
-                    <input type="text" id="mainSearch" placeholder="جستجوی محصول، برند، دسته‌بندی..." autocomplete="off" spellcheck="false" aria-label="جستجو" role="combobox" aria-expanded="false" aria-controls="searchDropdown">
-                    <button type="button" id="clearSearch" aria-label="پاک کردن جستجو">
-                        <i class="fas fa-times"></i>
-                    </button>
-                </div>
-                <div id="searchDropdown" class="search-dropdown" role="listbox"></div>
-            </div>
-    
-            <div class="header-actions">
-                <button type="button" class="theme-switch-pill theme-d" id="themeToggle" onclick="toggleTheme()" role="switch" aria-checked="false" aria-label="تغییر حالت شب/روز">
-                    <span class="tsp-track">
-                        <span class="tsp-thumb"><i class="fas fa-moon"></i></span>
-                        <span class="tsp-label" id="themeLabel">حالت شب</span>
-                    </span>
-                </button>
+    <head>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
+        <link rel="icon"  type="image/x-icon" href="img/Glossy-Blue-pnyshop-Logo.png">
+        <title>pnyshop فروشگاه اینترنتی</title>
 
-             
+        <script type="module" src="Js/firebase-bridge.js"></script>
+        <script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
+        <script src="Js/script.js" defer></script>
+        <script src="Js/all.js" defer></script>
+        <script src="https://browser.sentry-cdn.com/7.120.3/bundle.min.js" crossorigin="anonymous"></script>
+        <script src="Js/sentry-init.js"></script>
 
-                <button type="button" class="h-action-btn" id="mobileTheme" onclick="toggleTheme()" aria-label="تغییر تم" hidden>
-                    <i class="fas fa-moon"></i>
-                </button>
-            </div>
-        </div>
-    </header>
- 
-    <nav class="desktop-nav" aria-label="">
-        <div class="desktop-nav-inner">
-            <button style="color: var(--fa-th-large);" type="button" class="dnav-item"  id="megaTrigger" onclick="toggleMegaMenu()" onkeydown="handleMegaTriggerKeydown(event)" aria-haspopup="true" aria-expanded="false" aria-controls="megaMenu">
-                <i style="color: var(--fa-th-large);" class="fas fa-th-large"></i> دسته‌بندی‌ها
-                <i style="color: var(--fa-th-large);" class="fas fa-chevron-down" id="megaArrow" style="font-size:10px; margin-inline-end:auto;"></i>
-            </button>
-            <button type="button" class="dnav-item" onclick="openSRP('','', 'all')">
-                <i class="fas fa-border-all"></i> همه محصولات
-            </button>
-            <button type="button" class="dnav-item" onclick="window.location.href='Ai.html'">
-                <img src="img/Minimal Three-Colour Sparkle Cluster.png" alt="" class="dnav-ai-icon"> دستیار هوشمند
-            </button>
-            <button type="button" class="dnav-item" onclick="openSRP('','', 'bestseller')">
-                <i class="fas fa-fire"></i> پرفروش‌ترین‌ها
-            </button>
-            <button type="button" class="dnav-item" onclick="openSRP('','', 'discount')">
-                <i class="fas fa-tag"></i> تخفیفات ویژه
-            </button>
-        </div>
-    </nav>
- 
-    <div class="mega-menu-container" id="megaMenu" role="menu" aria-hidden="true" data-mobile-view="rail">
-        <div class="mega-menu-inner">
-            <button type="button" class="mega-panel-back" id="megaPanelBack" onclick="megaShowRail()">
-                <i class="fas fa-arrow-right"></i> بازگشت به دسته‌ها
-            </button>
-            <div class="mega-cats-rail" id="megaCatsRail" role="tablist" aria-orientation="vertical"></div>
-            <div class="mega-cats-panel" id="megaCatsPanel"></div>
-        </div>
-    </div>
- 
-    <main>
-        <div id="backInStockBanner" class="back-in-stock-banner" style="display:none;" role="status" aria-live="polite"></div>
-        <!-- بعد -->
-        <section class="hero-section" aria-label="اسلایدر">
-            <!-- Skeleton — عیناً الگوی #loadingState در product.html:
-                پیش‌فرض نمایان، با کلاس .skel مرجع -->
-            <div class="hero-container" id="heroLoadingState">
-                <div class="skel" style="width:100%;height:100%;border-radius:var(--radius-xl);"></div>
-            </div>
-            <div class="swiper hero-swiper hero-container" id="heroSwiperContainer" dir="rtl" style="display:none;">
-                <div class="swiper-wrapper" id="sliderTrack"></div>
-                <div class="swiper-button-next hero-next"></div>
-                <div class="swiper-button-prev hero-prev"></div>
-                <div class="swiper-pagination hero-pagination"></div>
-            </div>
-        </section>
- 
-        <section class="product-nav-section">
-            <div class="rs-productnav-cardsshelf">
-                <div class="rs-productnav-shelf-wrapper">
-                
-                    <!-- کارت محصول 1 -->
-                     <a href="#" class="productnav-item">
-                        <div class="productnav-image-wrapper">
-                            <img src="img/macbook.png" alt="Mac" />
-                        </div>
-                        <span class="productnav-label">Mac</span>
-                    </a>
- 
-                    <!-- کارت محصول 2 -->
-                    <a href="#" class="productnav-item">
-                        <div class="productnav-image-wrapper">
-                            <img src="img/iphone.png" alt="iPad" />
-                        </div>
-                        <span class="productnav-label">iphone</span>
-                    </a>
- 
-                    <!-- کارت محصول 3 -->
-                    <a href="#" class="productnav-item">
-                        <div class="productnav-image-wrapper">
-                            <img src="img/apple-watch.png" alt="Watch" />
-                        </div>
-                        <span class="productnav-label">Apple Watch</span>
-                    </a>
- 
-                    <!-- کارت محصول 4 -->
-                    <a href="#" class="productnav-item">
-                        <div class="productnav-image-wrapper">
-                            <img src="img/Apple-Vision-Pro.png" alt="Apple Vision Pro" />
-                        </div>
-                        <span class="productnav-label">Apple Vision Pro</span>
-                    </a>
- 
-                    <!-- کارت محصول 5 -->
-                    <a href="#" class="productnav-item">
-                        <div class="productnav-image-wrapper">
-                            <img src="img/airpods.png" alt="AirPods" />
-                        </div>
-                        <span class="productnav-label">Airpods</span>
-                    </a>
- 
-                    <!-- کارت محصول 6 -->
-                    <a href="#" class="productnav-item">
-                        <div class="productnav-image-wrapper">
-                            <img src="img/ipad.png" alt="ipad" />
-                        </div>
-                        <span class="productnav-label">ipad</span>
-                    </a>
- 
- 
-            </div>
-        </div>
-        </section>
- 
- 
-        <section class="section" aria-label="پیشنهادهای شگفت‌انگیز" id="amazingSectionRoot">
-            <div class="amazing-section-wrap" dir="rtl">
-                <div class="amazing-header-bar">
-                    <div class="ah-right-title">
-                        <i class="fas fa-bolt amazing-bolt-icon" aria-hidden="true"></i>
-                        قسطی شگفت
-                    </div>
-    
-                    <div class="ah-timer" role="timer" aria-label="تایمر شمارش معکوس" id="ahTimerBox">
-                        <div class="ah-digit" id="t-h">۰۰</div>
-                        <span class="ah-sep">:</span>
-                        <div class="ah-digit" id="t-m">۰۰</div>
-                        <span class="ah-sep">:</span>
-                        <div class="ah-digit" id="t-s">۰۰</div>
-                    </div>
-    
-                    <button class="ah-btn-all" onclick="openSRP('','', 'discount')">همه
-                        <i class="fas fa-chevron-left" style="color: rgb(250, 250, 250);"></i>
-                    </button>
-                </div>
-    
-                <div class="amazing-skeleton-row" id="amazingSkeletonRow">
-                    <div class="amazing-skeleton-card">
-                        <div class="amazing-skel-img"><span>LOADING</span></div>
-                        <div class="amazing-skel-lines">
-                            <div class="skel-line l1"></div>
-                            <div class="skel-line l2"></div>
-                            <div class="skel-line l3"></div>
-                        </div>
-                    </div>
-                    <div class="amazing-skeleton-card">
-                        <div class="amazing-skel-img"><span>LOADING</span></div>
-                        <div class="amazing-skel-lines">
-                            <div class="skel-line l1"></div>
-                            <div class="skel-line l2"></div>
-                            <div class="skel-line l3"></div>
-                        </div>
-                    </div>
-                    <div class="amazing-skeleton-card">
-                        <div class="amazing-skel-img"><span>LOADING</span></div>
-                        <div class="amazing-skel-lines">
-                            <div class="skel-line l1"></div>
-                            <div class="skel-line l2"></div>
-                            <div class="skel-line l3"></div>
-                        </div>
-                    </div>
-                    <div class="amazing-skeleton-card">
-                        <div class="amazing-skel-img"><span>LOADING</span></div>
-                        <div class="amazing-skel-lines">
-                            <div class="skel-line l1"></div>
-                            <div class="skel-line l2"></div>
-                            <div class="skel-line l3"></div>
-                        </div>
-                    </div>
-                    <div class="amazing-skeleton-card">
-                        <div class="amazing-skel-img"><span>LOADING</span></div>
-                        <div class="amazing-skel-lines">
-                            <div class="skel-line l1"></div>
-                            <div class="skel-line l2"></div>
-                            <div class="skel-line l3"></div>
-                        </div>
-                    </div>
-                    <div class="amazing-skeleton-card">
-                        <div class="amazing-skel-img"><span>LOADING</span></div>
-                        <div class="amazing-skel-lines">
-                            <div class="skel-line l1"></div>
-                            <div class="skel-line l2"></div>
-                            <div class="skel-line l3"></div>
-                        </div>
-                    </div>
-                    <div class="amazing-skeleton-card">
-                        <div class="amazing-skel-img"><span>LOADING</span></div>
-                        <div class="amazing-skel-lines">
-                            <div class="skel-line l1"></div>
-                            <div class="skel-line l2"></div>
-                            <div class="skel-line l3"></div>
-                        </div>
-                    </div>
-                    <div class="amazing-skeleton-card">
-                        <div class="amazing-skel-img"><span>LOADING</span></div>
-                        <div class="amazing-skel-lines">
-                            <div class="skel-line l1"></div>
-                            <div class="skel-line l2"></div>
-                            <div class="skel-line l3"></div>
-                        </div>
-                    </div>
+        <meta http-equiv="Content-Security-Policy" content="
+            default-src 'self';
+            script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com https://browser.sentry-cdn.com;
+            style-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com;
+            font-src 'self' https://cdn.jsdelivr.net https://cdnjs.cloudflare.com data:;
+            img-src 'self' data: https: blob:;
+            connect-src 'self' https://*.firestore.googleapis.com https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://*.firebaseio.com wss://*.firebaseio.com https://pnyshops.firebaseapp.com https://*.ingest.sentry.io https://*.ingest.us.sentry.io;
+            object-src 'none';
+            base-uri 'self';
+            form-action 'self';
+            upgrade-insecure-requests;
+        ">
+        <meta name="referrer" content="strict-origin-when-cross-origin">
 
-                </div>
-    
-                <div class="swiper amazing-swiper" id="amazingSwiperEl" dir="rtl" hidden>
-                    <div class="swiper-wrapper" id="dealsScroll"></div>
-                    <div class="swiper-button-next amazing-nav-next"></div>
-                    <div class="swiper-button-prev amazing-nav-prev"></div>
-                </div>
-    
-                <div class="amazing-empty-state" id="amazingEmptyState" style="display:none;">
-                    <i class="fas fa-gift" style="color: white;"></i>
-                    <div class="amazing-empty-title">فعلاً پیشنهاد شگفت‌انگیزی نداریم</div>
-                    <div class="amazing-empty-sub">به‌زودی تخفیف‌های ویژه اینجا نمایش داده می‌شود؛ در همین حین می‌توانید همه‌ی تخفیف‌های فعلی فروشگاه را ببینید.</div>
-                    <button type="button" class="amazing-empty-btn" onclick="openSRP('','', 'discount')">
-                        <i class="fas fa-tag" style="color: rgb(250, 250, 250);"></i> مشاهده تخفیفات فعلی
-                    </button>
+        <link href="https://cdn.jsdelivr.net/gh/rastikerdar/vazirmatn@v33.003/Vazirmatn-font-face.css" rel="stylesheet" type="text/css" crossorigin="anonymous" referrerpolicy="no-referrer">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css" crossorigin="anonymous" referrerpolicy="no-referrer">
+        <link rel="stylesheet" href="Css/style.css">
+        <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.css" crossorigin="anonymous" referrerpolicy="no-referrer" />
+        <link rel="stylesheet" href="Css/home.css">
+    </head>
+    <body>
+            <div class="loading-screen" id="loadingScreen">
+                <div class="loader-dots">
+                    <div class="dot"></div>
+                    <div class="dot"></div>
+                    <div class="dot"></div>
                 </div>
             </div>
-        </section>
- 
-            <section class="section" aria-label="دسته‌بندی‌ها">
-            <div class="cat-grid" id="catGrid">
-                <button type="button" class="cat-card" onclick="openSRP('سوپرمارکت فوری','')">
-                    <div class="cat-img-wrap"><img src="img/856d2daf9782a77d34755204955c745d401582f2_1772457881.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
-                    <span class="cat-name">سوپرمارکت فوری</span>
-                </button>
-                <button type="button" class="cat-card" onclick="window.location.href=''">
-                    <div class="cat-img-wrap"><img src="https://pnyshop.vercel.app/img/fd692c26cb058898affefef35c3d5e45673c4e0f_1771942114.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
-                    <span class="cat-name">پرداخت اعتباری</span>
-                </button>
-                <button type="button" class="cat-card" onclick="window.location.href=''">
-                    <div class="cat-img-wrap"><img src="img/801e57b6509b98b93164f4927dbf59191f0464de_1771935020.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
-                    <span class="cat-name">طلای دیجیتال</span>
-                </button>
-                <button type="button" class="cat-card" onclick="window.location.href=''">
-                    <div class="cat-img-wrap"><img src="img/07b8426d22e8e50a6a9e1c27861f2e8a37ade24d_1774984380.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
-                    <span class="cat-name">پیشنهاد هفته</span>
-                </button>
-                <button type="button" class="cat-card" onclick="openSRP('آرایشی','beauty')">
-                    <div class="cat-img-wrap"><img src="img/3bf1e08ccbeb5c7f48b754567e0e32e71f35603c_1777279421.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
-                    <span class="cat-name">۷۰٪ تخفیف آرایشی</span>
-                </button>
-                <button type="button" class="cat-card" onclick="openSRP('','')">
-                    <div class="cat-img-wrap"><img src="/img/laptop.webp" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
-                    <span class="cat-name">حراج لپ‌تاپ تبلت</span>
-                </button>
-                <button type="button" class="cat-card" onclick="openSRP('','')">
-                    <div class="cat-img-wrap"><img src="/img/plus.webp" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
-                    <span class="cat-name">اشتراک پلاس</span>
-                </button>
-            </div>
-        </section>
-
-
-        <!-- بعد -->
-<section class="section" aria-label="ویترین ویژه">
-    <!-- Skeleton — دقیقاً همان الگوی #loadingState در product.html:
-         بلوک‌های .skel با شکل واقعی کارت‌های spotlight، پیش‌فرض نمایان -->
-    <div class="spotlight-grid" id="spotlightLoadingState">
-        <div class="skel" style="aspect-ratio:0.72;border-radius:32px;width:100%;"></div>
-        <div class="skel" style="aspect-ratio:0.72;border-radius:32px;width:100%;"></div>
-        <div class="skel" style="aspect-ratio:0.72;border-radius:32px;width:100%;"></div>
-        <div class="skel" style="aspect-ratio:0.72;border-radius:32px;width:100%;"></div>
-    </div>
-    <div class="spotlight-grid" id="spotlightGrid" style="display:none;"></div>
-</section>
-    
-
-    
-        <section class="section" aria-label="کدهای تخفیف" id="couponSectionRoot" style="display:none;">
-            <div class="section-head">
-                <h2 class="section-title">کد تخفیف</h2>
-            </div>
-            <div class="coupon-scroll-row" id="couponScrollRow"></div>
-        </section>
-    
-    <section class="section" aria-label="بنرها">
-            <div class="banners-grid">
-                <!-- ردیف اول - بنر اول (نسبت 1:1) -->
-                <a href="#" class="banner-card banner-card--r1-small" aria-label="بنر ویژه اول">
-                    <img src="img/banner-card banner-card--r1-small.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'">
-                </a>
- 
-                <!-- ردیف اول - بنر دوم (نسبت 1:3 / عرض ۳ برابر) -->
-                <a href="#" class="banner-card banner-card--r1-wide">
-                    <img src="img/banner-card--r1-wide.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'">
-                </a>
- 
-                <!-- ردیف دوم - بنر اول (نسبت 1:3 / عرض ۳ برابر) -->
-                <a href="#" class="banner-card banner-card--r2-wide">
-                    <img src="img/banner-card--r2-wide.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'">
-                </a>
- 
-                <!-- ردیف دوم - بنر دوم (نسبت 1:1) -->
-                <a href="#" class="banner-card banner-card--r2-small">
-                    <img src="img/banner-card banner-card--r2-small.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'">
-                </a>
-            </div>
-        </section>
-    
-    
-            <!-- پرسونالایز کردن هوم بر اساس رفتار کاربر: بازدیدهای اخیر + پیشنهاد بر اساس دسته‌بندی مورد علاقه -->
-        <section class="section" aria-label="بازدیدهای اخیر شما" id="recentlyViewedSection" style="display:none;">
-            <div class="section-head">
-                <h2 class="section-title">بازدیدهای اخیر شما</h2>
-            </div>
-            <div class="p-grid-scroll" id="recentlyViewedGrid"></div>
-        </section>
-    
-        <section class="section" aria-label="پیشنهاد بر اساس سلیقه شما" id="personalizedSection" style="display:none;">
-            <div class="section-head">
-                <h2 class="section-title" id="personalizedTitle">پیشنهاد بر اساس سلیقه شما</h2>
-            </div>
-            <div class="p-grid-scroll" id="personalizedGrid"></div>
-        </section>
-
-        <a href="Ai.html" class="ai-fab" title="دستیار هوشمند خرید" aria-label="دستیار هوشمند">
-            <img src="img/Minimal Three-Colour Sparkle Cluster.png" alt="دستیار هوشمند" class="ai-fab-img">
-        </a>
-    
-
-    </main>
- 
-<footer class="site-footer" role="contentinfo">
-    <div class="footer-grid">
-        <div class="footer-col">
-            <div class="footer-brand">pnyshop</div>
-            <p style="color:var(--text-secondary);font-size:13px;line-height:1.8;margin-bottom:var(--space-2);">
-                فروشگاه اینترنتی pnyshop مرجع تخصصی نقد و بررسی و فروش اینترنتی کالا در ایران. با رعایت جدیدترین اصول معماری رابط کاربری.
-            </p>
-            <div class="social-row">
-                <a href="#" class="social-btn" aria-label="اینستاگرام"><i class="fab fa-instagram"></i></a>
-                <a href="#" class="social-btn" aria-label="تلگرام"><i class="fab fa-telegram"></i></a>
-                <a href="#" class="social-btn" aria-label="توییتر"><i class="fab fa-twitter"></i></a>
-                <a href="#" class="social-btn" aria-label="لینکدین"><i class="fab fa-linkedin"></i></a>
-            </div>
-        </div>
-        <div class="footer-col">
-            <h4>راهنمای خرید</h4>
-            <ul>
-                <li><i class="fas fa-chevron-left fa-xs"></i> نحوه ثبت سفارش</li>
-                <li><i class="fas fa-chevron-left fa-xs"></i> رویه ارسال سفارش</li>
-                <li><i class="fas fa-chevron-left fa-xs"></i> شیوه‌های پرداخت</li>
-                <li><i class="fas fa-chevron-left fa-xs"></i> پیگیری سفارش</li>
-            </ul>
-        </div>
-        <div class="footer-col">
-            <h4>خدمات مشتریان</h4>
-            <ul>
-                <li><i class="fas fa-chevron-left fa-xs"></i> پرسش‌های متداول</li>
-                <li><i class="fas fa-chevron-left fa-xs"></i> رویه بازگشت کالا</li>
-                <li><i class="fas fa-chevron-left fa-xs"></i> شرایط استفاده</li>
-                <li><i class="fas fa-chevron-left fa-xs"></i> حریم خصوصی</li>
-            </ul>
-        </div>
-        <div class="footer-col">
-            <h4>تماس با ما</h4>
-            <ul>
-                <li><i class="fas fa-phone"></i> ۰۲۱-۱۲۳۴۵۶۷۸</li>
-                <li><i class="fas fa-envelope"></i>pnyshop@gmail.com</li>
-                <li><i class="fas fa-map-marker-alt"></i> تهران، خیابان ولیعصر</li>
-            </ul>
-        </div>
-    </div>
-    <div class="footer-bottom">
-        © ۱۴۰۵ تمامی حقوق این سایت محفوظ می‌باشد.
-    </div>
-</footer>
-<nav class="mobile-nav" aria-label="ناوبری پایین">
-    <a href="index.html" class="mn-item active" aria-label="خانه">
-        <i class="fas fa-home"></i>
         
-    </a>
-    <a href="sabad.html" class="mn-item mn-item-featured" aria-label="سبد خرید">
-        <div class="mn-cart-wrap">
-            <i class="fas fa-shopping-cart"></i>
+            <header class="main-header" id="mainHeader">
+                <div class="header-inner">
+                    <a href="index.html" class="logo-btn">
+                        <img src="img/Pnyshop-img-logo.png" alt="pnyshop" class="logo-img">
+                        <span class="logo-text"></span>
+                    </a>
             
-        </div>
-        <span></span>
-    </a>
-    <a href="profile.html" class="mn-item" aria-label="حساب کاربری">
-        <i class="far fa-user"></i>
-        
-    </a>
-</nav>
- 
-
-<div class="srp-overlay" id="srpOverlay" role="dialog" aria-modal="true" aria-label="نتایج جستجو">
-    <div class="srp-top">
-        <button class="srp-back" onclick="closeSRP()" aria-label="بازگشت">
-            <i class="fas fa-arrow-right"></i>
-        </button>
-        <div class="srp-search-bar">
-            <i class="fas fa-search" style="color:var(--text-muted);font-size:14px;"></i>
-            <label for="srpInput" class="visually-hidden">جستجو در نتایج</label>
-            <input type="text" id="srpInput" placeholder="جستجو در نتایج..." oninput="srpFilter()">
-        </div>
-    </div>
-
-    <!-- نوار چیپ فیلتر موبایل -->
-    <div class="srp-chip-bar" id="srpChipBar">
-        <button type="button" class="srp-chip srp-chip-main" onclick="openFilterSheet('all')">
-            <i class="fas fa-sliders-h"></i> فیلتر
-            <span class="srp-chip-badge" id="srpFilterChipBadge" style="display:none;">۰</span>
-        </button>
-        <div class="srp-chip srp-chip-select">
-            <i class="fas fa-arrow-down-wide-short"></i>
-            <select id="srpSortMobile" onchange="onSrpSortChange(this.value)" aria-label="مرتب‌سازی">
-                <option value="relevant">مرتبط‌ترین</option>
-                <option value="cheapest">ارزان‌ترین</option>
-                <option value="expensive">گران‌ترین</option>
-                <option value="rating">بهترین امتیاز</option>
-                <option value="newest">جدیدترین</option>
-            </select>
-        </div>
-        <button type="button" class="srp-chip" onclick="window.location.href='Ai.html'">
-            <i class="fas fa-wand-magic-sparkles"></i> جستجوی توصیفی
-        </button>
-        <button type="button" class="srp-chip" data-chip="price" onclick="openFilterSheet('price')">
-            محدوده قیمت <i class="fas fa-chevron-down"></i>
-        </button>
-        <button type="button" class="srp-chip" data-chip="brand" onclick="openFilterSheet('brand')">
-            برند <i class="fas fa-chevron-down"></i>
-        </button>
-        <button type="button" class="srp-chip" data-chip="color" onclick="openFilterSheet('color')">
-            رنگ <i class="fas fa-chevron-down"></i>
-        </button>
-    </div>
-    <div class="filter-sheet-overlay" id="filterSheetOverlay" onclick="closeFilterSheet()"></div>
-
-    <div class="srp-body">
-        <aside class="srp-filters-panel" id="srpFilters" aria-label="فیلترها">
-            <div class="filter-sheet-head">
-                <span class="filter-sheet-handle" aria-hidden="true"></span>
-                <div class="filter-sheet-head-row">
-                    <h3>فیلترها</h3>
-                    <button type="button" class="filter-sheet-close" onclick="closeFilterSheet()" aria-label="بستن فیلترها"><i class="fas fa-times"></i></button>
-                </div>
-            </div>
-
-            <button type="button" class="srp-clear-btn" onclick="clearSrpFilters()">
-                <i class="fas fa-eraser"></i> پاک کردن فیلترها
-            </button>
-
-            <div class="filter-acc-item open" data-acc="price">
-                <button type="button" class="filter-acc-head" onclick="toggleAcc(this)">
-                    <span>محدوده قیمت</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="filter-acc-body">
-                    <div class="price-display-row">
-                        <div class="price-display-box">
-                            <span class="price-display-label">از</span>
-                            <span><span class="price-display-value" id="priceMinDisplay">۰</span><span class="price-display-unit">تومان</span></span>
+                    <div class="search-container">
+                        <div class="search-wrap">
+                            <i class="fas fa-search s-icon"></i>
+                            <label for="mainSearch" class="visually-hidden">جستجوی محصول</label>
+                            <input type="text" id="mainSearch" placeholder="جستجوی محصول، برند، دسته‌بندی..." autocomplete="off" spellcheck="false" aria-label="جستجو" role="combobox" aria-expanded="false" aria-controls="searchDropdown">
+                            <button type="button" id="clearSearch" aria-label="پاک کردن جستجو">
+                                <i class="fas fa-times"></i>
+                            </button>
                         </div>
-                        <div class="price-display-box">
-                            <span class="price-display-label">تا</span>
-                            <span><span class="price-display-value" id="priceMaxDisplay">۰</span><span class="price-display-unit">تومان</span></span>
+                        <div id="searchDropdown" class="search-dropdown" role="listbox"></div>
+                    </div>
+            
+                    <div class="header-actions">
+                        <button type="button" class="theme-switch-pill theme-d" id="themeToggle" onclick="toggleTheme()" role="switch" aria-checked="false" aria-label="تغییر حالت شب/روز">
+                            <span class="tsp-track">
+                                <span class="tsp-thumb"><i class="fas fa-moon"></i></span>
+                                <span class="tsp-label" id="themeLabel">حالت شب</span>
+                            </span>
+                        </button>
+
+                    
+
+                        <button type="button" class="h-action-btn" id="mobileTheme" onclick="toggleTheme()" aria-label="تغییر تم" hidden>
+                            <i class="fas fa-moon"></i>
+                        </button>
+                    </div>
+                </div>
+            </header>
+        
+            <nav class="desktop-nav" aria-label="">
+                <div class="desktop-nav-inner">
+                    <button style="color: var(--fa-th-large);" type="button" class="dnav-item"  id="megaTrigger" onclick="toggleMegaMenu()" onkeydown="handleMegaTriggerKeydown(event)" aria-haspopup="true" aria-expanded="false" aria-controls="megaMenu">
+                        <i style="color: var(--fa-th-large);" class="fas fa-th-large"></i> دسته‌بندی‌ها
+                        <i style="color: var(--fa-th-large);" class="fas fa-chevron-down" id="megaArrow" style="font-size:10px; margin-inline-end:auto;"></i>
+                    </button>
+                    <button type="button" class="dnav-item" onclick="openSRP('','', 'all')">
+                        <i class="fas fa-border-all"></i> همه محصولات
+                    </button>
+                    <button type="button" class="dnav-item" onclick="window.location.href='Ai.html'">
+                        <img src="img/Minimal Three-Colour Sparkle Cluster.png" alt="" class="dnav-ai-icon"> دستیار هوشمند
+                    </button>
+                    <button type="button" class="dnav-item" onclick="openSRP('','', 'bestseller')">
+                        <i class="fas fa-fire"></i> پرفروش‌ترین‌ها
+                    </button>
+                    <button type="button" class="dnav-item" onclick="openSRP('','', 'discount')">
+                        <i class="fas fa-tag"></i> تخفیفات ویژه
+                    </button>
+                </div>
+            </nav>
+        
+            <div class="mega-menu-container" id="megaMenu" role="menu" aria-hidden="true" data-mobile-view="rail">
+                <div class="mega-menu-inner">
+                    <button type="button" class="mega-panel-back" id="megaPanelBack" onclick="megaShowRail()">
+                        <i class="fas fa-arrow-right"></i> بازگشت به دسته‌ها
+                    </button>
+                    <div class="mega-cats-rail" id="megaCatsRail" role="tablist" aria-orientation="vertical"></div>
+                    <div class="mega-cats-panel" id="megaCatsPanel"></div>
+                </div>
+            </div>
+        
+            <main>
+                <div id="backInStockBanner" class="back-in-stock-banner" style="display:none;" role="status" aria-live="polite"></div>
+                <!-- بعد -->
+                <section class="hero-section" aria-label="اسلایدر">
+                    <!-- Skeleton — عیناً الگوی #loadingState در product.html:
+                        پیش‌فرض نمایان، با کلاس .skel مرجع -->
+                    <div class="hero-container" id="heroLoadingState">
+                        <div class="skel" style="width:100%;height:100%;border-radius:var(--radius-xl);"></div>
+                    </div>
+                    <div class="swiper hero-swiper hero-container" id="heroSwiperContainer" dir="rtl" style="display:none;">
+                        <div class="swiper-wrapper" id="sliderTrack"></div>
+                        <div class="swiper-button-next hero-next"></div>
+                        <div class="swiper-button-prev hero-prev"></div>
+                        <div class="swiper-pagination hero-pagination"></div>
+                    </div>
+                </section>
+        
+                <section class="product-nav-section">
+                    <div class="rs-productnav-cardsshelf">
+                        <div class="rs-productnav-shelf-wrapper">
+                        
+                            <!-- کارت محصول 1 -->
+                            <a href="#" class="productnav-item">
+                                <div class="productnav-image-wrapper">
+                                    <img src="img/macbook.png" alt="Mac" />
+                                </div>
+                                <span class="productnav-label">Mac</span>
+                            </a>
+        
+                            <!-- کارت محصول 2 -->
+                            <a href="#" class="productnav-item">
+                                <div class="productnav-image-wrapper">
+                                    <img src="img/iphone.png" alt="iPad" />
+                                </div>
+                                <span class="productnav-label">iphone</span>
+                            </a>
+        
+                            <!-- کارت محصول 3 -->
+                            <a href="#" class="productnav-item">
+                                <div class="productnav-image-wrapper">
+                                    <img src="img/apple-watch.png" alt="Watch" />
+                                </div>
+                                <span class="productnav-label">Apple Watch</span>
+                            </a>
+        
+                            <!-- کارت محصول 4 -->
+                            <a href="#" class="productnav-item">
+                                <div class="productnav-image-wrapper">
+                                    <img src="img/Apple-Vision-Pro.png" alt="Apple Vision Pro" />
+                                </div>
+                                <span class="productnav-label">Apple Vision Pro</span>
+                            </a>
+        
+                            <!-- کارت محصول 5 -->
+                            <a href="#" class="productnav-item">
+                                <div class="productnav-image-wrapper">
+                                    <img src="img/airpods.png" alt="AirPods" />
+                                </div>
+                                <span class="productnav-label">Airpods</span>
+                            </a>
+        
+                            <!-- کارت محصول 6 -->
+                            <a href="#" class="productnav-item">
+                                <div class="productnav-image-wrapper">
+                                    <img src="img/ipad.png" alt="ipad" />
+                                </div>
+                                <span class="productnav-label">ipad</span>
+                            </a>
+        
+        
+                    </div>
+                </div>
+                </section>
+        
+        
+                <section class="section" aria-label="پیشنهادهای شگفت‌انگیز" id="amazingSectionRoot">
+                    <div class="amazing-section-wrap" dir="rtl">
+                        <div class="amazing-header-bar">
+                            <div class="ah-right-title">
+                                <i class="fas fa-bolt amazing-bolt-icon" aria-hidden="true"></i>
+                                قسطی شگفت
+                            </div>
+            
+                            <div class="ah-timer" role="timer" aria-label="تایمر شمارش معکوس" id="ahTimerBox">
+                                <div class="ah-digit" id="t-h">۰۰</div>
+                                <span class="ah-sep">:</span>
+                                <div class="ah-digit" id="t-m">۰۰</div>
+                                <span class="ah-sep">:</span>
+                                <div class="ah-digit" id="t-s">۰۰</div>
+                            </div>
+            
+                            <button class="ah-btn-all" onclick="openSRP('','', 'discount')">همه
+                                <i class="fas fa-chevron-left" style="color: rgb(250, 250, 250);"></i>
+                            </button>
+                        </div>
+            
+                        <div class="amazing-skeleton-row" id="amazingSkeletonRow">
+                            <div class="amazing-skeleton-card">
+                                <div class="amazing-skel-img"><span>LOADING</span></div>
+                                <div class="amazing-skel-lines">
+                                    <div class="skel-line l1"></div>
+                                    <div class="skel-line l2"></div>
+                                    <div class="skel-line l3"></div>
+                                </div>
+                            </div>
+                            <div class="amazing-skeleton-card">
+                                <div class="amazing-skel-img"><span>LOADING</span></div>
+                                <div class="amazing-skel-lines">
+                                    <div class="skel-line l1"></div>
+                                    <div class="skel-line l2"></div>
+                                    <div class="skel-line l3"></div>
+                                </div>
+                            </div>
+                            <div class="amazing-skeleton-card">
+                                <div class="amazing-skel-img"><span>LOADING</span></div>
+                                <div class="amazing-skel-lines">
+                                    <div class="skel-line l1"></div>
+                                    <div class="skel-line l2"></div>
+                                    <div class="skel-line l3"></div>
+                                </div>
+                            </div>
+                            <div class="amazing-skeleton-card">
+                                <div class="amazing-skel-img"><span>LOADING</span></div>
+                                <div class="amazing-skel-lines">
+                                    <div class="skel-line l1"></div>
+                                    <div class="skel-line l2"></div>
+                                    <div class="skel-line l3"></div>
+                                </div>
+                            </div>
+                            <div class="amazing-skeleton-card">
+                                <div class="amazing-skel-img"><span>LOADING</span></div>
+                                <div class="amazing-skel-lines">
+                                    <div class="skel-line l1"></div>
+                                    <div class="skel-line l2"></div>
+                                    <div class="skel-line l3"></div>
+                                </div>
+                            </div>
+                            <div class="amazing-skeleton-card">
+                                <div class="amazing-skel-img"><span>LOADING</span></div>
+                                <div class="amazing-skel-lines">
+                                    <div class="skel-line l1"></div>
+                                    <div class="skel-line l2"></div>
+                                    <div class="skel-line l3"></div>
+                                </div>
+                            </div>
+                            <div class="amazing-skeleton-card">
+                                <div class="amazing-skel-img"><span>LOADING</span></div>
+                                <div class="amazing-skel-lines">
+                                    <div class="skel-line l1"></div>
+                                    <div class="skel-line l2"></div>
+                                    <div class="skel-line l3"></div>
+                                </div>
+                            </div>
+                            <div class="amazing-skeleton-card">
+                                <div class="amazing-skel-img"><span>LOADING</span></div>
+                                <div class="amazing-skel-lines">
+                                    <div class="skel-line l1"></div>
+                                    <div class="skel-line l2"></div>
+                                    <div class="skel-line l3"></div>
+                                </div>
+                            </div>
+
+                        </div>
+            
+                        <div class="swiper amazing-swiper" id="amazingSwiperEl" dir="rtl" hidden>
+                            <div class="swiper-wrapper" id="dealsScroll"></div>
+                            <div class="swiper-button-next amazing-nav-next"></div>
+                            <div class="swiper-button-prev amazing-nav-prev"></div>
+                        </div>
+            
+                        <div class="amazing-empty-state" id="amazingEmptyState" style="display:none;">
+                            <i class="fas fa-gift" style="color: white;"></i>
+                            <div class="amazing-empty-title">فعلاً پیشنهاد شگفت‌انگیزی نداریم</div>
+                            <div class="amazing-empty-sub">به‌زودی تخفیف‌های ویژه اینجا نمایش داده می‌شود؛ در همین حین می‌توانید همه‌ی تخفیف‌های فعلی فروشگاه را ببینید.</div>
+                            <button type="button" class="amazing-empty-btn" onclick="openSRP('','', 'discount')">
+                                <i class="fas fa-tag" style="color: rgb(250, 250, 250);"></i> مشاهده تخفیفات فعلی
+                            </button>
                         </div>
                     </div>
-                    <div class="dual-range-wrap">
-                        <div class="dual-range-track"><div class="dual-range-fill" id="dualRangeFill"></div></div>
-                        <input type="range" id="priceRangeMin" class="dual-range" min="0" max="10000000" value="0" oninput="onPriceRangeInput('min')" aria-label="حداقل قیمت">
-                        <input type="range" id="priceRangeMax" class="dual-range" min="0" max="10000000" value="10000000" oninput="onPriceRangeInput('max')" aria-label="حداکثر قیمت">
-                    </div>
-                    <div class="price-range-labels">
-                        <span>گران‌ترین</span>
-                        <span>ارزان‌ترین</span>
-                    </div>
-                    <input type="hidden" id="priceMin" value="0">
-                    <input type="hidden" id="priceMax" value="">
-                </div>
-            </div>
-
-            <div class="filter-acc-item" data-acc="brand">
-                <button type="button" class="filter-acc-head" onclick="toggleAcc(this)">
-                    <span>برند</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="filter-acc-body">
-                    <div class="brand-list" id="brandFilterList"></div>
-                </div>
-            </div>
-
-            <div class="filter-acc-item" data-acc="color">
-                <button type="button" class="filter-acc-head" onclick="toggleAcc(this)">
-                    <span>رنگ</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="filter-acc-body">
-                    <div class="color-swatch-grid" id="colorFilterGrid"></div>
-                </div>
-            </div>
-
-            <div class="filter-acc-item" data-acc="avail">
-                <button type="button" class="filter-acc-head" onclick="toggleAcc(this)">
-                    <span>موجودی و تخفیف</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="filter-acc-body">
-                    <label class="toggle-row">
-                        <span>فقط کالاهای موجود</span>
-                        <span class="toggle-switch">
-                            <input type="checkbox" id="fAvail" onchange="srpFilter();updateFilterBadges();">
-                            <span class="toggle-slider"></span>
-                        </span>
-                    </label>
-                    <label class="toggle-row">
-                        <span>فقط تخفیف‌دار</span>
-                        <span class="toggle-switch">
-                            <input type="checkbox" id="fDisc" onchange="srpFilter();updateFilterBadges();">
-                            <span class="toggle-slider"></span>
-                        </span>
-                    </label>
-                </div>
-            </div>
-
-            <div class="filter-acc-item" data-acc="rating">
-                <button type="button" class="filter-acc-head" onclick="toggleAcc(this)">
-                    <span>امتیاز</span>
-                    <i class="fas fa-chevron-down"></i>
-                </button>
-                <div class="filter-acc-body">
-                    <button type="button" class="star-filter-item" data-rating="4" aria-pressed="false" onclick="setSrpRating(4)">
-                        <span class="stars" style="color:var(--warning);font-size:12px;">★★★★★</span> ۴ ستاره و بالاتر
-                    </button>
-                    <button type="button" class="star-filter-item" data-rating="3" aria-pressed="false" onclick="setSrpRating(3)">
-                        <span class="stars" style="color:var(--warning);font-size:12px;">★★★★☆</span> ۳ ستاره و بالاتر
-                    </button>
-                    <button type="button" class="star-filter-item" data-rating="0" aria-pressed="true" onclick="setSrpRating(0)">
-                        <span class="stars" style="color:var(--warning);font-size:12px;">★☆☆☆☆</span> همه امتیازها
-                    </button>
-                </div>
-            </div>
-
-            <div class="filter-sheet-footer">
-                <button type="button" class="filter-sheet-apply" onclick="closeFilterSheet()">
-                    مشاهده <span id="filterResultCount">0</span> نتیجه
-                </button>
-            </div>
-        </aside>
-
-                <div class="srp-main">
-            <div class="srp-topbar">
-                <div class="srp-title-block">
-                    <h2 class="srp-title" id="srpTitle">نتایج جستجو</h2>
-                    <div class="srp-count" id="srpCount">در حال بارگذاری...</div>
-                </div>
-                <div class="srp-topbar-controls">
-                    <div class="srp-sort-wrap">
-                        <i class="fas fa-sliders-h"></i>
-                        <label for="srpSort" class="visually-hidden">مرتب‌سازی</label>
-                        <select class="srp-sort" id="srpSort" onchange="onSrpSortChange(this.value)">
-                            <option value="relevant">مرتبط‌ترین</option>
-                            <option value="cheapest">ارزان‌ترین</option>
-                            <option value="expensive">گران‌ترین</option>
-                            <option value="rating">بهترین امتیاز</option>
-                            <option value="newest">جدیدترین</option>
-                        </select>
-                    </div>
-                    <div class="srp-view-toggle" role="group" aria-label="نوع نمایش نتایج">
-                        <button type="button" class="srp-view-btn active" id="srpViewGridBtn" onclick="setSrpViewMode('grid')" aria-label="نمایش شبکه‌ای" aria-pressed="true"><i class="fas fa-grip"></i></button>
-                        <button type="button" class="srp-view-btn" id="srpViewListBtn" onclick="setSrpViewMode('list')" aria-label="نمایش لیستی" aria-pressed="false"><i class="fas fa-list"></i></button>
-                    </div>
-                </div>
-            </div>
-
-
-            <div class="srp-grid" id="srpGrid"></div>
-        </div>
-
+                </section>
         
-    </div>
-</div>
- 
-<div id="toast" class="toast" role="status" aria-live="polite"></div>
- 
- 
-<!-- FIREBASE BRIDGE -->
-<script type="module" src="Js/firebase-bridge.js"></script>
-<!-- EXTERNAL LIBRARIES & SCRIPTS -->
-<script src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"></script>
-<script src="Js/script.js" defer></script>
-<script src="Js/all.js" defer></script>
-</body>
+                    <section class="section" aria-label="دسته‌بندی‌ها">
+                    <div class="cat-grid" id="catGrid">
+                        <button type="button" class="cat-card" onclick="openSRP('سوپرمارکت فوری','')">
+                            <div class="cat-img-wrap"><img src="img/856d2daf9782a77d34755204955c745d401582f2_1772457881.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
+                            <span class="cat-name">سوپرمارکت فوری</span>
+                        </button>
+                        <button type="button" class="cat-card" onclick="window.location.href=''">
+                            <div class="cat-img-wrap"><img src="https://pnyshop.vercel.app/img/fd692c26cb058898affefef35c3d5e45673c4e0f_1771942114.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
+                            <span class="cat-name">پرداخت اعتباری</span>
+                        </button>
+                        <button type="button" class="cat-card" onclick="window.location.href=''">
+                            <div class="cat-img-wrap"><img src="img/801e57b6509b98b93164f4927dbf59191f0464de_1771935020.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
+                            <span class="cat-name">طلای دیجیتال</span>
+                        </button>
+                        <button type="button" class="cat-card" onclick="window.location.href=''">
+                            <div class="cat-img-wrap"><img src="img/07b8426d22e8e50a6a9e1c27861f2e8a37ade24d_1774984380.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
+                            <span class="cat-name">پیشنهاد هفته</span>
+                        </button>
+                        <button type="button" class="cat-card" onclick="openSRP('آرایشی','beauty')">
+                            <div class="cat-img-wrap"><img src="img/3bf1e08ccbeb5c7f48b754567e0e32e71f35603c_1777279421.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
+                            <span class="cat-name">۷۰٪ تخفیف آرایشی</span>
+                        </button>
+                        <button type="button" class="cat-card" onclick="openSRP('','')">
+                            <div class="cat-img-wrap"><img src="/img/laptop.webp" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
+                            <span class="cat-name">حراج لپ‌تاپ تبلت</span>
+                        </button>
+                        <button type="button" class="cat-card" onclick="openSRP('','')">
+                            <div class="cat-img-wrap"><img src="/img/plus.webp" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'"></div>
+                            <span class="cat-name">اشتراک پلاس</span>
+                        </button>
+                    </div>
+                </section>
+
+
+                <!-- بعد -->
+        <section class="section" aria-label="ویترین ویژه">
+            <!-- Skeleton — دقیقاً همان الگوی #loadingState در product.html:
+                بلوک‌های .skel با شکل واقعی کارت‌های spotlight، پیش‌فرض نمایان -->
+            <div class="spotlight-grid" id="spotlightLoadingState">
+                <div class="skel" style="aspect-ratio:0.72;border-radius:32px;width:100%;"></div>
+                <div class="skel" style="aspect-ratio:0.72;border-radius:32px;width:100%;"></div>
+                <div class="skel" style="aspect-ratio:0.72;border-radius:32px;width:100%;"></div>
+                <div class="skel" style="aspect-ratio:0.72;border-radius:32px;width:100%;"></div>
+            </div>
+            <div class="spotlight-grid" id="spotlightGrid" style="display:none;"></div>
+        </section>
+            
+
+            
+                <section class="section" aria-label="کدهای تخفیف" id="couponSectionRoot" style="display:none;">
+                    <div class="section-head">
+                        <h2 class="section-title">کد تخفیف</h2>
+                    </div>
+                    <div class="coupon-scroll-row" id="couponScrollRow"></div>
+                </section>
+            
+            <section class="section" aria-label="بنرها">
+                    <div class="banners-grid">
+                        <!-- ردیف اول - بنر اول (نسبت 1:1) -->
+                        <a href="#" class="banner-card banner-card--r1-small" aria-label="بنر ویژه اول">
+                            <img src="img/banner-card banner-card--r1-small.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'">
+                        </a>
+        
+                        <!-- ردیف اول - بنر دوم (نسبت 1:3 / عرض ۳ برابر) -->
+                        <a href="#" class="banner-card banner-card--r1-wide">
+                            <img src="img/banner-card--r1-wide.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'">
+                        </a>
+        
+                        <!-- ردیف دوم - بنر اول (نسبت 1:3 / عرض ۳ برابر) -->
+                        <a href="#" class="banner-card banner-card--r2-wide">
+                            <img src="img/banner-card--r2-wide.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'">
+                        </a>
+        
+                        <!-- ردیف دوم - بنر دوم (نسبت 1:1) -->
+                        <a href="#" class="banner-card banner-card--r2-small">
+                            <img src="img/banner-card banner-card--r2-small.png" alt="" loading="lazy" onerror="this.src='https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10'">
+                        </a>
+                    </div>
+                </section>
+            
+            
+                    <!-- پرسونالایز کردن هوم بر اساس رفتار کاربر: بازدیدهای اخیر + پیشنهاد بر اساس دسته‌بندی مورد علاقه -->
+                <section class="section" aria-label="بازدیدهای اخیر شما" id="recentlyViewedSection" style="display:none;">
+                    <div class="section-head">
+                        <h2 class="section-title">بازدیدهای اخیر شما</h2>
+                    </div>
+                    <div class="p-grid-scroll" id="recentlyViewedGrid"></div>
+                </section>
+            
+                <section class="section" aria-label="پیشنهاد بر اساس سلیقه شما" id="personalizedSection" style="display:none;">
+                    <div class="section-head">
+                        <h2 class="section-title" id="personalizedTitle">پیشنهاد بر اساس سلیقه شما</h2>
+                    </div>
+                    <div class="p-grid-scroll" id="personalizedGrid"></div>
+                </section>
+
+                <a href="Ai.html" class="ai-fab" title="دستیار هوشمند خرید" aria-label="دستیار هوشمند">
+                    <img src="img/Minimal Three-Colour Sparkle Cluster.png" alt="دستیار هوشمند" class="ai-fab-img">
+                </a>
+            
+
+            </main>
+        
+        <footer class="site-footer" role="contentinfo">
+            <div class="footer-grid">
+                <div class="footer-col">
+                    <div class="footer-brand">pnyshop</div>
+                    <p style="color:var(--text-secondary);font-size:13px;line-height:1.8;margin-bottom:var(--space-2);">
+                        فروشگاه اینترنتی pnyshop مرجع تخصصی نقد و بررسی و فروش اینترنتی کالا در ایران. با رعایت جدیدترین اصول معماری رابط کاربری.
+                    </p>
+                    <div class="social-row">
+                        <a href="#" class="social-btn" aria-label="اینستاگرام"><i class="fab fa-instagram"></i></a>
+                        <a href="#" class="social-btn" aria-label="تلگرام"><i class="fab fa-telegram"></i></a>
+                        <a href="#" class="social-btn" aria-label="توییتر"><i class="fab fa-twitter"></i></a>
+                        <a href="#" class="social-btn" aria-label="لینکدین"><i class="fab fa-linkedin"></i></a>
+                    </div>
+                </div>
+                <div class="footer-col">
+                    <h4>راهنمای خرید</h4>
+                    <ul>
+                        <li><i class="fas fa-chevron-left fa-xs"></i> نحوه ثبت سفارش</li>
+                        <li><i class="fas fa-chevron-left fa-xs"></i> رویه ارسال سفارش</li>
+                        <li><i class="fas fa-chevron-left fa-xs"></i> شیوه‌های پرداخت</li>
+                        <li><i class="fas fa-chevron-left fa-xs"></i> پیگیری سفارش</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>خدمات مشتریان</h4>
+                    <ul>
+                        <li><i class="fas fa-chevron-left fa-xs"></i> پرسش‌های متداول</li>
+                        <li><i class="fas fa-chevron-left fa-xs"></i> رویه بازگشت کالا</li>
+                        <li><i class="fas fa-chevron-left fa-xs"></i> شرایط استفاده</li>
+                        <li><i class="fas fa-chevron-left fa-xs"></i> حریم خصوصی</li>
+                    </ul>
+                </div>
+                <div class="footer-col">
+                    <h4>تماس با ما</h4>
+                    <ul>
+                        <li><i class="fas fa-phone"></i> ۰۲۱-۱۲۳۴۵۶۷۸</li>
+                        <li><i class="fas fa-envelope"></i>pnyshop@gmail.com</li>
+                        <li><i class="fas fa-map-marker-alt"></i> تهران، خیابان ولیعصر</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                © ۱۴۰۵ تمامی حقوق این سایت محفوظ می‌باشد.
+            </div>
+        </footer>
+        <nav class="mobile-nav" aria-label="ناوبری پایین">
+            <a href="index.html" class="mn-item active" aria-label="خانه">
+                <i class="fas fa-home"></i>
+                
+            </a>
+            <a href="sabad.html" class="mn-item mn-item-featured" aria-label="سبد خرید">
+                <div class="mn-cart-wrap">
+                    <i class="fas fa-shopping-cart"></i>
+                    
+                </div>
+                <span></span>
+            </a>
+            <a href="profile.html" class="mn-item" aria-label="حساب کاربری">
+                <i class="far fa-user"></i>
+                
+            </a>
+        </nav>
+        
+
+        <div class="srp-overlay" id="srpOverlay" role="dialog" aria-modal="true" aria-label="نتایج جستجو">
+            <div class="srp-top">
+                <button class="srp-back" onclick="closeSRP()" aria-label="بازگشت">
+                    <i class="fas fa-arrow-right"></i>
+                </button>
+                <div class="srp-search-bar">
+                    <i class="fas fa-search" style="color:var(--text-muted);font-size:14px;"></i>
+                    <label for="srpInput" class="visually-hidden">جستجو در نتایج</label>
+                    <input type="text" id="srpInput" placeholder="جستجو در نتایج..." oninput="srpFilter()">
+                </div>
+            </div>
+
+            <!-- نوار چیپ فیلتر موبایل -->
+            <div class="srp-chip-bar" id="srpChipBar">
+                <button type="button" class="srp-chip srp-chip-main" onclick="openFilterSheet('all')">
+                    <i class="fas fa-sliders-h"></i> فیلتر
+                    <span class="srp-chip-badge" id="srpFilterChipBadge" style="display:none;">۰</span>
+                </button>
+                <div class="srp-chip srp-chip-select">
+                    <i class="fas fa-arrow-down-wide-short"></i>
+                    <select id="srpSortMobile" onchange="onSrpSortChange(this.value)" aria-label="مرتب‌سازی">
+                        <option value="relevant">مرتبط‌ترین</option>
+                        <option value="cheapest">ارزان‌ترین</option>
+                        <option value="expensive">گران‌ترین</option>
+                        <option value="rating">بهترین امتیاز</option>
+                        <option value="newest">جدیدترین</option>
+                    </select>
+                </div>
+                <button type="button" class="srp-chip" onclick="window.location.href='Ai.html'">
+                    <i class="fas fa-wand-magic-sparkles"></i> جستجوی توصیفی
+                </button>
+                <button type="button" class="srp-chip" data-chip="price" onclick="openFilterSheet('price')">
+                    محدوده قیمت <i class="fas fa-chevron-down"></i>
+                </button>
+                <button type="button" class="srp-chip" data-chip="brand" onclick="openFilterSheet('brand')">
+                    برند <i class="fas fa-chevron-down"></i>
+                </button>
+                <button type="button" class="srp-chip" data-chip="color" onclick="openFilterSheet('color')">
+                    رنگ <i class="fas fa-chevron-down"></i>
+                </button>
+            </div>
+            <div class="filter-sheet-overlay" id="filterSheetOverlay" onclick="closeFilterSheet()"></div>
+
+            <div class="srp-body">
+                <aside class="srp-filters-panel" id="srpFilters" aria-label="فیلترها">
+                    <div class="filter-sheet-head">
+                        <span class="filter-sheet-handle" aria-hidden="true"></span>
+                        <div class="filter-sheet-head-row">
+                            <h3>فیلترها</h3>
+                            <button type="button" class="filter-sheet-close" onclick="closeFilterSheet()" aria-label="بستن فیلترها"><i class="fas fa-times"></i></button>
+                        </div>
+                    </div>
+
+                    <button type="button" class="srp-clear-btn" onclick="clearSrpFilters()">
+                        <i class="fas fa-eraser"></i> پاک کردن فیلترها
+                    </button>
+
+                    <div class="filter-acc-item open" data-acc="price">
+                        <button type="button" class="filter-acc-head" onclick="toggleAcc(this)">
+                            <span>محدوده قیمت</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-acc-body">
+                            <div class="price-display-row">
+                                <div class="price-display-box">
+                                    <span class="price-display-label">از</span>
+                                    <span><span class="price-display-value" id="priceMinDisplay">۰</span><span class="price-display-unit">تومان</span></span>
+                                </div>
+                                <div class="price-display-box">
+                                    <span class="price-display-label">تا</span>
+                                    <span><span class="price-display-value" id="priceMaxDisplay">۰</span><span class="price-display-unit">تومان</span></span>
+                                </div>
+                            </div>
+                            <div class="dual-range-wrap">
+                                <div class="dual-range-track"><div class="dual-range-fill" id="dualRangeFill"></div></div>
+                                <input type="range" id="priceRangeMin" class="dual-range" min="0" max="10000000" value="0" oninput="onPriceRangeInput('min')" aria-label="حداقل قیمت">
+                                <input type="range" id="priceRangeMax" class="dual-range" min="0" max="10000000" value="10000000" oninput="onPriceRangeInput('max')" aria-label="حداکثر قیمت">
+                            </div>
+                            <div class="price-range-labels">
+                                <span>گران‌ترین</span>
+                                <span>ارزان‌ترین</span>
+                            </div>
+                            <input type="hidden" id="priceMin" value="0">
+                            <input type="hidden" id="priceMax" value="">
+                        </div>
+                    </div>
+
+                    <div class="filter-acc-item" data-acc="brand">
+                        <button type="button" class="filter-acc-head" onclick="toggleAcc(this)">
+                            <span>برند</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-acc-body">
+                            <div class="brand-list" id="brandFilterList"></div>
+                        </div>
+                    </div>
+
+                    <div class="filter-acc-item" data-acc="color">
+                        <button type="button" class="filter-acc-head" onclick="toggleAcc(this)">
+                            <span>رنگ</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-acc-body">
+                            <div class="color-swatch-grid" id="colorFilterGrid"></div>
+                        </div>
+                    </div>
+
+                    <div class="filter-acc-item" data-acc="avail">
+                        <button type="button" class="filter-acc-head" onclick="toggleAcc(this)">
+                            <span>موجودی و تخفیف</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-acc-body">
+                            <label class="toggle-row">
+                                <span>فقط کالاهای موجود</span>
+                                <span class="toggle-switch">
+                                    <input type="checkbox" id="fAvail" onchange="srpFilter();updateFilterBadges();">
+                                    <span class="toggle-slider"></span>
+                                </span>
+                            </label>
+                            <label class="toggle-row">
+                                <span>فقط تخفیف‌دار</span>
+                                <span class="toggle-switch">
+                                    <input type="checkbox" id="fDisc" onchange="srpFilter();updateFilterBadges();">
+                                    <span class="toggle-slider"></span>
+                                </span>
+                            </label>
+                        </div>
+                    </div>
+
+                    <div class="filter-acc-item" data-acc="rating">
+                        <button type="button" class="filter-acc-head" onclick="toggleAcc(this)">
+                            <span>امتیاز</span>
+                            <i class="fas fa-chevron-down"></i>
+                        </button>
+                        <div class="filter-acc-body">
+                            <button type="button" class="star-filter-item" data-rating="4" aria-pressed="false" onclick="setSrpRating(4)">
+                                <span class="stars" style="color:var(--warning);font-size:12px;">★★★★★</span> ۴ ستاره و بالاتر
+                            </button>
+                            <button type="button" class="star-filter-item" data-rating="3" aria-pressed="false" onclick="setSrpRating(3)">
+                                <span class="stars" style="color:var(--warning);font-size:12px;">★★★★☆</span> ۳ ستاره و بالاتر
+                            </button>
+                            <button type="button" class="star-filter-item" data-rating="0" aria-pressed="true" onclick="setSrpRating(0)">
+                                <span class="stars" style="color:var(--warning);font-size:12px;">★☆☆☆☆</span> همه امتیازها
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="filter-sheet-footer">
+                        <button type="button" class="filter-sheet-apply" onclick="closeFilterSheet()">
+                            مشاهده <span id="filterResultCount">0</span> نتیجه
+                        </button>
+                    </div>
+                </aside>
+
+                        <div class="srp-main">
+                    <div class="srp-topbar">
+                        <div class="srp-title-block">
+                            <h2 class="srp-title" id="srpTitle">نتایج جستجو</h2>
+                            <div class="srp-count" id="srpCount">در حال بارگذاری...</div>
+                        </div>
+                        <div class="srp-topbar-controls">
+                            <div class="srp-sort-wrap">
+                                <i class="fas fa-sliders-h"></i>
+                                <label for="srpSort" class="visually-hidden">مرتب‌سازی</label>
+                                <select class="srp-sort" id="srpSort" onchange="onSrpSortChange(this.value)">
+                                    <option value="relevant">مرتبط‌ترین</option>
+                                    <option value="cheapest">ارزان‌ترین</option>
+                                    <option value="expensive">گران‌ترین</option>
+                                    <option value="rating">بهترین امتیاز</option>
+                                    <option value="newest">جدیدترین</option>
+                                </select>
+                            </div>
+                            <div class="srp-view-toggle" role="group" aria-label="نوع نمایش نتایج">
+                                <button type="button" class="srp-view-btn active" id="srpViewGridBtn" onclick="setSrpViewMode('grid')" aria-label="نمایش شبکه‌ای" aria-pressed="true"><i class="fas fa-grip"></i></button>
+                                <button type="button" class="srp-view-btn" id="srpViewListBtn" onclick="setSrpViewMode('list')" aria-label="نمایش لیستی" aria-pressed="false"><i class="fas fa-list"></i></button>
+                            </div>
+                        </div>
+                    </div>
+
+
+                    <div class="srp-grid" id="srpGrid"></div>
+                </div>
+
+                
+            </div>
+        </div>
+        
+        <div id="toast" class="toast" role="status" aria-live="polite"></div>
+    
+
+    </body>
 </html>
