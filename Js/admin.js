@@ -2232,7 +2232,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
         }
 
-
         async function addSingleSlide(btnEl) {
             const original = btnEl ? btnEl.innerHTML : '';
 
@@ -2253,12 +2252,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                         imageUrl = await uploadImageToImgbb(fileInput.files[0]);
                     } else {
                         showToast('فایل عکس انتخاب نشده است ❌');
-
-                        if (btnEl) {
-                            btnEl.disabled = false;
-                            btnEl.innerHTML = original;
-                        }
-
+                        if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = original; }
                         return;
                     }
                 } else {
@@ -2266,37 +2260,36 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                         imageUrl = linkInput.value;
                     } else {
                         showToast('لینک عکس وارد نشده است ❌');
-
-                        if (btnEl) {
-                            btnEl.disabled = false;
-                            btnEl.innerHTML = original;
-                        }
-
+                        if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = original; }
                         return;
                     }
                 }
             } catch (e) {
                 showToast('❌ ' + (e && e.message ? e.message : 'آپلود تصویر ناموفق بود'));
-
-                if (btnEl) {
-                    btnEl.disabled = false;
-                    btnEl.innerHTML = original;
-                }
-
+                if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = original; }
                 return;
             }
 
-            // ادامه منطق اضافه کردن اسلاید
-            // این قسمت را با کد فعلی خودت نگه دار
-            // ...
+            const newSlide = { image: imageUrl, link: link, title: title };
+            const slides = await loadSlidesFromFirestore();
+            slides.push(newSlide);
+            const saved = await saveSlidesToFirestore(slides);
 
-            if (btnEl) {
-                btnEl.disabled = false;
-                btnEl.innerHTML = original;
-            }
+            if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = original; }
 
+            if (!saved) return;
+
+            fileInput.value = '';
+            linkInput.value = '';
+            document.getElementById('s-title').value = '';
+            document.getElementById('s-link').value = '';
+
+            writeAuditLog('create', 'slide', `اسلاید جدید «${title || 'بدون عنوان'}» اضافه شد`);
+            await renderSlides();
             showToast('اسلاید جدید اضافه شد ✅');
         }
+
+
 
 
             const newSlide = { image: imageUrl, link: link, title: title };
