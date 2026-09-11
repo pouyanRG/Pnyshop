@@ -1,13 +1,9 @@
 // ===== localStorage Keys (فقط برای بخش‌هایی که هنوز مهاجرت نشده‌اند) =====
-        // ⚠️ محصولات دیگر اینجا نیستند — از این پس فقط در Firestore (کالکشن "products") ذخیره می‌شوند.
-        // اسلایدها، سفارشات و کاربران فعلاً همچنان از localStorage می‌آیند تا در فازهای بعدی مهاجرت شوند.
         const SLIDES_KEY = 'shop_slides';
         const AMAZING_TIMER_KEY = 'amazing_timer_settings';
 
-        // ===== سفارشات و کاربران — فاز ۱ مهاجرت: از این پس فقط Firestore =====
-        // کالکشن‌های "orders" و "users" منبع واحد داده هستند (نه localStorage).
-        let cachedOrders = []; // آخرین نسخه‌ی سفارشات خوانده‌شده از Firestore، همراه _docId
-        const usersCache = new Map(); // کش سبک uid -> داده‌ی سند users/{uid} برای جلوگیری از خواندن تکراری
+        let cachedOrders = [];
+        const usersCache = new Map();
 
         async function getUserCached(uid) {
             if (!uid) return null;
@@ -23,11 +19,6 @@
             }
         }
 
-        // =========================================================
-        // STANDARDIZED LOADING / EMPTY / ERROR STATE HELPER
-        // برای هر تب یک <div id="...StatusBox"> پیام یکسان و شفاف
-        // (شامل کد خطای واقعی Firestore برای دیباگ سریع‌تر) نمایش می‌دهد.
-        // =========================================================
         function renderStatusBox(boxId, mode, opts = {}) {
             const box = document.getElementById(boxId);
             if (!box) return;
@@ -47,23 +38,17 @@
             }
         }
 
-        // =========================================================
-        // AUDIT LOG — کالکشن "auditLogs" در Firestore
-        // هر تغییر مهم (ساخت/ویرایش/حذف محصول، کوپن، تغییر وضعیت سفارش)
-        // با شناسه‌ی مدیر، زمان، و شرح کوتاه ثبت می‌شود.
-        // =========================================================
         async function writeAuditLog(action, entityType, description) {
             try {
                 await window.fbAddDoc(window.fbCollection(window.fbDb, 'auditLogs'), {
-                    action,            // 'create' | 'update' | 'delete'
-                    entityType,        // 'product' | 'coupon' | 'order' | 'slide' | 'spotlight'
+                    action,
+                    entityType,
                     description,
                     adminEmail: (window.fbAuth && window.fbAuth.currentUser) ? window.fbAuth.currentUser.email : 'admin',
                     adminUid: adminUid || null,
                     createdAt: new Date().toISOString()
                 });
             } catch (e) {
-                // ثبت لاگ هرگز نباید مانع عملیات اصلی شود؛ فقط در کنسول ثبت می‌شود
                 console.error('خطا در ثبت گزارش فعالیت:', e);
             }
         }
@@ -114,11 +99,6 @@
             }
         }
 
-        // =========================================================
-        // DASHBOARD CHARTS (Chart.js) — روند فروش ۱۴ روز اخیر + وضعیت سفارشات
-        // یک کوئری سبک و جداگانه (سقف ۵۰۰ سفارش اخیر) صرفاً برای این
-        // نمودارها گرفته می‌شود؛ این مستقل از pagination جدول سفارشات است.
-        // =========================================================
         let revenueChartInstance = null;
         let statusChartInstance = null;
 
@@ -141,14 +121,13 @@
             const orders = await fetchOrdersForDashboard();
             if (badge) badge.style.display = 'none';
 
-            // ---- نمودار روند فروش ۱۴ روز اخیر (فقط سفارشات پرداخت‌شده/تحویل‌شده) ----
             const days = [];
             const revenueByDay = {};
             const countByDay = {};
             for (let i = 13; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(d.getDate() - i);
-                const key = d.toLocaleDateString('en-CA'); // YYYY-MM-DD ثابت برای کلید
+                const key = d.toLocaleDateString('en-CA');
                 days.push(key);
                 revenueByDay[key] = 0;
                 countByDay[key] = 0;
@@ -195,7 +174,6 @@
                 });
             }
 
-            // ---- نمودار دایره‌ای توزیع وضعیت سفارشات ----
             const statusCounts = { pending_payment: 0, paid: 0, processing: 0, shipped: 0, delivered: 0, failed_payment: 0 };
             orders.forEach(o => { if (statusCounts[o.status] !== undefined) statusCounts[o.status]++; });
             const statusLabelsFa = { pending_payment: 'در انتظار پرداخت', paid: 'پرداخت‌شده', processing: 'پردازش انبار', shipped: 'ارسال‌شده', delivered: 'تحویل‌شده', failed_payment: 'ناموفق' };
@@ -219,11 +197,8 @@
             }
         }
 
-        // =========================================================
-        // ORDERS — Pagination واقعی Firestore (limit + startAfter)
-        // =========================================================
         const ORDERS_PAGE_SIZE = 15;
-        let ordersPageCursors = [null]; // cursors[0] = null (صفحه‌ی اول)؛ cursors[i] = آخرین سند صفحه‌ی i-1
+        let ordersPageCursors = [null];
         let ordersCurrentPageIndex = 0;
         let ordersHasNextPage = false;
 
@@ -244,7 +219,6 @@
 
             try {
                 const cursor = ordersPageCursors[ordersCurrentPageIndex];
-                const clauses = [window.fbCollection(window.fbDb, 'orders'), window.fbOrderBy('createdAt', 'desc')];
                 let q;
                 if (cursor) {
                     q = window.fbQuery(window.fbCollection(window.fbDb, 'orders'), window.fbOrderBy('createdAt', 'desc'), window.fbStartAfter(cursor), window.fbLimit(ORDERS_PAGE_SIZE + 1));
@@ -287,21 +261,9 @@
             if (direction === 'next' && !ordersHasNextPage) return;
             if (direction === 'prev' && ordersCurrentPageIndex === 0) return;
             await loadOrdersFromFirestore(direction);
-            renderOrders(true); // true = فقط رندر مجدد بدون بارگذاری دوباره از سرور
+            renderOrders(true);
         }
 
-        // =========================================================
-        // SECURITY: HTML ESCAPING (قبلاً در admin.html اصلاً وجود نداشت!)
-        // -------------------------------------------------------
-        // نام/برند/توضیح محصول، عنوان کوپن، عنوان اسلاید/ویترین ویژه و
-        // شرح رویداد در Audit Log همگی از ورودی ادمین می‌آیند و مستقیماً
-        // با innerHTML رندر می‌شدند — یعنی اگر نام یک محصول حاوی
-        // "<img src=x onerror=...>" باشد، هنگام نمایش در جدول محصولات،
-        // مودال سفارش، جدول کوپن‌ها یا لاگ فعالیت‌ها اجرا می‌شد (Stored
-        // XSS). از این پس هر مقدار داینامیک پیش از innerHTML باید از
-        // esc() عبور کند. escAttr() برای زمانی است که مقدار داخل یک
-        // آرگومان تک‌کوتیشن onclick قرار می‌گیرد.
-        // =========================================================
         function esc(str) {
             return String(str ?? '').replace(/[&<>"']/g, ch => ({
                 '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;'
@@ -311,10 +273,8 @@
             return esc(str).replace(/'/g, '&#39;');
         }
 
-        // ===== تصویر جایگزین ثابت وقتی هیچ عکس اصلی‌ای وارد نشده باشد =====
         const NO_IMAGE_URL = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10';
 
-        // ===== ۱۰ رنگ پرطرفدار برای انتخاب سریع =====
         const PRESET_COLORS = [
             { name: 'مشکی', code: '#000000' },
             { name: 'سفید', code: '#ffffff' },
@@ -328,7 +288,6 @@
             { name: 'طوسی', code: '#6b7280' }
         ];
 
-        // ===== State =====
         let selectedBreadcrumb = "";
         let currentCategoryPath = [];
         let currentColors = [];
@@ -336,13 +295,9 @@
         let isEditingMode = false;
         let currentViewOrderId = null;
         let adminUid = null;
-        let cachedProducts = []; // آخرین نسخه‌ی محصولات خوانده‌شده از Firestore، شامل _docId داخلی برای CRUD
-        const catSelects = []; // 5 عدد select سلسله‌مراتب دسته‌بندی
+        let cachedProducts = [];
+        const catSelects = [];
 
-        // ===== Category Data (۱۰ دسته اصلی، تا ۵ سطح سلسله‌مراتبی) =====
-        // ⚠️ فاز ۱ مهاجرت: این آبجکت دیگر «منبع حقیقت» نیست، فقط seed اولیه است.
-        // منبع واقعی از این پس سند settings/categoryTree در Firestore است تا
-        // admin.html و بقیه‌ی صفحات (در آینده) از یک داده‌ی واحد بخوانند.
         const DEFAULT_CATEGORY_DATA = {
             "کالای دیجیتال": {
                 "موبایل": {
@@ -403,13 +358,8 @@
             }
         };
 
-        // مقدار فعلی درخت دسته‌بندی که واقعاً در فرم/کد استفاده می‌شود.
-        // در initAdminAppOnce() از Firestore بازخوانی و جایگزین می‌شود.
         let CATEGORY_DATA = DEFAULT_CATEGORY_DATA;
 
-        // =========================================================
-        // CATEGORY TREE — منبع واحد در Firestore (settings/categoryTree)
-        // =========================================================
         async function loadCategoryTree() {
             try {
                 const ref = window.fbDoc(window.fbDb, 'settings', 'categoryTree');
@@ -417,8 +367,6 @@
                 if (snap.exists() && snap.data() && snap.data().tree) {
                     CATEGORY_DATA = snap.data().tree;
                 } else {
-                    // اولین اجرا: درخت پیش‌فرض به‌عنوان seed در Firestore ذخیره می‌شود
-                    // تا از این پس همین صفحه هم فقط از آن بخواند.
                     await window.fbSetDoc(ref, { tree: DEFAULT_CATEGORY_DATA, updatedAt: new Date().toISOString() });
                     CATEGORY_DATA = DEFAULT_CATEGORY_DATA;
                 }
@@ -429,9 +377,6 @@
             }
         }
 
-        // =========================================================
-        // AUTH GATE LOGIC
-        // =========================================================
         function showAuthChecking(show) {
             document.getElementById('authCheckingScreen').style.display = show ? 'flex' : 'none';
         }
@@ -501,79 +446,37 @@
             }
         }
 
+        async function addSpotlightCard() {
+            const title = document.getElementById('sp-title').value.trim();
+            const price = document.getElementById('sp-price').value.trim();
+            const link = document.getElementById('sp-link').value.trim();
+            let imageUrl = '';
 
-        async function addSpotlightCard(btnEl) {
-            const original = btnEl ? btnEl.innerHTML : '';
-
-            if (btnEl) {
-                btnEl.disabled = true;
-                btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال آپلود...';
+            if (!document.getElementById('spotlight-file-container').classList.contains('hidden')) {
+                const fileInput = document.getElementById('sp-image-file');
+                if (fileInput.files[0]) imageUrl = await uploadImageToImgbb(fileInput.files[0]);
+                else { showToast('فایل عکس انتخاب نشده است ❌'); return; }
+            } else {
+                const linkInput = document.getElementById('sp-image-link');
+                if (linkInput.value) imageUrl = linkInput.value;
+                else { showToast('لینک عکس وارد نشده است ❌'); return; }
             }
+            if (!title) { showToast('عنوان را وارد کنید ⚠️'); return; }
 
-            try {
-                const title = document.getElementById('sp-title').value.trim();
-                const price = document.getElementById('sp-price').value.trim();
-                const link = document.getElementById('sp-link').value.trim();
-                let imageUrl = '';
+            let cards = await loadSpotlightCards();
+            if (cards.length >= 4) { showToast('حداکثر ۴ کارت مجاز است؛ یکی را حذف کنید ⚠️'); return; }
+            cards.push({ image: imageUrl, title, price, link });
 
-                if (!document.getElementById('spotlight-file-container').classList.contains('hidden')) {
-                    const fileInput = document.getElementById('sp-image-file');
-
-                    if (fileInput.files[0]) {
-                        imageUrl = await uploadImageToImgbb(fileInput.files[0]);
-                    } else {
-                        showToast('فایل عکس انتخاب نشده است ❌');
-                        return;
-                    }
-                } else {
-                    const linkInput = document.getElementById('sp-image-link');
-
-                    if (linkInput.value) {
-                        imageUrl = linkInput.value;
-                    } else {
-                        showToast('لینک عکس وارد نشده است ❌');
-                        return;
-                    }
-                }
-
-                if (!title) {
-                    showToast('عنوان را وارد کنید ⚠️');
-                    return;
-                }
-
-                let cards = await loadSpotlightCards();
-
-                if (cards.length >= 4) {
-                    showToast('حداکثر ۴ کارت مجاز است؛ یکی را حذف کنید ⚠️');
-                    return;
-                }
-
-                cards.push({
-                    image: imageUrl,
-                    title,
-                    price,
-                    link
-                });
-
-                if (await saveSpotlightCards(cards)) {
-                    document.getElementById('sp-title').value = '';
-                    document.getElementById('sp-price').value = '';
-                    document.getElementById('sp-link').value = '';
-                    document.getElementById('sp-image-file').value = '';
-                    document.getElementById('sp-image-link').value = '';
-
-                    showToast('به ویترین ویژه اضافه شد ✅');
-                    renderSpotlightAdminList();
-                }
-
-            } finally {
-                if (btnEl) {
-                    btnEl.disabled = false;
-                    btnEl.innerHTML = original;
-                }
+            if (await saveSpotlightCards(cards)) {
+                document.getElementById('sp-title').value = '';
+                document.getElementById('sp-price').value = '';
+                document.getElementById('sp-link').value = '';
+                document.getElementById('sp-image-file').value = '';
+                document.getElementById('sp-image-link').value = '';
+                showToast('به ویترین ویژه اضافه شد ✅');
+                renderSpotlightAdminList();
             }
         }
-    
 
         async function renderSpotlightAdminList() {
             const container = document.getElementById('spotlightAdminList');
@@ -592,9 +495,6 @@
                 </div>`).join('');
         }
 
-        // =========================================================
-// COUPONS — Firestore CRUD (کالکشن "coupons")
-// =========================================================
 let cachedCoupons = [];
 let isCouponEditingMode = false;
 
@@ -846,7 +746,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                     showAuthGate(false);
                     showAdminApp(true, user.email);
                 } else {
-                    // کاربر لاگین کرده ولی سند admins/{uid} وجود ندارد → دسترسی رد می‌شود
                     adminUid = null;
                     await window.fbSignOut(window.fbAuth);
                     showAdminApp(false);
@@ -867,7 +766,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
             try {
                 await window.fbSignInWithEmailAndPassword(window.fbAuth, email, password);
-                // ادامه‌ی فرآیند توسط onAuthStateChanged انجام می‌شود
             } catch (err) {
                 let msg = 'ورود ناموفق بود. ایمیل یا رمز عبور را بررسی کنید.';
                 if (err && err.code === 'auth/invalid-credential') msg = 'ایمیل یا رمز عبور اشتباه است.';
@@ -888,9 +786,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
         }
 
-        // =========================================================
-        // RESPONSIVE SIDEBAR (drawer) — موبایل/تبلت
-        // =========================================================
         function toggleSidebar(show) {
             const sb = document.getElementById('adminSidebar');
             const ov = document.getElementById('sidebarOverlay');
@@ -901,6 +796,12 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
         // =========================================================
         // TABS
+        // FIX باگ: قبلاً کارت «مدیریت ویترین ویژه» بیرون از هر تب
+        // (tab-content) در HTML قرار داشت، پس با هر تبی که فعال می‌شد
+        // همچنان دیده می‌شد (۳ بخش هم‌زمان باز). این تابع خودش هیچ‌وقت
+        // مشکل نداشت—حذف/اضافه‌ی .active روی .tab-content درست بود؛
+        // مشکل صرفاً از قرارگیری اشتباه آن کارت در HTML بود که به تب
+        // "products" منتقل شد. این تابع بدون تغییر منطقی، هنوز درست کار می‌کند.
         // =========================================================
         function showTab(tabName, el) {
             document.querySelectorAll('.tab-content').forEach(t => t.classList.remove('active'));
@@ -913,13 +814,9 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             else if (tabName === 'slider') renderCurrentTimerSettings();
             else if (tabName === 'coupons') { populateCouponScopeCategories(); loadCouponsFromFirestore(); }
             else if (tabName === 'audit') loadAuditLog();
-            // در موبایل، پس از انتخاب یک تب، کشوی سایدبار خودکار بسته می‌شود
             if (window.innerWidth <= 900) toggleSidebar(false);
         }
 
-        // =========================================================
-        // CATEGORY CASCADE (۵ سطح، عمق متغیر بر اساس داده)
-        // =========================================================
         function initCategories() {
             for (let i = 1; i <= 5; i++) {
                 catSelects.push(document.getElementById('cat-l' + i));
@@ -997,9 +894,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                     : `<i class="fas fa-link"></i> مسیر نهایی: هنوز انتخاب نشده`;
         }
 
-        // =========================================================
-        // SPECS
-        // =========================================================
         function addSpec() {
             const key = document.getElementById('spec-key').value.trim();
             const value = document.getElementById('spec-value').value.trim();
@@ -1027,9 +921,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             container.innerHTML = html;
         }
 
-        // =========================================================
-        // GALLERY LINKS
-        // =========================================================
         function initGalleryLinks() {
             const wrapper = document.getElementById('gallery-links-wrapper');
             wrapper.innerHTML = '';
@@ -1038,9 +929,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
         }
 
-        // =========================================================
-        // IMAGE SOURCE TOGGLE
-        // =========================================================
         function toggleInputSource(section, type) {
             const prefix = section;
             const fileCont = document.getElementById(`${prefix}-file-container`);
@@ -1074,15 +962,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
         }
 
-        // FIX امنیتی (فاز ۰ observability plan): کلید ImgBB دیگر هرگز داخل
-        // کد کلاینت نیست — قبلاً اینجا plaintext افشا شده بود (قابل مشاهده
-        // در View Source توسط هرکسی). آپلود از این پس از طریق یک Vercel
-        // Serverless Function امن (api/upload-image.js) انجام می‌شود که
-        // کلید را فقط از process.env می‌خواند.
-        //
-        // چون کلاینت دیگر از وضعیت کلید روی سرور خبر ندارد، بنر هشدار در
-        // لحظه‌ی ورود دیگر قطعی نمایش داده نمی‌شود؛ فقط اگر اولین تلاش
-        // آپلود واقعی با خطای «پیکربندی‌نشده» مواجه شود ظاهر می‌شود.
         function checkConfigWarnings() {
             const banner = document.getElementById('configWarningBanner');
             if (!banner) return;
@@ -1107,7 +986,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                 </div>`;
         }
 
-        // فشرده‌سازی و تغییر اندازه‌ی فایل عکس در سمت مرورگر، خروجی: Blob
         async function resizeImageToBlob(file, maxWidth = 900, quality = 0.8) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1132,7 +1010,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             });
         }
 
-        // تبدیل Blob به رشته‌ی base64 خام (بدون پیشوند data:...) — همان چیزی که ImgBB انتظار دارد
         async function blobToRawBase64(blob) {
             return new Promise((resolve, reject) => {
                 const reader = new FileReader();
@@ -1141,42 +1018,64 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                 reader.readAsDataURL(blob);
             });
         }
-                // FIX امنیتی (فاز ۰): آپلود دیگر مستقیماً به api.imgbb.com و با کلید
-        // افشاشده در کلاینت انجام نمی‌شود؛ درخواست به Serverless Function
-        // امن خودمان (/api/upload-image) می‌رود — دقیقاً هم‌الگو با chat.js
-        // که همین کار را برای GEMINI_API_KEY انجام می‌دهد.
-        async function uploadImageToImgbb(file) {
-            const blob = await resizeImageToBlob(file);
-            const base64 = await blobToRawBase64(blob);
 
-            const res = await fetch('/api/upload-image', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ image: base64 })
-            });
-
-            let json;
-            try {
-                json = await res.json();
-            } catch (e) {
-                throw new Error('پاسخ نامعتبر از سرور آپلود تصویر دریافت شد.');
-            }
-
-            if (!res.ok || !json.success) {
-                console.error('پاسخ خطای آپلود تصویر:', json);
-                if (json && json.code === 'MISSING_CONFIG') {
-                    showImgbbConfigBanner();
-                }
-                throw new Error(json && json.message ? json.message : 'آپلود تصویر ناموفق بود');
-            }
-
-            // url = لینک مستقیم و دائمی تصویر برای استفاده در <img src="">
-            return json.url;
+        // =========================================================
+        // FIX: نشانگر لودینگ سراسری آپلود
+        // -----------------------------------------------------------
+        // چون این تابع تنها نقطه‌ی ورودی همه‌ی آپلودها (محصول اصلی/گالری،
+        // ویترین ویژه، اسلاید، آیکون کوپن) است، افزودن نمایش/پنهان‌سازی
+        // اسپینر فقط همین‌جا باعث می‌شود همه‌ی دکمه‌های آپلود در کل
+        // پنل ادمین این پیام لودینگ را نشان دهند، بدون نیاز به تغییر
+        // در تک‌تک call-siteها. شمارنده‌ی activeUploads از بسته شدن
+        // زودهنگام نشانگر هنگام آپلود موازی (مثل گالری چندفایلی) جلوگیری می‌کند.
+        // =========================================================
+        let activeUploads = 0;
+        function showUploadIndicator() {
+            activeUploads++;
+            const el = document.getElementById('uploadIndicator');
+            if (el) el.classList.add('show');
         }
-   
-        // =========================================================
-        // COLORS
-        // =========================================================
+        function hideUploadIndicator() {
+            activeUploads = Math.max(0, activeUploads - 1);
+            if (activeUploads === 0) {
+                const el = document.getElementById('uploadIndicator');
+                if (el) el.classList.remove('show');
+            }
+        }
+
+        async function uploadImageToImgbb(file) {
+            showUploadIndicator();
+            try {
+                const blob = await resizeImageToBlob(file);
+                const base64 = await blobToRawBase64(blob);
+
+                const res = await fetch('/api/upload-image', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ image: base64 })
+                });
+
+                let json;
+                try {
+                    json = await res.json();
+                } catch (e) {
+                    throw new Error('پاسخ نامعتبر از سرور آپلود تصویر دریافت شد.');
+                }
+
+                if (!res.ok || !json.success) {
+                    console.error('پاسخ خطای آپلود تصویر:', json);
+                    if (json && json.code === 'MISSING_CONFIG') {
+                        showImgbbConfigBanner();
+                    }
+                    throw new Error(json && json.message ? json.message : 'آپلود تصویر ناموفق بود');
+                }
+
+                return json.url;
+            } finally {
+                hideUploadIndicator();
+            }
+        }
+
         function renderColorList(colors) {
             const container = document.getElementById('colorListContainer');
             container.innerHTML = '';
@@ -1222,9 +1121,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             renderColorList(currentColors);
         }
 
-        // =========================================================
-        // AMAZING OFFERS TIMER (تبدیل شمسی به میلادی + ذخیره تنظیمات)
-        // =========================================================
         function jalaliToGregorian(jy, jm, jd) {
             jy = parseInt(jy) + 1595;
             let days = -355668 + (365 * jy) + (Math.floor(jy / 33) * 8) + Math.floor(((jy % 33) + 3) / 4) + parseInt(jd) + ((jm < 7) ? (jm - 1) * 31 : ((jm - 7) * 30) + 186);
@@ -1252,9 +1148,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             return { gy: gy, gm: gm, gd: gd };
         }
 
-        // ===== اعتبارسنجی روز/ماه تقویم شمسی (بدون نیاز به کتابخانه‌ی خارجی) =====
         function isJalaliLeapYear(jy) {
-            // الگوریتم متداول تعیین سال کبیسه در تقویم جلالی (چرخه‌ی ۳۳ ساله)
             const remainders = [1, 5, 9, 13, 17, 22, 26, 30];
             return remainders.includes(((jy % 33) + 33) % 33);
         }
@@ -1267,7 +1161,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             return isJalaliLeapYear(parseInt(jy) || 0) ? 30 : 29;
         }
 
-        // با تغییر سال/ماه/روز، حداکثر روز مجاز همان ماه محاسبه و روز نامعتبر اصلاح می‌شود
         function onTimerDateFieldChange() {
             const hint = document.getElementById('timer-date-hint');
             const parts = [];
@@ -1369,12 +1262,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
         }
 
-        // =========================================================
-        // PRODUCTS — FIRESTORE CRUD
-        // (کالکشن "products"؛ هر سند یک فیلد عددی id هم دارد
-        //  که برای سازگاری با سبد خرید/سفارشات موجود در بقیه‌ی
-        //  صفحات همچنان به‌کار می‌رود. docId جدا نگه داشته می‌شود.)
-        // =========================================================
         let productsLoadFailed = false;
         async function loadProductsFromFirestore() {
             const badge = document.getElementById('productsLoadingBadge');
@@ -1409,8 +1296,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                 showToast('لطفاً حداقل یک رنگ برای محصول انتخاب کنید 🎨'); return;
             }
 
-            // در حالت ویرایش، سند فعلی از روی docId واقعی Firestore پیدا می‌شود
-            // (نه فیلد عددی id که فقط Date.now() است و تضمینی برای یکتا بودنش نیست)
             const editingDocId = document.getElementById('p-docid').value;
             const existingProduct = isEditingMode ? cachedProducts.find(p => p._docId === editingDocId) : null;
 
@@ -1422,8 +1307,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             submitBtn.disabled = true;
 
             try {
-                // Main image — اگر عکسی وارد نشده باشد، در حالت ویرایش عکس قبلی حفظ می‌شود
-                // و فقط در حالت افزودن محصول جدید از تصویر ثابت «یافت نشد» استفاده می‌شود
                 if (!document.getElementById('product-file-container').classList.contains('hidden')) {
                     const fileInput = document.getElementById('p-image-file');
                     if (fileInput.files[0]) {
@@ -1439,8 +1322,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                     mainImage = linkInput.value ? linkInput.value : (isEditingMode && existingProduct ? existingProduct.image : NO_IMAGE_URL);
                 }
 
-                // Gallery images — فقط به ازای هر لینک/فایل پرشده یک عکس جدید اضافه می‌شود؛
-                // اگر هیچ ورودی جدیدی داده نشده باشد، گالری قبلی محصول حفظ می‌شود (نه پاک شدن!)
                 let gallerySourceHasInput = false;
                 if (!document.getElementById('gallery-file-container').classList.contains('hidden')) {
                     const gFiles = document.getElementById('p-gallery-files').files;
@@ -1529,7 +1410,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                 }
             }
             document.getElementById('breadcrumb-display').innerHTML = '<i class="fas fa-link"></i> مسیر نهایی: هنوز انتخاب نشده';
-            // Reset image inputs to file mode
             document.getElementById('product-file-container').classList.remove('hidden');
             document.getElementById('product-link-container').classList.add('hidden');
             initGalleryLinks();
@@ -1538,9 +1418,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             wizardGoTo(1);
         }
 
-        // =========================================================
-        // PRODUCT FORM WIZARD — navigation, per-step validation, review
-        // =========================================================
         let currentWizardStep = 1;
         const WIZARD_TOTAL_STEPS = 5;
 
@@ -1625,7 +1502,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                 </div>`).join('');
         }
 
-        // ===== جستجو/فیلتر/pagination لیست موجودی انبار =====
         let productsCurrentPage = 1;
         const PRODUCTS_PER_PAGE = 10;
 
@@ -1715,8 +1591,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                     : '';
 
                 const isChecked = selectedProductDocIds.has(p._docId) ? 'checked' : '';
-                // SECURITY: تمام مقادیر متنی که از خودِ سند محصول می‌آیند (name/brand/
-                // breadcrumb/category/image) پیش از قرار گرفتن در innerHTML باید esc شوند
                 const safeName = esc(p.name);
                 const safeImg = esc(p.image);
 
@@ -1784,16 +1658,12 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                 : (product.breadcrumb ? product.breadcrumb.split(' > ') : (product.category ? [product.category] : []));
             restoreCategoryPath(path);
 
-            // کپی واقعی (نه رفرنس) می‌گیریم؛ وگرنه اضافه/حذف رنگ یا مشخصه در فرم
-            // مستقیماً آبجکت داخل cachedProducts را هم تغییر می‌دهد و باعث
-            // ناهماهنگی داده تا قبل از ذخیره‌ی واقعی در Firestore می‌شود.
             currentColors = product.colors ? product.colors.map(c => ({ ...c })) : [];
             renderColorList(currentColors);
 
             currentSpecs = product.specs ? { ...product.specs } : {};
             renderSpecsList();
 
-            // Switch to link input for image
             document.getElementById('product-file-container').classList.add('hidden');
             document.getElementById('product-link-container').classList.remove('hidden');
             const imgTypeBtns = document.querySelector('#product-link-container').closest('.form-group').querySelectorAll('.type-btn');
@@ -1828,9 +1698,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
         }
 
-        // =========================================================
-        // BULK ACTIONS — انتخاب چندتایی و حذف/تغییر دسته‌بندی گروهی
-        // =========================================================
         let selectedProductDocIds = new Set();
 
         function toggleSelectAllProducts(checkbox) {
@@ -1869,9 +1736,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             sel.innerHTML = '<option value="">— انتخاب دسته‌بندی جدید —</option>' + cats.map(c => `<option value="${c}">${c}</option>`).join('');
         }
 
-        // FIX (اتمیک‌سازی + کارایی): Firestore هر batch را حداکثر تا ۵۰۰ نوشتن
-        // می‌پذیرد؛ این تابع کمکی آرایه را به تکه‌های حداکثر ۵۰۰تایی می‌شکند تا
-        // حتی اگر تعداد کالاهای انتخاب‌شده خیلی زیاد باشد هم کار کند.
         function chunkArray(arr, size) {
             const out = [];
             for (let i = 0; i < arr.length; i += size) out.push(arr.slice(i, i + size));
@@ -1885,11 +1749,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             if (selectedProductDocIds.size === 0) return;
             if (!confirm(`دسته‌بندی ${selectedProductDocIds.size.toLocaleString('fa-IR')} کالای انتخاب‌شده به «${newCat}» تغییر کند؟`)) return;
 
-            // FIX: قبلاً این عملیات با یک حلقه‌ی for..of و await های پشت‌سرهم
-            // (نه اتمیک، نه سریع) انجام می‌شد. حالا با writeBatch در گروه‌های
-            // ۵۰۰تایی انجام می‌شود: یا کل یک batch با موفقیت commit می‌شود، یا
-            // هیچ‌کدام از نوشتن‌های همان batch اعمال نمی‌شوند (اتمیک) و هم‌زمان
-            // چند برابر سریع‌تر از حلقه‌ی ترتیبی است.
             const docIds = Array.from(selectedProductDocIds);
             const chunks = chunkArray(docIds, 500);
             let okCount = 0;
@@ -1916,7 +1775,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             const n = selectedProductDocIds.size;
             if (!confirm(`آیا از حذف ${n.toLocaleString('fa-IR')} کالای انتخاب‌شده اطمینان دارید؟ این عملیات قابل بازگشت نیست.`)) return;
 
-            // FIX: همان اصلاح اتمیک‌سازی/کارایی با writeBatch برای حذف گروهی
             const docIds = Array.from(selectedProductDocIds);
             const chunks = chunkArray(docIds, 500);
             let okCount = 0;
@@ -1938,9 +1796,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             await loadProductsFromFirestore();
         }
 
-        // =========================================================
-        // INLINE QUICK-EDIT — تغییر سریع قیمت/موجودی/تخفیف بدون باز کردن ویزارد
-        // =========================================================
         async function saveQuickEdit(docId, btnEl) {
             const row = btnEl.closest('.quick-edit-row');
             const price = parseFloat(row.querySelector('.qe-price').value);
@@ -1966,10 +1821,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
         }
 
-        // =========================================================
-        // ORDERS — از فاز ۱ به بعد کاملاً از Firestore (کالکشن‌های
-        // "orders" و "users") خوانده و نوشته می‌شوند، نه localStorage.
-        // =========================================================
         function calculatePoints(totalAmount) {
             const amount = parseInt(totalAmount);
             if (amount >= 1000000000) return 100000;
@@ -1996,8 +1847,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
             document.getElementById('stat-orders').innerText = cachedOrders.length;
 
-            // توجه: فیلتر «پردازش‌نشده» روی همان صفحه‌ی جاری (نه کل کالکشن) اعمال می‌شود؛
-            // این یعنی ممکن است در برخی صفحات تعداد ردیف‌های نمایشی کمتر از اندازه‌ی صفحه باشد.
             const pendingOrders = cachedOrders.filter(o => o.status !== 'delivered');
 
             if (pendingOrders.length === 0) {
@@ -2009,12 +1858,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
             const rows = await Promise.all(pendingOrders.map(async order => {
                 const user = await getUserCached(order.userId);
-                // SECURITY: user.name توسط خودِ مشتری در login.html وارد می‌شود و
-                // بدون ساینتایز روی سرور ذخیره می‌گردد؛ یعنی یک مشتری می‌تواند نام
-                // خود را "<img src=x onerror=...>" بگذارد. چون این مقدار در پنل
-                // ادمین (جدول سفارشات/گزارشات/مودال جزئیات) رندر می‌شود، این
-                // خطرناک‌ترین نوع XSS ذخیره‌شده در این پروژه بود (هر مشتری،
-                // نه فقط ادمین، می‌توانست payload بسازد). از این پس همیشه esc().
                 const userName = esc(user ? (user.name || order.userId) : order.userId);
 
                 let statusClass = 'status-paid', statusText = 'پرداخت شده';
@@ -2086,9 +1929,8 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             document.getElementById('modal-status-select').value = order.status;
             document.getElementById('orderModal').classList.add('open');
 
-            // اطلاعات کاربر به‌صورت جداگانه و async بارگذاری می‌شود تا باز شدن مودال معطل نماند
             const user = await getUserCached(order.userId);
-            if (currentViewOrderId !== docId) return; // کاربر مودال دیگری باز کرده
+            if (currentViewOrderId !== docId) return;
             document.getElementById('modal-user-name').innerText = user ? (user.name || order.userId) : order.userId;
             document.getElementById('modal-user-mobile').innerText = 'تلفن: ' + (user && user.mobile ? user.mobile : order.userId);
         }
@@ -2106,8 +1948,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             const oldStatus = order.status;
             if (oldStatus === newStatus) return;
 
-            // تغییر وضعیت به «تحویل داده شده» امتیاز واقعی به کیف پول کاربر اضافه می‌کند؛
-            // این عملیات باید با یک تأیید صریح انجام شود، نه فقط انتخاب از select.
             if (newStatus === 'delivered' && oldStatus !== 'delivered') {
                 const pts = calculatePoints(order.totalAmount);
                 const ok = confirm(`با ثبت این سفارش به‌عنوان «تحویل داده شده»، ${pts.toLocaleString('fa-IR')} امتیاز به کیف پول مشتری اضافه می‌شود. ادامه می‌دهید؟`);
@@ -2142,7 +1982,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                     const userSnap = await window.fbGetDoc(userRef);
                     const currentPoints = (userSnap.exists() && userSnap.data().points) ? userSnap.data().points : 0;
                     await window.fbUpdateDoc(userRef, { points: currentPoints + pointsToAdd });
-                    usersCache.delete(order.userId); // کش این کاربر باطل می‌شود تا دفعه بعد امتیاز تازه خوانده شود
+                    usersCache.delete(order.userId);
                     showToast(`سفارش تأیید شد. ${pointsToAdd} امتیاز به کاربر اضافه شد ✨`);
                     writeAuditLog('update', 'order', `سفارش #${orderLabel} به «تحویل داده شده» تغییر کرد و ${pointsToAdd.toLocaleString('fa-IR')} امتیاز اعطا شد`);
                 } catch (e) {
@@ -2160,14 +2000,10 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             renderDashboardCharts();
         }
 
-        // Close modal on overlay click
         document.getElementById('orderModal').addEventListener('click', function (e) {
             if (e.target === this) closeOrderModal();
         });
 
-        // =========================================================
-        // REPORTS
-        // =========================================================
         async function renderReports() {
             const tbody = document.getElementById('deliveredOrdersTableBody');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-light);"><i class="fas fa-spinner fa-spin"></i> در حال محاسبه گزارشات از سرور...</td></tr>';
@@ -2191,7 +2027,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
             const rows = await Promise.all([...deliveredOrders].reverse().map(async order => {
                 const user = await getUserCached(order.userId);
-                const userName = esc(user ? (user.name || order.userId) : order.userId); // SECURITY: نگاه کنید به توضیح esc() در renderOrders
+                const userName = esc(user ? (user.name || order.userId) : order.userId);
                 const deliveredAt = order.deliveredAt ? new Date(order.deliveredAt).toLocaleDateString('fa-IR') : '--';
                 const orderLabel = esc(order.orderId || order._docId.slice(0, 6).toUpperCase());
                 return `<tr>
@@ -2205,11 +2041,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             tbody.innerHTML = rows.join('');
         }
 
-        // =========================================================
-        // SLIDER — از این پس در Firestore (settings/slides)، هماهنگ با
-        // spotlightCards؛ دیگر با تغییر مرورگر/دستگاه ادمین گم نمی‌شود
-        // و می‌تواند مستقیماً توسط index.html هم خوانده شود.
-        // =========================================================
         async function loadSlidesFromFirestore() {
             try {
                 const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'slides'));
@@ -2232,14 +2063,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
         }
 
-        async function addSingleSlide(btnEl) {
-            const original = btnEl ? btnEl.innerHTML : '';
-
-            if (btnEl) {
-                btnEl.disabled = true;
-                btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال آپلود...';
-            }
-
+        async function addSingleSlide() {
             let imageUrl = '';
             const fileInput = document.getElementById('s-image-file');
             const linkInput = document.getElementById('s-image-link');
@@ -2248,49 +2072,16 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
             try {
                 if (!document.getElementById('slider-file-container').classList.contains('hidden')) {
-                    if (fileInput.files[0]) {
-                        imageUrl = await uploadImageToImgbb(fileInput.files[0]);
-                    } else {
-                        showToast('فایل عکس انتخاب نشده است ❌');
-                        if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = original; }
-                        return;
-                    }
+                    if (fileInput.files[0]) imageUrl = await uploadImageToImgbb(fileInput.files[0]);
+                    else { showToast('فایل عکس انتخاب نشده است ❌'); return; }
                 } else {
-                    if (linkInput.value) {
-                        imageUrl = linkInput.value;
-                    } else {
-                        showToast('لینک عکس وارد نشده است ❌');
-                        if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = original; }
-                        return;
-                    }
+                    if (linkInput.value) imageUrl = linkInput.value;
+                    else { showToast('لینک عکس وارد نشده است ❌'); return; }
                 }
             } catch (e) {
                 showToast('❌ ' + (e && e.message ? e.message : 'آپلود تصویر ناموفق بود'));
-                if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = original; }
                 return;
             }
-
-            const newSlide = { image: imageUrl, link: link, title: title };
-            const slides = await loadSlidesFromFirestore();
-            slides.push(newSlide);
-            const saved = await saveSlidesToFirestore(slides);
-
-            if (btnEl) { btnEl.disabled = false; btnEl.innerHTML = original; }
-
-            if (!saved) return;
-
-            fileInput.value = '';
-            linkInput.value = '';
-            document.getElementById('s-title').value = '';
-            document.getElementById('s-link').value = '';
-
-            writeAuditLog('create', 'slide', `اسلاید جدید «${title || 'بدون عنوان'}» اضافه شد`);
-            await renderSlides();
-            showToast('اسلاید جدید اضافه شد ✅');
-        }
-
-
-
 
             const newSlide = { image: imageUrl, link: link, title: title };
             const slides = await loadSlidesFromFirestore();
@@ -2345,9 +2136,6 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             showToast('اسلاید حذف شد');
         }
 
-        // =========================================================
-        // TOAST
-        // =========================================================
         function showToast(msg) {
             const t = document.getElementById('toast');
             t.innerText = msg;
@@ -2355,8 +2143,5 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             setTimeout(() => t.classList.remove('show'), 3000);
         }
 
-        // =========================================================
-        // APP BOOTSTRAP
-        // =========================================================
         window.addEventListener('firebase-ready', initAuthGate);
         if (window.fbAuth) initAuthGate();
