@@ -490,9 +490,8 @@
                     </div>
                     <div id="prod-pagination" style="display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:8px;margin-top:18px;"></div>
                 </div>
-            </div>
 
-            <div class="admin-card">
+                <div class="admin-card">
                     <div class="section-title">
                         <i class="fas fa-star" style="color: var(--warning);"></i> مدیریت ویترین ویژه
                     </div>
@@ -524,11 +523,13 @@
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="btn-submit" onclick="addSpotlightCard()">
+                    <button type="button" class="btn-submit" onclick="addSpotlightCard(this)"></button>
                         <i class="fas fa-plus"></i> اضافه کردن به ویترین ویژه
                     </button>
                     <div id="spotlightAdminList" class="slider-preview-grid" style="margin-top:20px;"></div>
                 </div>
+
+            </div>
 
             <!-- ===== TAB: SLIDER ===== -->
             <div id="tab-slider" class="tab-content">
@@ -629,7 +630,7 @@
                             </div>
                         </div>
                     </div>
-                    <button type="button" class="btn-submit" onclick="addSingleSlide()">
+                    <button type="button" class="btn-submit" onclick="addSingleSlide(this)"></button>
                         <i class="fas fa-plus"></i> اضافه کردن به لیست اسلایدها
                     </button>
                 </div>
@@ -930,7 +931,6 @@
     </div>
 
    
-
 
 </body>
 </html>
