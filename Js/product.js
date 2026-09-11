@@ -1,6 +1,4 @@
 import * as wishlistService from './wishlist-service.js';
-import { skelFill, skelDone, skelError, skelRun, skelText, skelRevealText } from './skeleton.js';
-
 const FALLBACK_IMG = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10';
 const DB = { session: 'current_user', theme: 'theme' };
 const state = {
