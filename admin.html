@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>پنل ادمین</title>
 
-    <script src="Js/admin.js" defer></script>
+    <script type="module" src="admin.js"></script>
     <script type="module" src="Js/admin-bridge.js"></script>
     <script src="https://browser.sentry-cdn.com/7.120.3/bundle.min.js" crossorigin="anonymous"></script>
     <script src="Js/sentry-init.js"></script>
@@ -16,11 +16,10 @@
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
         font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:;
         img-src 'self' data: https: blob:;
-        connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com https://*.ingest.de.sentry.io https://*.ingest.us.sentry.io;
+        connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com https://*.ingest.de.sentry.io https://*.ingest.us.sentry.io https://*.gstatic.com;
         object-src 'none';
         base-uri 'self';
         form-action 'self';
-        frame-ancestors 'self';
         upgrade-insecure-requests;
     ">
 
