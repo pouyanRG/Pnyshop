@@ -278,6 +278,13 @@
             color: var(--text-main);
         }
 
+        /* =========================================================
+           FAZ 3 — کارت‌ها، جداول، فرم‌ها، ویزارد (بازطراحی مدرن)
+           همان الگوی فاز ۱: هیچ کلاس/idای حذف یا تغییرنام داده نشده؛
+           فقط مقادیر بصری (سایه، شعاع، فاصله، حالت‌های هاور/فوکوس)
+           به سبک نرم و لایه‌ای Canva/Gemini ارتقا یافته‌اند.
+           ========================================================= */
+
         /* ===== STATS GRID ===== */
         .stats-grid {
             display: grid;
@@ -287,53 +294,102 @@
         }
 
         .stat-card {
+            position: relative;
             background: var(--white);
-            padding: 20px;
-            border-radius: var(--radius-md);
+            padding: 22px 20px;
+            border-radius: var(--radius-lg);
             box-shadow: var(--shadow-sm);
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 16px;
             border: 1px solid var(--border-color);
+            transition: var(--transition);
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 auto 0;
+            height: 3px;
+            background: var(--gradient-primary);
+            opacity: 0;
             transition: var(--transition);
         }
 
         .stat-card:hover {
-            box-shadow: var(--shadow-md);
-            transform: translateY(-2px);
+            box-shadow: var(--shadow-lg);
+            transform: translateY(-3px);
+            border-color: rgba(88,80,236,0.18);
         }
+
+        .stat-card:hover::before { opacity: 1; }
+
+        /* آیکون‌های داخل استت‌کارت (که مستقیماً با style inline در HTML
+           رنگ/سایز می‌گیرند) اکنون داخل یک باکس گرد نرم قرار می‌گیرند */
+        .stat-card > div:first-child {
+            width: 54px;
+            height: 54px;
+            border-radius: var(--radius-md);
+            background: var(--surface-2);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-shrink: 0;
+            font-size: 20px !important;
+            transition: var(--transition);
+        }
+        .stat-card:hover > div:first-child { transform: scale(1.06); }
 
         /* ===== ADMIN CARD ===== */
         .admin-card {
+            position: relative;
             background: var(--white);
-            padding: 25px;
+            padding: 26px;
             border-radius: var(--radius-lg);
             box-shadow: var(--shadow-sm);
-            margin-bottom: 30px;
+            margin-bottom: 26px;
             border: 1px solid var(--border-color);
+            transition: box-shadow 0.3s ease;
         }
 
+        .admin-card:hover { box-shadow: var(--shadow-md); }
+
         .section-title {
-            font-size: 17px;
+            font-size: 16.5px;
             font-weight: 800;
-            margin-bottom: 20px;
+            margin-bottom: 22px;
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             color: var(--text-main);
+        }
+
+        /* آیکون کوچک قبل از عنوان بخش (اولین <i> داخل section-title)
+           داخل یک باکس گرد نرم — الگوی یکسان با sidebar-header/audit-icon */
+        .section-title > i:first-child {
+            width: 32px;
+            height: 32px;
+            border-radius: 10px;
+            background: var(--admin-primary-soft);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            flex-shrink: 0;
         }
 
         /* ===== FORMS ===== */
         .input-grid {
             display: grid;
             grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-            gap: 20px;
+            gap: 18px 20px;
         }
 
         .form-group {
             display: flex;
             flex-direction: column;
-            gap: 8px;
+            gap: 7px;
         }
 
         .form-group.full-width {
@@ -341,23 +397,28 @@
         }
 
         label {
-            font-size: 13px;
-            font-weight: 700;
+            font-size: 12.5px;
+            font-weight: 800;
             color: var(--text-light);
+            letter-spacing: 0.1px;
         }
 
         input,
         select,
         textarea {
-            padding: 10px 15px;
+            padding: 11px 15px;
             border: 1.5px solid var(--border-color);
             border-radius: var(--radius-md);
             font-family: inherit;
-            font-size: 14px;
+            font-size: 13.5px;
             outline: none;
             transition: var(--transition);
-            background: #fafafa;
+            background: var(--surface-2);
             color: var(--text-main);
+        }
+
+        input:hover, select:hover, textarea:hover {
+            border-color: rgba(88,80,236,0.35);
         }
 
         input:focus,
@@ -365,45 +426,57 @@
         textarea:focus {
             border-color: var(--admin-primary);
             background: var(--white);
-            box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.1);
+            box-shadow: var(--ring-focus);
         }
+
+        input::placeholder, textarea::placeholder { color: #b7bac4; }
 
         textarea {
             resize: vertical;
             min-height: 90px;
+            line-height: 1.7;
         }
 
         .btn-submit {
-            background: var(--admin-primary);
+            background: var(--gradient-primary);
             color: white;
             border: none;
-            padding: 13px 25px;
+            padding: 14px 25px;
             border-radius: var(--radius-md);
             font-weight: 800;
             cursor: pointer;
             width: 100%;
-            font-size: 15px;
+            font-size: 14.5px;
             transition: var(--transition);
             font-family: inherit;
             margin-top: 10px;
+            box-shadow: 0 6px 16px rgba(88,80,236,0.28);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 8px;
         }
 
         .btn-submit:hover {
-            background: var(--primary-hover);
             transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+            box-shadow: 0 10px 24px rgba(88,80,236,0.36);
+            filter: brightness(1.04);
         }
+        .btn-submit:active { transform: translateY(0); }
 
         .btn-submit:disabled {
             background: #c9c6f5;
             cursor: not-allowed;
             transform: none;
             box-shadow: none;
+            filter: none;
         }
 
         /* ===== TABLES ===== */
         .table-wrapper {
             overflow-x: auto;
+            border: 1px solid var(--border-color);
+            border-radius: var(--radius-md);
         }
 
         table {
@@ -412,7 +485,7 @@
         }
 
         th, td {
-            padding: 14px 12px;
+            padding: 15px 14px;
             text-align: right;
             border-bottom: 1px solid var(--border-color);
             font-size: 13px;
@@ -420,23 +493,39 @@
 
         th {
             color: var(--text-light);
-            font-weight: 700;
-            background: #fafafa;
-            font-size: 12px;
+            font-weight: 800;
+            background: var(--surface-2);
+            font-size: 11px;
             text-transform: uppercase;
-            letter-spacing: 0.5px;
+            letter-spacing: 0.6px;
         }
+        th:first-child { border-top-right-radius: var(--radius-md); }
+        th:last-child { border-top-left-radius: var(--radius-md); }
+
+        tbody tr {
+            position: relative;
+            transition: background 0.2s ease;
+        }
+        tbody tr:last-child td { border-bottom: none; }
 
         tbody tr:hover {
-            background: rgba(99, 102, 241, 0.03);
+            background: var(--admin-primary-soft);
+        }
+        tbody tr:hover::before {
+            content: '';
+            position: absolute;
+            inset: 0 0 0 auto;
+            width: 3px;
+            background: var(--admin-primary);
         }
 
         .prod-img {
             width: 52px;
             height: 52px;
             object-fit: cover;
-            border-radius: 8px;
+            border-radius: var(--radius-md);
             border: 1px solid var(--border-color);
+            box-shadow: var(--shadow-sm);
         }
 
         /* ===== CATEGORY CASCADES ===== */
@@ -575,9 +664,9 @@
             cursor: pointer;
         }
         .wizard-step-dot {
-            width: 34px; height: 34px;
+            width: 36px; height: 36px;
             border-radius: 50%;
-            background: #eceaff;
+            background: var(--admin-primary-soft2);
             color: var(--admin-primary);
             display: flex; align-items: center; justify-content: center;
             font-weight: 900; font-size: 14px;
@@ -589,10 +678,11 @@
             color: #fff;
         }
         .wizard-step-dot-wrap.active .wizard-step-dot {
-            background: var(--admin-primary);
+            background: var(--gradient-primary);
             color: #fff;
-            border-color: #d8d4ff;
-            box-shadow: 0 0 0 4px rgba(99,102,241,0.15);
+            border-color: #fff;
+            box-shadow: 0 0 0 4px var(--admin-primary-soft2), var(--shadow-md);
+            transform: scale(1.08);
         }
         .wizard-step-label {
             font-size: 11px;
@@ -600,20 +690,22 @@
             color: var(--text-light);
             text-align: center;
             white-space: nowrap;
+            transition: var(--transition);
         }
-        .wizard-step-dot-wrap.active .wizard-step-label { color: var(--admin-primary); }
+        .wizard-step-dot-wrap.active .wizard-step-label { color: var(--admin-primary); font-weight: 800; }
         .wizard-step-dot-wrap.done .wizard-step-label { color: var(--admin-success); }
         .wizard-step-line {
             flex: 1;
             min-width: 24px;
             height: 3px;
-            background: #eceaff;
+            background: var(--admin-primary-soft2);
             margin: 0 6px 22px;
             border-radius: 2px;
+            transition: background 0.4s ease;
         }
         .wizard-step-line.done { background: var(--admin-success); }
 
-        .wizard-pane { display: none; animation: fadeIn 0.25s ease; }
+        .wizard-pane { display: none; animation: fadeIn 0.3s ease; }
         .wizard-pane.active { display: block; }
 
         .wizard-nav-bar {
@@ -638,13 +730,13 @@
             display: flex; align-items: center; gap: 8px;
             font-family: inherit;
         }
-        .wizard-btn:hover { border-color: var(--admin-primary); color: var(--admin-primary); }
-        .wizard-btn.primary { background: var(--admin-primary); color: #fff; border-color: var(--admin-primary); }
-        .wizard-btn.primary:hover { background: var(--primary-hover); color: #fff; }
-        .wizard-btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .wizard-btn:hover { border-color: var(--admin-primary); color: var(--admin-primary); background: var(--admin-primary-soft); }
+        .wizard-btn.primary { background: var(--gradient-primary); color: #fff; border-color: transparent; box-shadow: 0 4px 12px rgba(88,80,236,0.25); }
+        .wizard-btn.primary:hover { color: #fff; filter: brightness(1.05); transform: translateY(-1px); box-shadow: 0 8px 18px rgba(88,80,236,0.32); }
+        .wizard-btn:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
 
         .wizard-review-box {
-            background: #f9f9fc;
+            background: var(--surface-2);
             border: 1.5px dashed var(--border-color);
             border-radius: var(--radius-md);
             padding: 18px;
@@ -652,6 +744,14 @@
             grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             gap: 14px;
         }
+        .wizard-review-item {
+            background: var(--white);
+            border: 1px solid var(--border-color);
+            border-radius: 10px;
+            padding: 12px 14px;
+            transition: var(--transition);
+        }
+        .wizard-review-item:hover { border-color: rgba(88,80,236,0.3); box-shadow: var(--shadow-sm); }
         .wizard-review-item .rlabel { font-size: 11px; color: var(--text-light); font-weight: 700; margin-bottom: 4px; }
         .wizard-review-item .rvalue { font-size: 13.5px; font-weight: 800; color: var(--text-main); }
 
@@ -722,56 +822,59 @@
 
         /* ===== ACTION BUTTONS ===== */
         .action-btn {
-            padding: 7px 12px;
+            padding: 7px 13px;
             border-radius: 8px;
             border: none;
             cursor: pointer;
-            font-size: 13px;
+            font-size: 12.5px;
             margin-left: 4px;
             transition: var(--transition);
             font-family: inherit;
-            font-weight: 600;
+            font-weight: 700;
         }
+        .action-btn:hover { transform: translateY(-1px); }
+        .action-btn:active { transform: translateY(0); }
 
         .edit-btn {
-            background: #e3f2fd;
-            color: #1976d2;
+            background: rgba(37,99,235,0.1);
+            color: var(--admin-accent);
         }
 
         .edit-btn:hover {
-            background: #bbdefb;
+            background: rgba(37,99,235,0.18);
         }
 
         .delete-btn {
-            background: #ffebee;
-            color: #c62828;
+            background: var(--admin-danger-soft);
+            color: var(--danger);
         }
 
         .delete-btn:hover {
-            background: #ffcdd2;
+            background: rgba(225,29,72,0.18);
         }
 
         .view-btn {
-            background: #fff3e0;
-            color: #ef6c00;
+            background: var(--admin-warning-soft);
+            color: #b45309;
         }
 
         .view-btn:hover {
-            background: #ffe0b2;
+            background: rgba(245,158,11,0.2);
         }
 
         /* ===== STATUS BADGE ===== */
         .status-badge {
-            padding: 4px 10px;
-            border-radius: 6px;
+            padding: 4px 11px;
+            border-radius: var(--radius-full, 20px);
             font-size: 11px;
-            font-weight: 700;
+            font-weight: 800;
+            display: inline-block;
         }
         .status-inactive { background: #f1f1f1; color: #757575; }
-        .status-paid { background: #e3f2fd; color: #1976d2; }
-        .status-processing { background: #fff3e0; color: #ef6c00; }
-        .status-shipped { background: #e8f5e9; color: #2e7d32; }
-        .status-delivered { background: #f3e5f5; color: #7b1fa2; }
+        .status-paid { background: rgba(37,99,235,0.1); color: var(--admin-accent); }
+        .status-processing { background: var(--admin-warning-soft); color: #b45309; }
+        .status-shipped { background: var(--admin-success-soft); color: #0f8c66; }
+        .status-delivered { background: var(--admin-primary-soft2); color: var(--admin-primary); }
 
         /* ===== TAB CONTENT ===== */
         .tab-content {
@@ -1107,3 +1210,104 @@
         .charts-grid { display: grid; grid-template-columns: 1.3fr 1fr; gap: 20px; margin-bottom: 20px; }
         @media (max-width: 900px) { .charts-grid { grid-template-columns: 1fr; } }
         .chart-card-box { position: relative; height: 260px; }
+        /* =========================================================
+           FAZ 4 — بازبینی نهایی ریسپانسیو + میکرو-اینترکشن‌ها
+           هیچ id/class/onclickـی که admin.js به آن وابسته است تغییر
+           نکرده؛ این بخش فقط رفتار بصری (hover/focus/active)، حالت‌های
+           فوکوس کیبورد (دسترس‌پذیری)، و رفع چند شکاف ریسپانسیو در
+           سایزهای خیلی کوچک (زیر ۳۸۰px) و خیلی بزرگ را اضافه می‌کند.
+           ========================================================= */
+
+        /* ---- Focus-visible سراسری (فقط برای ناوبری با کیبورد) ---- */
+        button:focus-visible,
+        a:focus-visible,
+        input:focus-visible,
+        select:focus-visible,
+        textarea:focus-visible,
+        [tabindex]:focus-visible {
+            outline: 2px solid var(--admin-primary);
+            outline-offset: 2px;
+            border-radius: 6px;
+        }
+        /* داخل عناصر گرد (آیکون‌ها/دکمه‌های دایره‌ای) outline باید خودش گرد بماند */
+        .hamburger-btn:focus-visible,
+        .sidebar-close-btn:focus-visible,
+        .close-modal:focus-visible,
+        .audit-icon:focus-visible {
+            outline-offset: 1px;
+            border-radius: 50%;
+        }
+
+        /* ---- میکرو-اینترکشن فشردن (press) روی دکمه‌های اصلی ---- */
+        .btn-submit:active:not(:disabled),
+        .wizard-btn:active:not(:disabled),
+        .action-btn:active,
+        .type-btn:active,
+        .preset-color-btn:active,
+        .quick-edit-save-btn:active,
+        .hamburger-btn:active,
+        .sidebar-close-btn:active,
+        .auth-gate-btn:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+        .admin-menu li:active { transform: scale(0.99); }
+
+        /* ---- انیمیشن ورود نرم‌تر مودال (backdrop + content با هم) ---- */
+        .modal-overlay {
+            transition: opacity 0.25s ease;
+            opacity: 0;
+        }
+        .modal-overlay.open { opacity: 1; }
+
+        /* ---- Toast: فاصله ایمن از پایین در موبایل (کشوی خانگی iOS/Android) ---- */
+        .toast {
+            bottom: calc(20px + env(safe-area-inset-bottom, 0px));
+        }
+
+        /* ---- حداقل اندازه‌ی لمسی استاندارد (۴۴px) برای ورودی‌های موبایل ---- */
+        @media (max-width: 900px) {
+            input, select, textarea, .btn-submit, .wizard-btn, .type-btn {
+                min-height: 40px;
+            }
+            .action-btn { min-height: 34px; }
+        }
+
+        /* ---- رفع شکاف ریسپانسیو: سایزهای خیلی کوچک (زیر ۳۸۰px) ---- */
+        @media (max-width: 380px) {
+            .admin-main { padding: 12px; }
+            .page-header h2 { font-size: 19px; }
+            .stat-card { padding: 16px 14px; gap: 10px; }
+            .stat-card > div:first-child { width: 44px; height: 44px; font-size: 16px !important; }
+            .wizard-step-dot { width: 30px; height: 30px; font-size: 12px; }
+            .modal-content { padding: 18px; width: 94%; }
+            .order-details-grid { gap: 12px; }
+            .auth-gate-card { padding: 28px 20px; }
+            .mobile-topbar .mt-brand { font-size: 13px; }
+        }
+
+        /* ---- نمودارها: در خیلی موبایل‌های کوچک ارتفاع کمتر تا اسکرول افقی/فشردگی نداشته باشیم ---- */
+        @media (max-width: 480px) {
+            .chart-card-box { height: 220px; }
+        }
+
+        /* ---- ویزارد: در موبایل، نوار مراحل نباید باعث اسکرول افقی کل صفحه شود ---- */
+        @media (max-width: 480px) {
+            .wizard-steps-bar { margin-bottom: 20px; }
+            .wizard-step-dot-wrap { min-width: 54px; }
+            .wizard-nav-bar { flex-wrap: wrap; gap: 10px; }
+            .wizard-nav-bar .wizard-btn { flex: 1 1 auto; justify-content: center; }
+        }
+
+        /* ---- کارت‌های آماری در موبایل خیلی کوچک: آیکون و عدد در یک ردیف فشرده اما خوانا ---- */
+        @media (max-width: 340px) {
+            .stats-grid { gap: 12px; }
+        }
+
+        /* ---- احترام به کاربرانی که انیمیشن کمتر می‌خواهند ---- */
+        @media (prefers-reduced-motion: reduce) {
+            *, *::before, *::after {
+                animation-duration: 0.001ms !important;
+                animation-iteration-count: 1 !important;
+                transition-duration: 0.001ms !important;
+            }
+        }
