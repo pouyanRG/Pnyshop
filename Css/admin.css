@@ -437,7 +437,37 @@
             line-height: 1.7;
         }
 
-        .btn-submit {
+        /* ===== SELECT — دراپ‌داون مدرن با فلش سفارشی
+           (شامل #cp-discount-type و همه‌ی select های پنل) ===== */
+        select {
+            appearance: none;
+            -webkit-appearance: none;
+            -moz-appearance: none;
+            padding-inline-end: 38px;
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A8F98' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: left 13px center;
+            background-size: 15px;
+            cursor: pointer;
+        }
+        select:focus {
+            background-image: url("data:image/svg+xml;charset=UTF-8,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%235850EC' stroke-width='2.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
+        }
+        select:disabled {
+            opacity: 0.55;
+            cursor: not-allowed;
+            background-color: var(--surface-2);
+        }
+        select option {
+            font-family: 'Vazirmatn', sans-serif;
+            padding: 8px;
+        }
+
+        /* ===== BUTTONS — .btn-submit + الگوی جایگزین .submit-btn
+           (برخی صفحات/فرم‌ها از کلاس قدیمی‌تر submit-btn استفاده
+           می‌کنند؛ استایل عیناً یکسان تا هیچ دکمه‌ای بی‌استایل نماند) ===== */
+        .btn-submit,
+        .submit-btn {
             background: var(--gradient-primary);
             color: white;
             border: none;
@@ -457,14 +487,17 @@
             gap: 8px;
         }
 
-        .btn-submit:hover {
+        .btn-submit:hover,
+        .submit-btn:hover {
             transform: translateY(-2px);
             box-shadow: 0 10px 24px rgba(88,80,236,0.36);
             filter: brightness(1.04);
         }
-        .btn-submit:active { transform: translateY(0); }
+        .btn-submit:active,
+        .submit-btn:active { transform: translateY(0); }
 
-        .btn-submit:disabled {
+        .btn-submit:disabled,
+        .submit-btn:disabled {
             background: #c9c6f5;
             cursor: not-allowed;
             transform: none;
@@ -519,6 +552,31 @@
             background: var(--admin-primary);
         }
 
+        /* ===== PRODUCT TABLE BODY — پالیش مدرن اختصاصی
+           (ردیف‌های محصول: تصویر بزرگ‌تر، عنوان/برند خواناتر،
+           بج قیمت/موجودی مرتب‌تر — بدون تغییر ساختار HTML/JS) ===== */
+        #productTableBody tr {
+            animation: fadeIn 0.25s ease both;
+        }
+        #productTableBody tr:nth-child(even) {
+            background: var(--surface-2);
+        }
+        #productTableBody tr:nth-child(even):hover {
+            background: var(--admin-primary-soft);
+        }
+        #productTableBody td {
+            vertical-align: middle;
+        }
+        #productTableBody strong,
+        #productTableBody b {
+            color: var(--text-main);
+            font-weight: 800;
+        }
+        #productTableBody small {
+            color: var(--text-light);
+            font-weight: 600;
+        }
+
         .prod-img {
             width: 52px;
             height: 52px;
@@ -526,6 +584,11 @@
             border-radius: var(--radius-md);
             border: 1px solid var(--border-color);
             box-shadow: var(--shadow-sm);
+            transition: var(--transition);
+        }
+        #productTableBody tr:hover .prod-img {
+            transform: scale(1.06);
+            box-shadow: var(--shadow-md);
         }
 
         /* ===== CATEGORY CASCADES ===== */
@@ -587,18 +650,95 @@
             margin-top: 12px;
         }
 
-        .preset-color-btn {
+        /* ===== PRESET COLOR BUTTONS — .preset-color-btn + الگوی
+           جایگزین .preset-btn (نسخه‌ی قدیمی‌تر admin.html که از
+           <span style="background:...">رنگ</span> داخل دکمه استفاده
+           می‌کند). هر دو اکنون دقیقاً هم‌شکل و مدرن هستند. ===== */
+        .preset-colors,
+        .preset-colors-container { margin-bottom: 4px; }
+        .preset-colors-label { font-size: 11px; color: var(--text-light); font-weight: 700; display: block; margin-bottom: 8px; }
+        .preset-colors,
+        .preset-colors-grid {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-bottom: 12px;
+        }
+
+        .preset-color-btn,
+        .preset-btn {
             display: flex;
             align-items: center;
-            gap: 6px;
-            padding: 6px 12px;
+            gap: 7px;
+            padding: 7px 13px 7px 10px;
+            border: 1.5px solid var(--border-color);
+            background: var(--white);
+            border-radius: var(--radius-full, 999px);
+            cursor: pointer;
+            font-size: 12px;
+            font-weight: 700;
+            font-family: inherit;
+            color: var(--text-main);
+            transition: var(--transition);
         }
-        .preset-swatch {
-            width: 14px;
-            height: 14px;
+        .preset-color-btn:hover,
+        .preset-btn:hover {
+            border-color: var(--admin-primary);
+            background: var(--admin-primary-soft);
+            color: var(--admin-primary);
+            transform: translateY(-1px);
+            box-shadow: var(--shadow-sm);
+        }
+        .preset-color-btn:active,
+        .preset-btn:active { transform: translateY(0) scale(0.97); }
+
+        .preset-swatch,
+        .preset-btn span {
+            width: 16px;
+            height: 16px;
             border-radius: 50%;
             display: inline-block;
-            border: 1.5px solid #ccc;
+            border: 1.5px solid rgba(0,0,0,0.12);
+            box-shadow: inset 0 0 0 2px var(--white);
+            flex-shrink: 0;
+        }
+
+        .custom-color-input,
+        .color-inputs {
+            display: flex;
+            gap: 10px;
+            margin-top: 12px;
+            flex-wrap: wrap;
+        }
+        .custom-color-input input[type="text"],
+        .custom-color-input input[type="color"] {
+            flex: 1;
+            min-width: 120px;
+        }
+        .custom-color-input input[type="color"] {
+            flex: 0 0 54px;
+            padding: 4px;
+            height: 44px;
+            cursor: pointer;
+        }
+        .custom-color-input button,
+        .primary-btn {
+            flex-shrink: 0;
+            background: var(--gradient-primary) !important;
+            color: #fff !important;
+            border: none !important;
+            border-radius: var(--radius-md) !important;
+            padding: 0 18px !important;
+            font-weight: 800 !important;
+            cursor: pointer;
+            transition: var(--transition);
+            box-shadow: 0 4px 12px rgba(88,80,236,0.25);
+        }
+        .custom-color-input button:hover,
+        .primary-btn:hover {
+            transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(88,80,236,0.32);
+            filter: brightness(1.05);
         }
 
         /* ===== IMAGE INPUT ===== */
@@ -704,6 +844,66 @@
             transition: background 0.4s ease;
         }
         .wizard-step-line.done { background: var(--admin-success); }
+
+        /* ===== نسخه‌ی قدیمی نام‌گذاری ویزارد (.wizard-header /
+           .wizard-line / .wizard-nav) — دقیقاً همان چیدمان افقی بالا،
+           چون این کلاس‌ها در برخی صفحات به‌جای wizard-steps-bar/
+           wizard-step-line/wizard-nav-bar استفاده شده‌اند و بدون این
+           بلوک، دات‌های ویزارد به‌صورت پیش‌فرض بلاکی و عمودی می‌افتند. ===== */
+        .wizard-header {
+            display: flex;
+            align-items: center;
+            margin-bottom: 28px;
+            overflow-x: auto;
+            padding-bottom: 4px;
+        }
+        .wizard-line {
+            flex: 1;
+            min-width: 24px;
+            height: 3px;
+            background: var(--admin-primary-soft2);
+            margin: 0 6px 22px;
+            border-radius: 2px;
+            transition: background 0.4s ease;
+        }
+        .wizard-line.done { background: var(--admin-success); }
+        .wizard-nav {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-top: 24px;
+            padding-top: 18px;
+            border-top: 1px dashed var(--border-color);
+            gap: 12px;
+        }
+        .wizard-nav .wizard-btn,
+        .wizard-nav .wizard-next,
+        .wizard-nav .wizard-prev {
+            padding: 12px 22px;
+            border-radius: var(--radius-md);
+            font-weight: 800;
+            font-size: 13.5px;
+            cursor: pointer;
+            border: 1.5px solid var(--border-color);
+            background: var(--white);
+            color: var(--text-main);
+            transition: var(--transition);
+            display: flex; align-items: center; gap: 8px;
+            font-family: inherit;
+        }
+        .wizard-nav .wizard-btn:hover,
+        .wizard-nav .wizard-next:hover,
+        .wizard-nav .wizard-prev:hover {
+            border-color: var(--admin-primary); color: var(--admin-primary); background: var(--admin-primary-soft);
+        }
+        .wizard-nav .wizard-next {
+            background: var(--gradient-primary); color: #fff; border-color: transparent;
+            box-shadow: 0 4px 12px rgba(88,80,236,0.25); margin-inline-start: auto;
+        }
+        .wizard-nav .wizard-next:hover {
+            color: #fff; filter: brightness(1.05); transform: translateY(-1px);
+            box-shadow: 0 8px 18px rgba(88,80,236,0.32);
+        }
 
         .wizard-pane { display: none; animation: fadeIn 0.3s ease; }
         .wizard-pane.active { display: block; }
@@ -1118,7 +1318,7 @@
             .stats-grid { grid-template-columns: 1fr 1fr; }
             .input-grid { grid-template-columns: 1fr; }
             .order-details-grid { grid-template-columns: 1fr; }
-            .wizard-steps-bar { gap: 2px; }
+            .wizard-steps-bar, .wizard-header { gap: 2px; }
             .wizard-step-label { display: none; }
         }
         @media (max-width: 480px) {
@@ -1163,6 +1363,7 @@
             }
             .table-wrapper td[data-label=""]::before,
             .table-wrapper td:not([data-label])::before { content: ''; }
+            #productTableBody tr:nth-child(even) { background: var(--white); }
         }
 
         /* ===== BULK ACTIONS BAR ===== */
@@ -1240,10 +1441,14 @@
 
         /* ---- میکرو-اینترکشن فشردن (press) روی دکمه‌های اصلی ---- */
         .btn-submit:active:not(:disabled),
+        .submit-btn:active:not(:disabled),
         .wizard-btn:active:not(:disabled),
+        .wizard-nav .wizard-next:active,
+        .wizard-nav .wizard-prev:active,
         .action-btn:active,
         .type-btn:active,
         .preset-color-btn:active,
+        .preset-btn:active,
         .quick-edit-save-btn:active,
         .hamburger-btn:active,
         .sidebar-close-btn:active,
@@ -1266,7 +1471,7 @@
 
         /* ---- حداقل اندازه‌ی لمسی استاندارد (۴۴px) برای ورودی‌های موبایل ---- */
         @media (max-width: 900px) {
-            input, select, textarea, .btn-submit, .wizard-btn, .type-btn {
+            input, select, textarea, .btn-submit, .submit-btn, .wizard-btn, .type-btn {
                 min-height: 40px;
             }
             .action-btn { min-height: 34px; }
@@ -1292,10 +1497,13 @@
 
         /* ---- ویزارد: در موبایل، نوار مراحل نباید باعث اسکرول افقی کل صفحه شود ---- */
         @media (max-width: 480px) {
-            .wizard-steps-bar { margin-bottom: 20px; }
+            .wizard-steps-bar, .wizard-header { margin-bottom: 20px; }
             .wizard-step-dot-wrap { min-width: 54px; }
-            .wizard-nav-bar { flex-wrap: wrap; gap: 10px; }
-            .wizard-nav-bar .wizard-btn { flex: 1 1 auto; justify-content: center; }
+            .wizard-nav-bar, .wizard-nav { flex-wrap: wrap; gap: 10px; }
+            .wizard-nav-bar .wizard-btn,
+            .wizard-nav .wizard-btn,
+            .wizard-nav .wizard-next,
+            .wizard-nav .wizard-prev { flex: 1 1 auto; justify-content: center; }
         }
 
         /* ---- کارت‌های آماری در موبایل خیلی کوچک: آیکون و عدد در یک ردیف فشرده اما خوانا ---- */
