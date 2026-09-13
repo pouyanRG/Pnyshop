@@ -99,12 +99,18 @@
             }
         }
 
+        let reportsRangeDays = 14;
         let revenueChartInstance = null;
-        let statusChartInstance = null;
+        let statusChartInstance = null;          // بازه‌ی زمانی فعال نمودارها (۷/۱۴/۳۰/۹۰ روز)
+        let topProductsChartInstance = null;
+        let aovChartInstance = null;
 
         async function fetchOrdersForDashboard() {
             try {
-                const q = window.fbQuery(window.fbCollection(window.fbDb, 'orders'), window.fbOrderBy('createdAt', 'desc'), window.fbLimit(500));
+                // برای بازه‌های بزرگ‌تر (۹۰ روز)، سقف دریافت را بالاتر می‌بریم
+                // تا داده‌ی کافی برای محاسبه‌ی روند در دسترس باشد.
+                const fetchLimit = reportsRangeDays > 30 ? 1000 : 500;
+                const q = window.fbQuery(window.fbCollection(window.fbDb, 'orders'), window.fbOrderBy('createdAt', 'desc'), window.fbLimit(fetchLimit));
                 const snap = await window.fbGetDocs(q);
                 const list = [];
                 snap.forEach(d => list.push(d.data()));
@@ -115,16 +121,19 @@
             }
         }
 
+
         async function renderDashboardCharts() {
             const badge = document.getElementById('chartsLoadingBadge');
-            if (badge) badge.style.display = 'inline';
+            if (badge) badge.style.display = 'inline-flex';
             const orders = await fetchOrdersForDashboard();
             if (badge) badge.style.display = 'none';
 
+            // ===== ساخت آرایه‌ی روزهای بازه‌ی انتخابی =====
             const days = [];
             const revenueByDay = {};
             const countByDay = {};
-            for (let i = 13; i >= 0; i--) {
+            const totalRangeDays = reportsRangeDays;
+            for (let i = totalRangeDays - 1; i >= 0; i--) {
                 const d = new Date();
                 d.setDate(d.getDate() - i);
                 const key = d.toLocaleDateString('en-CA');
@@ -132,21 +141,110 @@
                 revenueByDay[key] = 0;
                 countByDay[key] = 0;
             }
+
+            // ===== بازه‌ی مقایسه (دوره‌ی مشابهِ بلافاصله قبل) برای محاسبه‌ی رشد =====
+            const prevStart = new Date();
+            prevStart.setDate(prevStart.getDate() - (totalRangeDays * 2 - 1));
+            prevStart.setHours(0, 0, 0, 0);
+            const prevEnd = new Date();
+            prevEnd.setDate(prevEnd.getDate() - totalRangeDays);
+            prevEnd.setHours(23, 59, 59, 999);
+            const currStart = new Date();
+            currStart.setDate(currStart.getDate() - (totalRangeDays - 1));
+            currStart.setHours(0, 0, 0, 0);
+
+            let currRevenue = 0, currCount = 0, prevRevenue = 0, prevCount = 0;
+            let totalOrdersInRange = 0, successfulInRange = 0;
+            const productQtyMap = new Map(); // productId -> { name, qty }
+
             orders.forEach(o => {
-                if (!o.createdAt || o.status === 'failed_payment' || o.status === 'pending_payment') return;
-                const key = new Date(o.createdAt).toLocaleDateString('en-CA');
-                if (revenueByDay[key] !== undefined) {
+                if (!o.createdAt) return;
+                const created = new Date(o.createdAt);
+                const key = created.toLocaleDateString('en-CA');
+                const isCounted = o.status !== 'failed_payment' && o.status !== 'pending_payment';
+
+                if (revenueByDay[key] !== undefined && isCounted) {
                     revenueByDay[key] += (parseInt(o.totalAmount) || 0);
                     countByDay[key] += 1;
                 }
+
+                if (created >= currStart) {
+                    totalOrdersInRange++;
+                    if (isCounted) {
+                        successfulInRange++;
+                        currRevenue += (parseInt(o.totalAmount) || 0);
+                        currCount++;
+                        // جمع‌آوری تعداد فروش هر محصول برای نمودار پرفروش‌ترین‌ها
+                        if (Array.isArray(o.items)) {
+                            o.items.forEach(item => {
+                                const pid = item.id;
+                                const productMeta = cachedProducts.find(p => p.id == pid);
+                                const name = (productMeta && productMeta.name) || item.name || 'محصول حذف‌شده';
+                                const qty = Number(item.qty) || 0;
+                                if (!productQtyMap.has(pid)) productQtyMap.set(pid, { name, qty: 0 });
+                                productQtyMap.get(pid).qty += qty;
+                            });
+                        }
+                    }
+                } else if (created >= prevStart && created <= prevEnd && isCounted) {
+                    prevRevenue += (parseInt(o.totalAmount) || 0);
+                    prevCount++;
+                }
             });
+
             const dayLabels = days.map(k => new Date(k).toLocaleDateString('fa-IR', { month: 'short', day: 'numeric' }));
             const revenueData = days.map(k => revenueByDay[k]);
             const countData = days.map(k => countByDay[k]);
+            const aovData = days.map(k => countByDay[k] > 0 ? Math.round(revenueByDay[k] / countByDay[k]) : 0);
 
+            // ===== محاسبه و نمایش نشانگرهای رشد/کاهش روی کارت‌های KPI =====
+            function trendHtml(curr, prev) {
+                if (prev === 0 && curr === 0) return '<i class="fas fa-minus"></i> بدون تغییر';
+                if (prev === 0) return '<i class="fas fa-arrow-up"></i> رشد جدید';
+                const pct = ((curr - prev) / prev) * 100;
+                const rounded = Math.abs(pct).toFixed(1);
+                if (pct > 0.5) return `<i class="fas fa-arrow-up"></i> ${rounded.toLocaleString('fa-IR')}٪ رشد`;
+                if (pct < -0.5) return `<i class="fas fa-arrow-down"></i> ${rounded.toLocaleString('fa-IR')}٪ کاهش`;
+                return '<i class="fas fa-minus"></i> بدون تغییر محسوس';
+            }
+
+            const salesTrendEl = document.getElementById('report-sales-trend');
+            const deliveredTrendEl = document.getElementById('report-delivered-trend');
+            const aovTrendEl = document.getElementById('report-aov-trend');
+            const successRateEl = document.getElementById('report-success-rate');
+            const successTrendEl = document.getElementById('report-success-trend');
+
+            if (salesTrendEl) {
+                salesTrendEl.innerHTML = trendHtml(currRevenue, prevRevenue);
+                salesTrendEl.className = 'kpi-trend ' + (currRevenue >= prevRevenue ? 'up' : 'down');
+            }
+            if (deliveredTrendEl) {
+                deliveredTrendEl.innerHTML = trendHtml(currCount, prevCount);
+                deliveredTrendEl.className = 'kpi-trend ' + (currCount >= prevCount ? 'up' : 'down');
+            }
+            const currAOV = currCount > 0 ? currRevenue / currCount : 0;
+            const prevAOV = prevCount > 0 ? prevRevenue / prevCount : 0;
+            if (aovTrendEl) {
+                aovTrendEl.innerHTML = trendHtml(currAOV, prevAOV);
+                aovTrendEl.className = 'kpi-trend ' + (currAOV >= prevAOV ? 'up' : 'down');
+            }
+            if (successRateEl) {
+                const rate = totalOrdersInRange > 0 ? Math.round((successfulInRange / totalOrdersInRange) * 100) : 0;
+                successRateEl.innerText = rate.toLocaleString('fa-IR') + '٪';
+            }
+            if (successTrendEl) {
+                successTrendEl.innerHTML = `<i class="fas fa-info-circle"></i> از ${totalOrdersInRange.toLocaleString('fa-IR')} سفارش ثبت‌شده در بازه`;
+            }
+
+            // ===== نمودار روند فروش + تعداد سفارشات =====
             const revenueCanvas = document.getElementById('revenueChart');
             if (revenueCanvas && window.Chart) {
                 if (revenueChartInstance) revenueChartInstance.destroy();
+                const ctx = revenueCanvas.getContext('2d');
+                const gradientFill = ctx.createLinearGradient(0, 0, 0, 260);
+                gradientFill.addColorStop(0, 'rgba(88,80,236,0.35)');
+                gradientFill.addColorStop(1, 'rgba(88,80,236,0.02)');
+
                 revenueChartInstance = new Chart(revenueCanvas, {
                     type: 'bar',
                     data: {
@@ -154,30 +252,47 @@
                         datasets: [
                             {
                                 type: 'line', label: 'تعداد سفارش', data: countData, yAxisID: 'y1',
-                                borderColor: '#0984e3', backgroundColor: '#0984e3', tension: 0.35, pointRadius: 3
+                                borderColor: '#2563EB', backgroundColor: '#2563EB', tension: 0.4, pointRadius: 3,
+                                pointBackgroundColor: '#fff', pointBorderColor: '#2563EB', pointBorderWidth: 2,
+                                order: 0
                             },
                             {
                                 type: 'bar', label: 'فروش (تومان)', data: revenueData, yAxisID: 'y',
-                                backgroundColor: 'rgba(99,102,241,0.55)', borderRadius: 6, maxBarThickness: 26
+                                backgroundColor: gradientFill, borderColor: '#5850EC', borderWidth: 1.5,
+                                borderRadius: 8, maxBarThickness: 28, order: 1
                             }
                         ]
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
-                        plugins: { title: { display: true, text: 'روند فروش و سفارشات (۱۴ روز اخیر)', font: { family: 'Vazirmatn', size: 13 } }, legend: { labels: { font: { family: 'Vazirmatn' } } } },
+                        interaction: { mode: 'index', intersect: false },
+                        plugins: {
+                            legend: { position: 'top', align: 'end', labels: { font: { family: 'Vazirmatn', size: 11.5 }, usePointStyle: true, boxWidth: 8 } },
+                            tooltip: {
+                                rtl: true, titleFont: { family: 'Vazirmatn' }, bodyFont: { family: 'Vazirmatn' },
+                                backgroundColor: 'rgba(31,36,48,0.92)', padding: 12, cornerRadius: 10,
+                                callbacks: {
+                                    label: function (ctx2) {
+                                        if (ctx2.dataset.yAxisID === 'y') return ' فروش: ' + Number(ctx2.parsed.y).toLocaleString('fa-IR') + ' تومان';
+                                        return ' سفارش: ' + Number(ctx2.parsed.y).toLocaleString('fa-IR');
+                                    }
+                                }
+                            }
+                        },
                         scales: {
-                            y: { position: 'left', ticks: { font: { family: 'Vazirmatn' }, callback: v => v.toLocaleString('fa-IR') } },
+                            y: { position: 'left', grid: { color: 'rgba(0,0,0,0.04)' }, ticks: { font: { family: 'Vazirmatn' }, callback: v => (v >= 1000000 ? (v / 1000000).toLocaleString('fa-IR') + 'M' : v.toLocaleString('fa-IR')) } },
                             y1: { position: 'right', grid: { drawOnChartArea: false }, ticks: { font: { family: 'Vazirmatn' }, precision: 0 } },
-                            x: { ticks: { font: { family: 'Vazirmatn' } } }
+                            x: { grid: { display: false }, ticks: { font: { family: 'Vazirmatn' }, maxRotation: 0, autoSkip: true } }
                         }
                     }
                 });
             }
 
+            // ===== نمودار توزیع وضعیت سفارشات =====
             const statusCounts = { pending_payment: 0, paid: 0, processing: 0, shipped: 0, delivered: 0, failed_payment: 0 };
             orders.forEach(o => { if (statusCounts[o.status] !== undefined) statusCounts[o.status]++; });
             const statusLabelsFa = { pending_payment: 'در انتظار پرداخت', paid: 'پرداخت‌شده', processing: 'پردازش انبار', shipped: 'ارسال‌شده', delivered: 'تحویل‌شده', failed_payment: 'ناموفق' };
-            const statusColors = { pending_payment: '#fdcb6e', paid: '#0984e3', processing: '#f59e0b', shipped: '#00b894', delivered: '#6c5ce7', failed_payment: '#d63031' };
+            const statusColors = { pending_payment: '#F59E0B', paid: '#2563EB', processing: '#8B5CF6', shipped: '#10B981', delivered: '#5850EC', failed_payment: '#E11D48' };
 
             const statusCanvas = document.getElementById('statusChart');
             if (statusCanvas && window.Chart) {
@@ -187,15 +302,92 @@
                     type: 'doughnut',
                     data: {
                         labels: keys.map(k => statusLabelsFa[k]),
-                        datasets: [{ data: keys.map(k => statusCounts[k]), backgroundColor: keys.map(k => statusColors[k]) }]
+                        datasets: [{ data: keys.map(k => statusCounts[k]), backgroundColor: keys.map(k => statusColors[k]), borderWidth: 3, borderColor: '#fff', hoverOffset: 8 }]
+                    },
+                    options: {
+                        responsive: true, maintainAspectRatio: false, cutout: '68%',
+                        plugins: {
+                            legend: { position: 'bottom', labels: { font: { family: 'Vazirmatn', size: 11 }, usePointStyle: true, boxWidth: 8, padding: 14 } },
+                            tooltip: { rtl: true, titleFont: { family: 'Vazirmatn' }, bodyFont: { family: 'Vazirmatn' }, backgroundColor: 'rgba(31,36,48,0.92)', padding: 10, cornerRadius: 10 }
+                        }
+                    }
+                });
+            }
+
+            // ===== نمودار جدید: پرفروش‌ترین محصولات بازه انتخابی =====
+            const topProductsCanvas = document.getElementById('topProductsChart');
+            if (topProductsCanvas && window.Chart) {
+                if (topProductsChartInstance) topProductsChartInstance.destroy();
+                const topList = Array.from(productQtyMap.values()).sort((a, b) => b.qty - a.qty).slice(0, 6);
+                topProductsChartInstance = new Chart(topProductsCanvas, {
+                    type: 'bar',
+                    data: {
+                        labels: topList.map(p => p.name.length > 18 ? p.name.slice(0, 18) + '…' : p.name),
+                        datasets: [{
+                            label: 'تعداد فروش', data: topList.map(p => p.qty),
+                            backgroundColor: 'rgba(16,185,129,0.75)', borderRadius: 8, maxBarThickness: 22
+                        }]
+                    },
+                    options: {
+                        indexAxis: 'y', responsive: true, maintainAspectRatio: false,
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: { rtl: true, titleFont: { family: 'Vazirmatn' }, bodyFont: { family: 'Vazirmatn' }, backgroundColor: 'rgba(31,36,48,0.92)', padding: 10, cornerRadius: 10 }
+                        },
+                        scales: {
+                            x: { ticks: { font: { family: 'Vazirmatn' }, precision: 0 }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                            y: { ticks: { font: { family: 'Vazirmatn', size: 11 } }, grid: { display: false } }
+                        }
+                    }
+                });
+                // اگر داده‌ای برای این بازه نبود، پیام مناسب نشان بده
+                if (!topList.length) {
+                    const ctxTop = topProductsCanvas.getContext('2d');
+                    ctxTop.save();
+                    ctxTop.font = "13px Vazirmatn";
+                    ctxTop.fillStyle = "#9CA3AF";
+                    ctxTop.textAlign = "center";
+                    ctxTop.fillText("داده‌ای برای این بازه یافت نشد", topProductsCanvas.width / 2, topProductsCanvas.height / 2);
+                    ctxTop.restore();
+                }
+            }
+
+            // ===== نمودار جدید: روند میانگین ارزش سفارش =====
+            const aovCanvas = document.getElementById('aovChart');
+            if (aovCanvas && window.Chart) {
+                if (aovChartInstance) aovChartInstance.destroy();
+                aovChartInstance = new Chart(aovCanvas, {
+                    type: 'line',
+                    data: {
+                        labels: dayLabels,
+                        datasets: [{
+                            label: 'میانگین ارزش سفارش', data: aovData,
+                            borderColor: '#F59E0B', backgroundColor: 'rgba(245,158,11,0.12)',
+                            tension: 0.4, fill: true, pointRadius: 2.5, pointBackgroundColor: '#F59E0B'
+                        }]
                     },
                     options: {
                         responsive: true, maintainAspectRatio: false,
-                        plugins: { title: { display: true, text: 'توزیع وضعیت سفارشات', font: { family: 'Vazirmatn', size: 13 } }, legend: { position: 'bottom', labels: { font: { family: 'Vazirmatn' } } } }
+                        plugins: {
+                            legend: { display: false },
+                            tooltip: {
+                                rtl: true, titleFont: { family: 'Vazirmatn' }, bodyFont: { family: 'Vazirmatn' },
+                                backgroundColor: 'rgba(31,36,48,0.92)', padding: 10, cornerRadius: 10,
+                                callbacks: { label: ctx3 => ' میانگین: ' + Number(ctx3.parsed.y).toLocaleString('fa-IR') + ' تومان' }
+                            }
+                        },
+                        scales: {
+                            y: { ticks: { font: { family: 'Vazirmatn' }, callback: v => Number(v).toLocaleString('fa-IR') }, grid: { color: 'rgba(0,0,0,0.04)' } },
+                            x: { grid: { display: false }, ticks: { font: { family: 'Vazirmatn' }, maxRotation: 0, autoSkip: true } }
+                        }
                     }
                 });
             }
         }
+
+
+
+ 
 
         const ORDERS_PAGE_SIZE = 15;
         let ordersPageCursors = [null];
@@ -810,7 +1002,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             el.classList.add('active');
             document.getElementById('tab-title').innerText = el.innerText.trim();
             if (tabName === 'orders') renderOrders();
-            else if (tabName === 'reports') renderReports();
+            else if (tabName === 'reports') { renderReports(); renderDashboardCharts(); } // ← تغییر: رفرش نمودارها هم انجام می‌شود
             else if (tabName === 'slider') renderCurrentTimerSettings();
             else if (tabName === 'coupons') { populateCouponScopeCategories(); loadCouponsFromFirestore(); }
             else if (tabName === 'audit') loadAuditLog();
