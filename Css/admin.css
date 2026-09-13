@@ -1519,3 +1519,198 @@
                 transition-duration: 0.001ms !important;
             }
         }
+
+        /* =========================================================
+   REPORTS TAB — بازطراحی مدرن (Faz Reports Redesign)
+   هیچ‌کدام از کلاس‌ها/IDهای قدیمی حذف نشده‌اند؛ این بلوک فقط
+   کلاس‌های جدید مخصوص بخش گزارشات را اضافه می‌کند.
+   ========================================================= */
+
+/* ---- Toolbar بالای صفحه ---- */
+.reports-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    flex-wrap: wrap;
+    gap: 16px;
+    margin-bottom: 22px;
+}
+.reports-toolbar-title h3 {
+    margin: 0 0 4px;
+    font-size: 19px;
+    font-weight: 900;
+    color: var(--text-main);
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+.reports-toolbar-title h3 i { color: var(--admin-primary); }
+.reports-toolbar-title p {
+    margin: 0;
+    font-size: 12.5px;
+    color: var(--text-light);
+    font-weight: 600;
+}
+
+.reports-range-group {
+    display: flex;
+    gap: 6px;
+    background: var(--surface-2);
+    padding: 5px;
+    border-radius: var(--radius-full, 999px);
+    border: 1px solid var(--border-color);
+    flex-shrink: 0;
+}
+.range-chip {
+    border: none;
+    background: transparent;
+    padding: 8px 16px;
+    border-radius: var(--radius-full, 999px);
+    font-family: inherit;
+    font-size: 12.5px;
+    font-weight: 800;
+    color: var(--text-light);
+    cursor: pointer;
+    transition: var(--transition);
+}
+.range-chip:hover { color: var(--admin-primary); }
+.range-chip.active {
+    background: var(--gradient-primary);
+    color: #fff;
+    box-shadow: 0 4px 12px rgba(88,80,236,0.3);
+}
+
+/* ---- کارت‌های KPI ---- */
+.reports-kpi-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(230px, 1fr));
+    gap: 18px;
+    margin-bottom: 24px;
+}
+.kpi-card {
+    position: relative;
+    background: var(--white);
+    border-radius: var(--radius-lg);
+    padding: 20px;
+    display: flex;
+    align-items: flex-start;
+    gap: 14px;
+    border: 1px solid var(--border-color);
+    box-shadow: var(--shadow-sm);
+    overflow: hidden;
+    transition: var(--transition);
+}
+.kpi-card::before {
+    content: '';
+    position: absolute;
+    inset: 0 auto 0 0;
+    width: 4px;
+    border-radius: 4px 0 0 4px;
+}
+.kpi-card:hover { box-shadow: var(--shadow-lg); transform: translateY(-3px); }
+
+.kpi-primary::before { background: var(--admin-primary); }
+.kpi-success::before { background: var(--admin-success); }
+.kpi-info::before { background: var(--admin-accent); }
+.kpi-warning::before { background: var(--warning); }
+
+.kpi-icon {
+    width: 46px;
+    height: 46px;
+    border-radius: var(--radius-md);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 18px;
+    flex-shrink: 0;
+}
+.kpi-primary .kpi-icon { background: var(--admin-primary-soft); color: var(--admin-primary); }
+.kpi-success .kpi-icon { background: var(--admin-success-soft); color: var(--admin-success); }
+.kpi-info .kpi-icon { background: rgba(37,99,235,0.1); color: var(--admin-accent); }
+.kpi-warning .kpi-icon { background: var(--admin-warning-soft); color: #b45309; }
+
+.kpi-body { flex: 1; min-width: 0; }
+.kpi-body small {
+    display: block;
+    font-size: 11.5px;
+    font-weight: 700;
+    color: var(--text-light);
+    margin-bottom: 6px;
+}
+.kpi-body h3 {
+    margin: 0 0 8px;
+    font-size: 20px;
+    font-weight: 900;
+    color: var(--text-main);
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+.kpi-trend {
+    display: inline-flex;
+    align-items: center;
+    gap: 5px;
+    font-size: 11px;
+    font-weight: 800;
+    padding: 3px 9px;
+    border-radius: var(--radius-full, 999px);
+    background: var(--surface-2);
+    color: var(--text-light);
+}
+.kpi-trend.up { background: var(--admin-success-soft); color: var(--admin-success); }
+.kpi-trend.down { background: var(--admin-danger-soft); color: var(--danger); }
+
+/* ---- بج لودینگ نمودارها ---- */
+.charts-loading-badge {
+    margin-inline-start: auto;
+    font-size: 11px;
+    color: var(--text-light);
+    font-weight: 700;
+    display: none;
+    align-items: center;
+    gap: 6px;
+}
+.charts-loading-badge[style*="inline"] { display: inline-flex !important; }
+
+/* ---- گرید نمودارها ---- */
+.reports-charts-grid {
+    display: grid;
+    grid-template-columns: 2fr 1fr;
+    gap: 20px;
+}
+.reports-charts-grid-2 {
+    grid-template-columns: 1fr 1fr;
+}
+.chart-box {
+    position: relative;
+    height: 300px;
+    background: var(--surface-2);
+    padding: 16px;
+    border-radius: var(--radius-md);
+    border: 1px solid var(--border-color);
+    display: flex;
+    flex-direction: column;
+}
+.chart-box canvas { flex: 1; min-height: 0; }
+.chart-box-lg { grid-column: span 1; }
+.chart-box-label {
+    font-size: 12px;
+    font-weight: 800;
+    color: var(--text-main);
+    margin-bottom: 10px;
+    display: flex;
+    align-items: center;
+    gap: 6px;
+}
+.chart-box-label i { color: var(--admin-primary); }
+
+@media (max-width: 900px) {
+    .reports-charts-grid,
+    .reports-charts-grid-2 {
+        grid-template-columns: 1fr;
+    }
+    .chart-box { height: 260px; }
+    .reports-toolbar { flex-direction: column; }
+    .reports-range-group { width: 100%; justify-content: space-between; }
+    .range-chip { flex: 1; text-align: center; }
+}
