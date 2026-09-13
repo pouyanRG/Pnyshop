@@ -749,51 +749,99 @@
                 </div>
             </section>
 
-            <!-- ===== TAB 4: REPORTS ===== -->
+            <!-- ===== TAB 4: REPORTS (بازطراحی‌شده) ===== -->
             <section id="tab-reports" class="tab-content">
-                <div class="reports-summary-cards">
-                    <div class="report-card primary">
-                        <div class="r-icon"><i class="fas fa-wallet"></i></div>
-                        <div class="r-info">
+
+                <!-- نوار ابزار بالای صفحه: عنوان + فیلتر بازه زمانی -->
+                <div class="reports-toolbar">
+                    <div class="reports-toolbar-title">
+                        <h3><i class="fas fa-chart-pie"></i> گزارشات و تحلیل عملکرد فروش</h3>
+                        <p>نمای کلی از فروش، سفارشات و روند رشد فروشگاه در بازه‌ی انتخابی</p>
+                    </div>
+                    <div class="reports-range-group" id="reportsRangeGroup" role="group" aria-label="انتخاب بازه زمانی گزارش">
+                        <button type="button" class="range-chip" data-range="7" onclick="setReportsRange(7, this)">۷ روز</button>
+                        <button type="button" class="range-chip active" data-range="14" onclick="setReportsRange(14, this)">۱۴ روز</button>
+                        <button type="button" class="range-chip" data-range="30" onclick="setReportsRange(30, this)">۳۰ روز</button>
+                        <button type="button" class="range-chip" data-range="90" onclick="setReportsRange(90, this)">۹۰ روز</button>
+                    </div>
+                </div>
+
+                <!-- کارت‌های KPI -->
+                <div class="reports-kpi-grid">
+                    <div class="kpi-card kpi-primary">
+                        <div class="kpi-icon"><i class="fas fa-wallet"></i></div>
+                        <div class="kpi-body">
                             <small>مجموع کل فروش (تحویل‌شده)</small>
                             <h3 id="report-total-sales">0 تومان</h3>
+                            <span class="kpi-trend" id="report-sales-trend"><i class="fas fa-minus"></i> در حال محاسبه...</span>
                         </div>
                     </div>
-                    <div class="report-card success">
-                        <div class="r-icon"><i class="fas fa-check-double"></i></div>
-                        <div class="r-info">
+                    <div class="kpi-card kpi-success">
+                        <div class="kpi-icon"><i class="fas fa-check-double"></i></div>
+                        <div class="kpi-body">
                             <small>تعداد سفارشات موفق</small>
                             <h3 id="report-delivered-count">0</h3>
+                            <span class="kpi-trend" id="report-delivered-trend"><i class="fas fa-minus"></i> در حال محاسبه...</span>
                         </div>
                     </div>
-                    <div class="report-card info">
-                        <div class="r-icon"><i class="fas fa-calculator"></i></div>
-                        <div class="r-info">
+                    <div class="kpi-card kpi-info">
+                        <div class="kpi-icon"><i class="fas fa-calculator"></i></div>
+                        <div class="kpi-body">
                             <small>میانگین ارزش هر سفارش</small>
                             <h3 id="report-average-order">0 تومان</h3>
+                            <span class="kpi-trend" id="report-aov-trend"><i class="fas fa-minus"></i> در حال محاسبه...</span>
+                        </div>
+                    </div>
+                    <div class="kpi-card kpi-warning">
+                        <div class="kpi-icon"><i class="fas fa-percentage"></i></div>
+                        <div class="kpi-body">
+                            <small>نرخ موفقیت پرداخت (بازه)</small>
+                            <h3 id="report-success-rate">۰٪</h3>
+                            <span class="kpi-trend" id="report-success-trend"><i class="fas fa-info-circle"></i> در حال محاسبه...</span>
                         </div>
                     </div>
                 </div>
 
-                <div class="admin-card" style="margin-top:20px;">
-                    <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
-                        <h3 style="margin:0;"><i class="fas fa-chart-bar"></i> نمودارهای تحلیلی فروش</h3>
-                        <span id="chartsLoadingBadge" class="loading-badge" style="display:none;"><i class="fas fa-spinner fa-spin"></i> در حال دریافت داده‌ها...</span>
+                <!-- نمودار اصلی: روند فروش/سفارشات + توزیع وضعیت -->
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-chart-bar" style="color: var(--admin-accent);"></i> روند فروش و تعداد سفارشات
+                        <span id="chartsLoadingBadge" class="charts-loading-badge"><i class="fas fa-spinner fa-spin"></i> در حال دریافت داده‌ها...</span>
                     </div>
-                    <div style="display:grid;grid-template-columns:repeat(auto-fit, minmax(300px, 1fr));gap:20px;">
-                        <div style="position:relative;height:260px;background:#fafafa;padding:12px;border-radius:12px;border:1px solid var(--border-color);">
+                    <div class="reports-charts-grid">
+                        <div class="chart-box chart-box-lg">
                             <canvas id="revenueChart"></canvas>
                         </div>
-                        <div style="position:relative;height:260px;background:#fafafa;padding:12px;border-radius:12px;border:1px solid var(--border-color);">
+                        <div class="chart-box">
                             <canvas id="statusChart"></canvas>
                         </div>
                     </div>
                 </div>
 
+                <!-- نمودارهای تکمیلی: پرفروش‌ترین‌ها + میانگین ارزش سفارش -->
                 <div class="admin-card">
-                    <h3><i class="fas fa-history"></i> آرشیو سفارشات تحویل داده شده</h3>
-                    <div class="table-responsive">
-                        <table class="admin-table">
+                    <div class="section-title">
+                        <i class="fas fa-fire" style="color: var(--danger);"></i> تحلیل تکمیلی بازه انتخابی
+                    </div>
+                    <div class="reports-charts-grid reports-charts-grid-2">
+                        <div class="chart-box">
+                            <div class="chart-box-label"><i class="fas fa-trophy"></i> پرفروش‌ترین محصولات (بر اساس تعداد)</div>
+                            <canvas id="topProductsChart"></canvas>
+                        </div>
+                        <div class="chart-box">
+                            <div class="chart-box-label"><i class="fas fa-chart-line"></i> روند میانگین ارزش سفارش</div>
+                            <canvas id="aovChart"></canvas>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- آرشیو سفارشات تحویل‌شده -->
+                <div class="admin-card">
+                    <div class="section-title">
+                        <i class="fas fa-history" style="color: var(--text-light);"></i> آرشیو سفارشات تحویل داده شده
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
                             <thead>
                                 <tr>
                                     <th>کد سفارش</th>
