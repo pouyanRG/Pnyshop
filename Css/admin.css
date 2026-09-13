@@ -1,24 +1,41 @@
-        :root {
-            /* هماهنگ‌شده با پالت اصلی فروشگاه (--primary در index/login/profile) */
-            --admin-primary: #6366f1;
-            --primary-hover: #4f46e5;
-            --admin-success: #00b894;
-            --admin-accent: #0984e3;
-            --info: #0984e3;
-            --warning: #fdcb6e;
-            --danger: #d63031;
-            --text-main: #3f404d;
-            --text-light: #81858b;
-            --border-color: #e0e0e2;
-            --bg-body: #f8f9fa;
+:root {
+            /* =====================================================
+               FAZ 1 — DESIGN TOKENS (بازطراحی مدرن، الهام از Canva/Gemini)
+               نام تمام متغیرها عیناً حفظ شده تا ۱۰۰۰+ خط قانون CSS و
+               کلاس‌های موجود در سراسر فایل بدون هیچ تغییری کار کنند؛
+               فقط مقادیر به یک پالت نرم‌تر، مدرن‌تر و متعادل‌تر تغییر
+               کرده‌اند. متغیرهای جدید (--*-soft, --gradient-*, ...)
+               صرفاً اضافه شده‌اند و چیزی را جایگزین نمی‌کنند.
+               ===================================================== */
+            --admin-primary: #5850EC;
+            --primary-hover: #453DE0;
+            --admin-success: #10B981;
+            --admin-accent: #2563EB;
+            --info: #2563EB;
+            --warning: #F59E0B;
+            --danger: #E11D48;
+            --text-main: #1F2430;
+            --text-light: #8A8F98;
+            --border-color: #E7E8EF;
+            --bg-body: #F5F6FA;
             --white: #ffffff;
-            --radius-md: 12px;
-            --radius-lg: 16px;
-            --shadow-sm: 0 1px 2px rgba(0,0,0,0.04);
-            --shadow-md: 0 4px 12px rgba(0,0,0,0.08);
-            --shadow-lg: 0 8px 24px rgba(0,0,0,0.12);
-            --transition: all 0.3s cubic-bezier(0.25, 0.8, 0.25, 1);
-            --sidebar-w: 250px;
+            --radius-md: 14px;
+            --radius-lg: 20px;
+            --shadow-sm: 0 1px 2px rgba(31,36,48,0.05);
+            --shadow-md: 0 6px 18px rgba(31,36,48,0.07);
+            --shadow-lg: 0 16px 40px rgba(31,36,48,0.12);
+            --transition: all 0.25s cubic-bezier(0.25, 0.8, 0.25, 1);
+            --sidebar-w: 264px;
+
+            /* ---- توکن‌های جدید (فقط افزوده، چیزی را عوض نمی‌کنند) ---- */
+            --admin-primary-soft: rgba(88,80,236,0.08);
+            --admin-primary-soft2: rgba(88,80,236,0.14);
+            --admin-success-soft: rgba(16,185,129,0.10);
+            --admin-danger-soft: rgba(225,29,72,0.09);
+            --admin-warning-soft: rgba(245,158,11,0.12);
+            --gradient-primary: linear-gradient(135deg, #6D5DF6 0%, #5850EC 45%, #2F8CFF 100%);
+            --surface-2: #FAFAFD;
+            --ring-focus: 0 0 0 3px rgba(88,80,236,0.16);
         }
 
         * { box-sizing: border-box; outline: none; -webkit-tap-highlight-color: transparent; }
@@ -91,39 +108,69 @@
         #adminAppRoot { display: none; }
         #adminAppRoot.ready { display: flex; height: 100vh; }
 
-        /* ===== SIDEBAR ===== */
+        /* =========================================================
+           SIDEBAR — بازطراحی مدرن (الهام از Canva / Google Gemini)
+           ساختار HTML و کلاس‌ها/idهای admin.js دست‌نخورده مانده‌اند؛
+           فقط ظاهر بصری (کارت شناور، آیکون‌های نشان‌دار، حالت فعال
+           گرادیانی نرم، میکرو-اینترکشن‌های هاور) بازسازی شده است.
+           ========================================================= */
         .admin-sidebar {
-            width: 250px;
+            width: var(--sidebar-w);
             background: var(--white);
-            border-left: 1px solid var(--border-color);
-            padding: 20px;
+            border-left: none;
+            padding: 22px 16px;
             display: flex;
             flex-direction: column;
             z-index: 10;
-            box-shadow: var(--shadow-sm);
+            box-shadow: var(--shadow-md);
             flex-shrink: 0;
+            gap: 4px;
         }
 
+        /* لوگو/برند بالای سایدبار — نشان دایره‌ای گرادیانی + عنوان + زیرعنوان */
         .sidebar-header {
-            margin-bottom: 30px;
+            margin-bottom: 22px;
             padding-bottom: 20px;
             border-bottom: 1px solid var(--border-color);
+            display: flex;
+            align-items: center;
+            gap: 12px;
         }
 
-        .sidebar-header h3 {
-            margin: 0 0 4px 0;
-            color: var(--admin-primary);
-            font-size: 22px;
+        .sidebar-header::before {
+            content: '\f54e'; /* fa-store (Font Awesome، هم‌خانواده‌ی بقیه‌ی آیکون‌های پروژه) */
+            font-family: 'Font Awesome 6 Free';
             font-weight: 900;
-            letter-spacing: -0.5px;
+            flex-shrink: 0;
+            width: 42px;
+            height: 42px;
+            border-radius: 14px;
+            background: var(--gradient-primary);
+            color: #fff;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 17px;
+            box-shadow: 0 6px 16px rgba(88,80,236,0.32);
+        }
+
+        .sidebar-header > div { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
+
+        .sidebar-header h3 {
+            margin: 0;
+            color: var(--text-main);
+            font-size: 18px;
+            font-weight: 900;
+            letter-spacing: -0.3px;
+            line-height: 1.3;
         }
 
         .sidebar-header small {
-            color: var(--admin-accent);
+            color: var(--text-light);
             font-size: 11px;
             font-weight: 700;
-            text-transform: uppercase;
-            letter-spacing: 1px;
+            text-transform: none;
+            letter-spacing: 0.2px;
         }
 
         .admin-menu {
@@ -131,48 +178,82 @@
             padding: 0;
             margin: 0;
             flex: 1;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
         }
 
         .admin-menu li {
-            padding: 12px 15px;
+            padding: 11px 14px;
             cursor: pointer;
-            border-radius: 10px;
-            margin-bottom: 6px;
+            border-radius: var(--radius-md);
+            margin-bottom: 0;
             transition: var(--transition);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             color: var(--text-light);
-            font-weight: 600;
-            font-size: 14px;
-        }
-
-        .admin-menu li:hover,
-        .admin-menu li.active {
-            background: rgba(99, 102, 241, 0.08);
-            color: var(--admin-primary);
+            font-weight: 700;
+            font-size: 13.5px;
+            position: relative;
         }
 
         .admin-menu li i {
-            width: 18px;
+            width: 30px;
+            height: 30px;
+            flex-shrink: 0;
             text-align: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border-radius: 9px;
+            background: var(--surface-2);
+            color: var(--text-light);
+            font-size: 13px;
+            transition: var(--transition);
+        }
+
+        .admin-menu li:hover {
+            background: var(--surface-2);
+            color: var(--text-main);
+            transform: translateX(-2px);
+        }
+        [dir="rtl"] .admin-menu li:hover,
+        .admin-menu li:hover { transform: translateX(0); }
+
+        .admin-menu li:hover i { color: var(--admin-primary); background: var(--admin-primary-soft); }
+
+        .admin-menu li.active {
+            background: var(--admin-primary-soft2);
+            color: var(--admin-primary);
+            box-shadow: inset 0 0 0 1px rgba(88,80,236,0.18);
+        }
+        .admin-menu li.active i {
+            background: var(--gradient-primary);
+            color: #fff;
+            box-shadow: 0 4px 10px rgba(88,80,236,0.35);
         }
 
         .admin-menu-logout {
-            padding: 12px 15px;
+            padding: 11px 14px;
             cursor: pointer;
-            border-radius: 10px;
+            border-radius: var(--radius-md);
             margin-top: 10px;
             transition: var(--transition);
             display: flex;
             align-items: center;
-            gap: 10px;
+            gap: 12px;
             color: var(--danger);
-            font-weight: 700;
-            font-size: 14px;
-            background: rgba(214,48,49,0.08);
+            font-weight: 800;
+            font-size: 13.5px;
+            background: var(--admin-danger-soft);
         }
-        .admin-menu-logout:hover { background: rgba(214,48,49,0.15); }
+        .admin-menu-logout:hover { background: rgba(225,29,72,0.16); transform: translateX(0); }
+        .admin-menu-logout i {
+            width: 30px; height: 30px; border-radius: 9px; flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            background: rgba(225,29,72,0.14); font-size: 13px;
+        }
 
         /* ===== MAIN CONTENT ===== */
         .admin-main {
@@ -873,31 +954,40 @@
            سایدبار به یک کشوی (drawer) قابل‌جمع‌شدن تبدیل می‌شود که
            با یک دکمه‌ی همبرگری در نوار بالای موبایل باز/بسته می‌شود.
            ========================================================= */
+        /* موبایل: نوار بالای شیشه‌ای (glass) شناور، همراستا با سبک مینیمال Canva/Gemini */
         .mobile-topbar {
             display: none;
             align-items: center;
             justify-content: space-between;
             gap: 12px;
             padding: 12px 16px;
-            background: var(--white);
+            background: rgba(255,255,255,0.85);
+            -webkit-backdrop-filter: blur(14px) saturate(160%);
+            backdrop-filter: blur(14px) saturate(160%);
             border-bottom: 1px solid var(--border-color);
             box-shadow: var(--shadow-sm);
             position: sticky;
             top: 0;
             z-index: 40;
         }
-        .mobile-topbar .mt-brand { display: flex; align-items: center; gap: 8px; font-weight: 900; color: var(--admin-primary); font-size: 17px; }
+        .mobile-topbar .mt-brand { display: flex; align-items: center; gap: 8px; font-weight: 900; color: var(--text-main); font-size: 15.5px; }
+        .mobile-topbar .mt-brand i { color: var(--admin-primary); }
         .hamburger-btn {
-            width: 40px; height: 40px; border-radius: 10px; border: 1.5px solid var(--border-color);
-            background: var(--white); display: flex; align-items: center; justify-content: center;
-            font-size: 17px; color: var(--text-main); cursor: pointer; flex-shrink: 0;
+            width: 40px; height: 40px; border-radius: 12px; border: none;
+            background: var(--surface-2); display: flex; align-items: center; justify-content: center;
+            font-size: 16px; color: var(--text-main); cursor: pointer; flex-shrink: 0;
+            transition: var(--transition);
         }
+        .hamburger-btn:hover { background: var(--admin-primary-soft); color: var(--admin-primary); }
+        .hamburger-btn:active { transform: scale(0.94); }
+
         .sidebar-close-btn { display: none; }
         .sidebar-overlay {
-            display: none; position: fixed; inset: 0; background: rgba(15,23,42,0.5);
-            z-index: 90; -webkit-backdrop-filter: blur(2px); backdrop-filter: blur(2px);
+            display: none; position: fixed; inset: 0; background: rgba(20,20,30,0.42);
+            z-index: 90; -webkit-backdrop-filter: blur(3px); backdrop-filter: blur(3px);
+            opacity: 0; transition: opacity 0.25s ease;
         }
-        .sidebar-overlay.show { display: block; }
+        .sidebar-overlay.show { display: block; opacity: 1; }
 
         @media (max-width: 900px) {
             body { height: auto; min-height: 100vh; overflow: visible; }
@@ -905,18 +995,21 @@
             .mobile-topbar { display: flex; }
             .admin-sidebar {
                 position: fixed; top: 0; right: 0; bottom: 0; height: 100vh;
-                width: min(var(--sidebar-w), 82vw);
+                width: min(var(--sidebar-w), 84vw);
                 transform: translateX(100%);
-                transition: transform 0.3s cubic-bezier(0.25,0.8,0.25,1);
+                transition: transform 0.35s cubic-bezier(0.22,1,0.36,1);
                 z-index: 95;
                 overflow-y: auto;
+                box-shadow: none;
             }
-            .admin-sidebar.open { transform: translateX(0); }
+            .admin-sidebar.open { transform: translateX(0); box-shadow: -12px 0 40px rgba(20,20,30,0.18); }
             .sidebar-close-btn {
                 display: flex; align-items: center; justify-content: center;
-                width: 34px; height: 34px; border-radius: 50%; background: #f3f4f6;
-                color: var(--text-light); font-size: 16px; margin-inline-start: auto; cursor: pointer;
+                width: 32px; height: 32px; border-radius: 50%; background: var(--surface-2);
+                color: var(--text-light); font-size: 14px; margin-inline-start: auto; cursor: pointer;
+                transition: var(--transition); flex-shrink: 0;
             }
+            .sidebar-close-btn:hover { background: var(--admin-danger-soft); color: var(--danger); }
             .admin-main { padding: 16px; }
             .page-header { flex-wrap: wrap; gap: 12px; }
             .stats-grid { grid-template-columns: 1fr 1fr; }
