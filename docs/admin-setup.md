@@ -28,12 +28,15 @@ requirement. An ordinary authenticated user cannot grant themselves the role:
    - `supabase/migrations/202611180001_initial_schema.sql`
    - `supabase/migrations/202611190001_require_admin_mfa.sql`
    - `supabase/migrations/202611190002_admin_catalog_media.sql`
+   - `supabase/migrations/202611190003_brand_description.sql`
 
    Without them `user_roles`, `products`, `coupons`, `orders`, `audit_logs` and
    `is_admin()` do not exist, and `/admin` throws on its first query. The third
    migration adds the catalog/media tables (`brands`, `categories`,
    `product_images`, `product_variants`, `site_media`, `site_settings`), the
    `pnyshop-media` public storage bucket, and variant-aware checkout functions.
+   The fourth migration adds the brand `description` column used by the brand
+   manager.
 
 2. **Configure the environment.** Copy `.env.example` to `.env.local` and fill in
    at least `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
