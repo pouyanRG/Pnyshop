@@ -1492,7 +1492,7 @@ async function quickAddToCart(id, btnEl) {
 
     if (!state.currentUser) {
         showToast('برای افزودن به سبد ابتدا وارد شوید');
-        setTimeout(() => window.location.href = 'login.html', 1200);
+        setTimeout(() => window.location.href = '/login', 1200);
         return;
     }
 
@@ -1581,7 +1581,7 @@ function updateAuthUI() {
         if (authLink) authLink.href='profile.html';
         if (label) label.innerText=state.currentUser.name||'پنل کاربری';
     } else {
-        if (authLink) authLink.href='login.html';
+        if (authLink) authLink.href='/login';
         if (label) label.innerText='ورود';
     }
 }

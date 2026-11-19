@@ -1,10 +1,20 @@
 import type { Metadata } from "next";
+import { ThemeInitializer } from "@/components/storefront/theme-initializer";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "pnyshop فروشگاه اینترنتی",
+  title: "Pnyshop فروشگاه اینترنتی",
   description: "فروشگاه اینترنتی Pnyshop",
 };
+
+const themeInitializationScript = `
+  try {
+    const theme = localStorage.getItem("theme");
+    document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
+  } catch {
+    document.documentElement.dataset.theme = "light";
+  }
+`;
 
 export default function RootLayout({
   children,
@@ -12,8 +22,9 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="fa" dir="rtl">
+    <html lang="fa" dir="rtl" suppressHydrationWarning>
       <head>
+        <script dangerouslySetInnerHTML={{ __html: themeInitializationScript }} />
         <link
           rel="icon"
           type="image/x-icon"
@@ -38,7 +49,10 @@ export default function RootLayout({
           referrerPolicy="no-referrer"
         />
       </head>
-      <body>{children}</body>
+      <body>
+        <ThemeInitializer />
+        {children}
+      </body>
     </html>
   );
 }

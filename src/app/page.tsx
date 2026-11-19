@@ -71,7 +71,11 @@ export default async function HomePage() {
   return (
     <>
       <LegacyHomeBehavior />
-      <div suppressHydrationWarning dangerouslySetInnerHTML={{ __html: markup }} />
+      <div
+        className="legacy-home-page"
+        suppressHydrationWarning
+        dangerouslySetInnerHTML={{ __html: markup }}
+      />
     </>
   );
 }

@@ -68,7 +68,7 @@ function initApp() {
     window.dbOnAuthStateChanged(window.dbAuth, async (user) => {
         if (!user) {
             localStorage.removeItem(LEGACY_SESSION_KEY);
-            window.location.href = 'login.html';
+            window.location.href = '/login';
             return;
         }
 
@@ -177,7 +177,7 @@ async function loadUserData(uid) {
     let profile = await getUserProfile(uid);
 
     if (!profile) {
-        // در حالت عادی login.html همیشه سند کاربر را می‌سازد؛ این فقط یک شبکه‌ی ایمنی است
+        // در حالت عادی مسیر ورود سند کاربر را می‌سازد؛ این فقط یک شبکه‌ی ایمنی است
         profile = {
             mobile: '', name: '', melli: '', email: '', address: '', post: '',
             date: new Date().toLocaleDateString('fa-IR'),

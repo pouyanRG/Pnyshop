@@ -1,38 +1,12 @@
 "use client";
 
-import { useEffect, useSyncExternalStore } from "react";
-
-type Theme = "light" | "dark";
-const THEME_EVENT = "pnyshop-theme-change";
-
-function subscribe(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(THEME_EVENT, onStoreChange);
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(THEME_EVENT, onStoreChange);
-  };
-}
-
-function getSnapshot(): Theme {
-  return window.localStorage.getItem("theme") === "dark" ? "dark" : "light";
-}
-
-function getServerSnapshot(): Theme {
-  return "light";
-}
+import { useStorefrontTheme } from "./use-storefront-theme";
 
 export function ThemeToggle() {
-  const theme = useSyncExternalStore(subscribe, getSnapshot, getServerSnapshot);
-
-  useEffect(() => {
-    document.documentElement.dataset.theme = theme;
-  }, [theme]);
+  const { theme, setTheme } = useStorefrontTheme();
 
   function toggleTheme() {
-    const nextTheme = theme === "light" ? "dark" : "light";
-    window.localStorage.setItem("theme", nextTheme);
-    window.dispatchEvent(new Event(THEME_EVENT));
+    setTheme(theme === "light" ? "dark" : "light");
   }
 
   return (

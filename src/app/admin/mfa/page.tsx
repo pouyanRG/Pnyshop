@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AdminMfaChallenge } from "./admin-mfa-challenge";
 
 export const metadata: Metadata = {
-  title: "تأیید دومرحله‌ای مدیریت | PnySHOP",
+  title: "تأیید دومرحله‌ای مدیریت | Pnyshop",
 };
 
 export default async function AdminMfaPage() {

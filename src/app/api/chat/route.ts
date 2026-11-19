@@ -26,7 +26,7 @@ export async function POST(request: Request) {
     }
 
     let systemInstruction =
-      "شما دستیار هوشمند و پشتیبان خریداران فروشگاه PnySHOP هستید. صمیمی، محترمانه و فقط به فارسی پاسخ دهید.";
+      "شما دستیار هوشمند و پشتیبان خریداران فروشگاه Pnyshop هستید. صمیمی، محترمانه و فقط به فارسی پاسخ دهید.";
     if (Array.isArray(body.productsCatalog) && body.productsCatalog.length > 0) {
       systemInstruction += `\n\nکاتالوگ واقعی فروشگاه:\n${JSON.stringify(body.productsCatalog)}`;
     }

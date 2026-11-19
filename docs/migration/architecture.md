@@ -14,11 +14,16 @@
 ## Current implementation
 
 - `/` renders the existing storefront markup and styles through Next.js.
-- `/login` provides Supabase email/password sign-in, email registration with a
-  one-time verification code, Google OAuth and password recovery. Registration
-  requires a 12-character password with uppercase, lowercase, numeric and
-  symbol characters. Admins must complete TOTP MFA before the admin route or
-  admin-protected row-level-security policies allow access.
+- `/login` uses one email-only Supabase OTP flow for both existing and new
+  users. The eight-digit code is verified with `verifyOtp` and is not stored in
+  the browser; the email and resend deadline are kept in `sessionStorage` so a
+  refresh preserves the verification step and its 45-second cooldown.
+  Authenticated users are redirected server-side. Admins must complete TOTP
+  MFA before the admin route or admin-protected row-level-security policies
+  allow access.
+- `/login` and the storefront share one theme hook. The root layout applies the
+  saved light/dark theme before rendering to avoid a theme flash; an unset
+  preference defaults to light.
 - `/profile` reads the authenticated user's profile and orders server-side,
   allows editing non-sensitive profile fields, and keeps email, wallet balance
   and points read-only. Profile updates are subject to the database grants and
@@ -65,22 +70,18 @@
 ## Verification and blockers
 
 - Auth behavior depends on Supabase project settings that are not changed by
-  local code: require email confirmation and copy
-  `supabase/templates/confirm-signup.html` into Authentication > Email Templates
-  > Confirm signup. The template must display `{{ .Token }}` and omit
-  `{{ .ConfirmationURL }}` to send a one-time code instead of a link. Set the
-  OTP length to eight, match the password requirements and breached-password
-  protection, enable the Google provider and TOTP MFA, configure an SMS
-  provider for phone signup/login/recovery, and allow the `/login` callback
-  URL for OAuth and password recovery.
-  Configure a trusted SMTP sender and server-side Auth rate limits before
-  production.
+  local code. Enable the email provider, set the OTP length to eight, and use
+  `supabase/templates/confirm-signup.html` for **Confirm signup** and
+  `supabase/templates/magic-link.html` for **Magic Link**. Both templates must
+  display `{{ .Token }}` and omit `{{ .ConfirmationURL }}` so the email contains
+  a code, not a sign-in link. Configure the project's dedicated trusted SMTP
+  sender and server-side Auth rate limits in Supabase; the SMTP configuration
+  cannot be verified or changed by this codebase.
   CAPTCHA is intentionally not enabled; the browser cooldown is only a UX
-  guard and honeypot, not a substitute for Supabase-side rate limits.
+  guard, not a substitute for Supabase-side rate limits.
 - The login UI uses Supabase SSR browser cookies. Moving auth exchange to
-  server-managed `HttpOnly` cookies, enforcing remember-me duration, and
-  recording terms acceptance/version server-side remain API tasks; the current
-  client-side control does not alter cookie persistence.
+  server-managed `HttpOnly` cookies and recording terms acceptance/version
+  server-side remain API tasks.
 - Apply `supabase/migrations/202611190001_require_admin_mfa.sql` to enforce
   `aal2` inside `is_admin()` and all RLS policies that rely on it. The admin
   route guides authorized admins through TOTP enrollment and challenge.

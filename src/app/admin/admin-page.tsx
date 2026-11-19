@@ -210,7 +210,7 @@ export function AdminPage({
     <div className={`${styles.page} admin-page`} dir="rtl">
       <StorefrontHeader />
       <aside className={styles.sidebar}>
-        <div className={styles.brand}><i className="fas fa-store" /><div><b>PnySHOP</b><small>پنل مدیریت</small></div></div>
+        <div className={styles.brand}><i className="fas fa-store" /><div><b>Pnyshop</b><small>پنل مدیریت</small></div></div>
         <nav>
           {([
             ["products", "fa-layer-group", "محصولات"],

@@ -147,7 +147,7 @@ function updateUserUI() {
     } else {
         if (nameEl) nameEl.innerText = 'کاربر مهمان';
         if (subEl) subEl.innerText = 'ورود / ثبت‌نام';
-        if (link) link.href = 'login.html';
+        if (link) link.href = '/login';
     }
 }
 
@@ -164,7 +164,7 @@ function bindStaticUI() {
     document.getElementById('aiDrawerBackdrop')?.addEventListener('click', closeDrawer);
 
     document.getElementById('aiMobileUserBtn')?.addEventListener('click', () => {
-        window.location.href = state.user ? 'profile.html' : 'login.html';
+        window.location.href = state.user ? 'profile.html' : '/login';
     });
 
     document.getElementById('qcSearch')?.addEventListener('click', () => {

@@ -5,7 +5,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { AdminPage } from "./admin-page";
 
 export const metadata: Metadata = {
-  title: "پنل مدیریت | PnySHOP",
+  title: "پنل مدیریت | Pnyshop",
 };
 
 export default async function AdminRoute() {

@@ -64,7 +64,7 @@ function initApp() {
     window.dbOnAuthStateChanged(window.dbAuth, async (user) => {
         if (!user) {
             localStorage.removeItem(DB.legacySession);
-            window.location.href = 'login.html';
+            window.location.href = '/login';
             return;
         }
 
@@ -72,7 +72,7 @@ function initApp() {
 
         const profile = await getUserProfile(user.uid);
         if (!profile) {
-            window.location.href = 'login.html';
+            window.location.href = '/login';
             return;
         }
 

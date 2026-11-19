@@ -2429,7 +2429,7 @@
    DESKTOP OVERRIDES
    ============================================= */
 @media (min-width: 769px) {
-    body { padding-top: calc(var(--header-h) + 48px); padding-bottom: 0; }
+    .legacy-home-page { padding-top: calc(var(--header-h) + 48px); padding-bottom: 0; }
     .mobile-nav { display: none; }
     .desktop-nav { display: block; }
     .ai-fab { display: flex; }

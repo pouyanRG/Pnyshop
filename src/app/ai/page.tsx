@@ -5,7 +5,7 @@ import { LegacyAiBehavior } from "./legacy-ai-behavior";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
 
 export const metadata: Metadata = {
-  title: "دستیار هوشمند PnySHOP",
+  title: "دستیار هوشمند Pnyshop",
 };
 
 async function getLegacyAiMarkup() {

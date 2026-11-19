@@ -5,7 +5,7 @@ import type { Product } from "@/types/database";
 import { CartPage } from "./cart-page";
 
 export const metadata: Metadata = {
-  title: "سبد خرید | PnySHOP",
+  title: "سبد خرید | Pnyshop",
   description: "مشاهده و مدیریت سبد خرید",
 };
 

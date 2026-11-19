@@ -18,7 +18,7 @@ function getProductId(value: string | string[] | undefined) {
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {
   const { id: queryId } = await searchParams;
   const id = getProductId(queryId);
-  if (!id) return { title: "جزئیات محصول | PnySHOP" };
+  if (!id) return { title: "جزئیات محصول | Pnyshop" };
 
   const supabase = await createSupabaseServerClient();
   const { data } = await supabase
@@ -28,7 +28,7 @@ export async function generateMetadata({ searchParams }: Props): Promise<Metadat
     .eq("is_active", true)
     .maybeSingle();
 
-  return { title: data?.name ? `${data.name} | PnySHOP` : "جزئیات محصول | PnySHOP" };
+  return { title: data?.name ? `${data.name} | Pnyshop` : "جزئیات محصول | Pnyshop" };
 }
 
 export default async function ProductRoute({ searchParams }: Props) {

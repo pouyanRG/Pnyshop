@@ -7,7 +7,7 @@ import { LegacyCheckoutBehavior } from "./legacy-checkout-behavior";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
 
 export const metadata: Metadata = {
-  title: "تکمیل سفارش | PnySHOP",
+  title: "تکمیل سفارش | Pnyshop",
 };
 
 async function getLegacyCheckoutMarkup() {

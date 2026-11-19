@@ -40,7 +40,7 @@ function initCheckout() {
             if (!user) {
                 localStorage.removeItem(DB.legacySession);
                 showToast('لطفاً ابتدا وارد حساب کاربری شوید', 'error');
-                setTimeout(() => window.location.href = 'login.html', 1500);
+                setTimeout(() => window.location.href = '/login', 1500);
                 return;
             }
 
@@ -49,7 +49,7 @@ function initCheckout() {
             const profile = await getUserProfile(user.uid);
             if (!profile) {
                 showToast('خطا در احراز هویت.', 'error');
-                window.location.href = 'login.html';
+                window.location.href = '/login';
                 return;
             }
 
@@ -60,7 +60,7 @@ function initCheckout() {
 
             if (profile.emailVerifiedCustom !== true) {
                 showToast('لطفاً ابتدا ایمیل خود را تأیید کنید', 'error');
-                setTimeout(() => window.location.href = 'login.html', 1500);
+                setTimeout(() => window.location.href = '/login', 1500);
                 return;
             }
 

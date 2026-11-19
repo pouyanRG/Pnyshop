@@ -4,7 +4,7 @@ import { createSupabaseServerClient } from "@/lib/supabase/server";
 import { ProfilePage } from "./profile-page";
 
 export const metadata: Metadata = {
-  title: "پروفایل کاربری | SHOP",
+  title: "پروفایل کاربری | Pnyshop",
   description: "مدیریت اطلاعات حساب و مشاهده سفارش‌های Pnyshop",
 };
 

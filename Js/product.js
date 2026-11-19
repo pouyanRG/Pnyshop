@@ -121,7 +121,7 @@ function updateAuthUI() {
     const authLink = document.getElementById('authLink');
     const label = document.getElementById('userLabel');
     if (state.currentUser) { authLink.href = 'profile.html'; label.innerText = state.currentUser.name || 'پنل'; }
-    else { authLink.href = 'login.html'; label.innerText = 'ورود'; }
+    else { authLink.href = '/login'; label.innerText = 'ورود'; }
 }
 function updateCartUI(cart) {
     const list = Array.isArray(cart) ? cart : [];
@@ -209,7 +209,7 @@ function renderStarsHtml(rating) {
 }
 
 function renderProduct(p) {
-    document.title = (p.name || 'محصول') + ' | SHOP';
+    document.title = (p.name || 'محصول') + ' | Pnyshop';
     const bc = document.getElementById('breadcrumbRow');
     let bcHtml = `<a href="index.html">خانه</a>`;
     const path = (p.categoryPath && p.categoryPath.length) ? p.categoryPath : (p.breadcrumb ? p.breadcrumb.split(' > ') : []);
@@ -493,7 +493,7 @@ async function addToCart() {
     if (isAddingToCart) return;
     if (!state.currentUser) {
         showToast('لطفاً ابتدا وارد شوید');
-        setTimeout(() => window.location.href = 'login.html', 1200);
+        setTimeout(() => window.location.href = '/login', 1200);
         return;
     }
     isAddingToCart = true;
@@ -559,7 +559,7 @@ async function toggleWishlist() {
     if (!state.product) return;
     if (!state.currentUser) { 
         showToast('برای علاقه‌مندی وارد شوید'); 
-        setTimeout(() => window.location.href = 'login.html', 1200); 
+        setTimeout(() => window.location.href = '/login', 1200);
         return; 
     }
 

@@ -2,7 +2,7 @@
    SHOP — SHARED DESIGN SYSTEM (Css/style.css)
    -----------------------------------------------------------------
    منبع واحد توکن‌های طراحی + کامپوننت‌های مشترک بین همه‌ی صفحات
-   مشتری (index.html, sabad.html, login.html, profile.html).
+   مشتری (index.html, sabad.html, profile.html).
 
    ⚠️ منبع حقیقت (source of truth) این فایل = index.html است. طبق
    تصمیم پروژه، هر جا بین طراحی index.html و نسخه‌های محلی/قدیمی‌تر
@@ -46,6 +46,7 @@
  
     
     --text-secondary:#62666D;
+    --text-primary: #17212b;
     --icon-neutral:#000000;
     --icone-header :#A1A3A8;
     --fa-th-large:#3F4064;

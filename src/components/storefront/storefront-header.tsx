@@ -2,45 +2,19 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useState, useSyncExternalStore } from "react";
+import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
+import { useStorefrontTheme } from "./use-storefront-theme";
 import styles from "./storefront-header.module.css";
-
-const THEME_EVENT = "pnyshop-theme-change";
-
-function subscribeTheme(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(THEME_EVENT, onStoreChange);
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(THEME_EVENT, onStoreChange);
-  };
-}
-
-function getThemeSnapshot() {
-  return window.localStorage.getItem("theme") === "dark" ? "dark" : "light";
-}
-
-function getThemeServerSnapshot() {
-  return "light";
-}
 
 export function StorefrontHeader() {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
-  const theme = useSyncExternalStore(
-    subscribeTheme,
-    getThemeSnapshot,
-    getThemeServerSnapshot,
-  );
+  const { theme, setTheme } = useStorefrontTheme();
 
   function toggleTheme() {
-    const current = window.localStorage.getItem("theme") === "dark" ? "dark" : "light";
-    const next = current === "dark" ? "light" : "dark";
-    window.localStorage.setItem("theme", next);
-    document.documentElement.dataset.theme = next;
-    window.dispatchEvent(new Event(THEME_EVENT));
+    setTheme(theme === "dark" ? "light" : "dark");
   }
 
   function openSearch() {
