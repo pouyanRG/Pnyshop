@@ -13,7 +13,9 @@ export default async function AdminMfaPage() {
     data: { user },
     error: authError,
   } = await supabase.auth.getUser();
-  if (authError) throw authError;
+  // A missing session is expected for anonymous visitors; only real auth
+  // failures should surface as errors instead of the login redirect.
+  if (authError && authError.name !== "AuthSessionMissingError") throw authError;
   if (!user) redirect("/login?next=%2Fadmin");
 
   const { data: userRoles, error: roleError } = await supabase

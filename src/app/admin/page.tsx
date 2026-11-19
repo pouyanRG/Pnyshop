@@ -22,7 +22,9 @@ export default async function AdminRoute() {
     .eq("user_id", user.id);
   if (userRolesError) throw userRolesError;
   if (!userRoles.some(({ role }) => role === "admin")) {
-    redirect("/login?next=%2Fadmin");
+    // Sending a signed-in non-admin back to /login would loop forever: the
+    // login page redirects authenticated users straight back to `next=/admin`.
+    redirect("/");
   }
 
   const { data: assurance, error: assuranceError } =
@@ -34,7 +36,7 @@ export default async function AdminRoute() {
 
   const { data: isAdmin, error: roleError } = await supabase.rpc("is_admin");
   if (roleError) throw roleError;
-  if (!isAdmin) redirect("/login?next=%2Fadmin");
+  if (!isAdmin) redirect("/");
 
   const [productsResult, couponsResult, ordersResult, auditResult] = await Promise.all([
     supabase.from("products").select("*").order("created_at", { ascending: false }).limit(100),
