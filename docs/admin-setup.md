@@ -27,9 +27,13 @@ requirement. An ordinary authenticated user cannot grant themselves the role:
 1. **Apply the migrations in order** (SQL Editor or `supabase db push`):
    - `supabase/migrations/202611180001_initial_schema.sql`
    - `supabase/migrations/202611190001_require_admin_mfa.sql`
+   - `supabase/migrations/202611190002_admin_catalog_media.sql`
 
    Without them `user_roles`, `products`, `coupons`, `orders`, `audit_logs` and
-   `is_admin()` do not exist, and `/admin` throws on its first query.
+   `is_admin()` do not exist, and `/admin` throws on its first query. The third
+   migration adds the catalog/media tables (`brands`, `categories`,
+   `product_images`, `product_variants`, `site_media`, `site_settings`), the
+   `pnyshop-media` public storage bucket, and variant-aware checkout functions.
 
 2. **Configure the environment.** Copy `.env.example` to `.env.local` and fill in
    at least `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
@@ -76,6 +80,19 @@ requirement. An ordinary authenticated user cannot grant themselves the role:
 
 7. Open `/admin`. Signed-in users without the role (or without `aal2` after the
    RPC check) are sent to `/`, not back to `/login`, to avoid a redirect loop.
+
+## Image uploads (phase 1)
+
+Product, banner and logo images are uploaded through the shared
+`ImageUploader` component, which posts the file to the server-side route
+`/api/admin/media`. The route re-checks the admin role **and** `aal2`,
+validates the file type (JPG/PNG/WebP/AVIF) and size (max 8 MB), applies a
+rate limit, and only then writes to the public `pnyshop-media` bucket with the
+service role. Deleting an image uses `DELETE /api/admin/media` with the stored
+object path.
+
+The legacy ImgBB route `api/upload-image.js` was removed; `IMGBB_API_KEY` is no
+longer used. Keep `SUPABASE_SECRET_KEY` server-side only.
 
 ## Troubleshooting
 

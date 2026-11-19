@@ -95,9 +95,9 @@ export function ProductPage({ product, related }: { product: Product; related: P
         const wishlist = Array.isArray(data?.wishlist) ? data.wishlist : [];
         setWished(wishlist.some((entry) => {
           if (entry && typeof entry === "object" && !Array.isArray(entry) && "id" in entry) {
-            return String(entry.id) === product.id;
+            return String(entry.id) === String(product.id);
           }
-          return String(entry) === product.id;
+          return String(entry) === String(product.id);
         }));
       } catch (error) {
         console.error("Could not load product wishlist state:", error);
@@ -144,14 +144,14 @@ export function ProductPage({ product, related }: { product: Product; related: P
 
       const cart = parseCart(profileResult.data?.cart ?? []);
       const selectedName = selectedColor?.name ?? "مشکی";
-      const existing = cart.find((item) => item.id === product.id && item.color === selectedName);
+      const existing = cart.find((item) => item.id === String(product.id) && item.color === selectedName);
       if (existing && existing.qty + quantity > availableStock) {
         setNotice(`حداکثر ${availableStock} عدد از این رنگ موجود است.`);
         return;
       }
       const nextCart = existing
         ? cart.map((item) => item === existing ? { ...item, qty: item.qty + quantity } : item)
-        : [...cart, { id: product.id, qty: quantity, color: selectedName, name: product.name }];
+        : [...cart, { id: String(product.id), qty: quantity, color: selectedName, name: product.name }];
       const { error: saveError } = await client.from("profiles")
         .update({ cart: serializeCart(nextCart), updated_at: new Date().toISOString() })
         .eq("id", user.id);
@@ -185,16 +185,16 @@ export function ProductPage({ product, related }: { product: Product; related: P
       const current = Array.isArray(data?.wishlist) ? data.wishlist : [];
       const alreadySaved = current.some((entry) => {
         if (entry && typeof entry === "object" && !Array.isArray(entry) && "id" in entry) {
-          return String(entry.id) === product.id;
+          return String(entry.id) === String(product.id);
         }
-        return String(entry) === product.id;
+        return String(entry) === String(product.id);
       });
       const updated = alreadySaved
         ? current.filter((entry) => {
             if (entry && typeof entry === "object" && !Array.isArray(entry) && "id" in entry) {
-              return String(entry.id) !== product.id;
+              return String(entry.id) !== String(product.id);
             }
-            return String(entry) !== product.id;
+            return String(entry) !== String(product.id);
           })
         : [...current, { id: Number(product.id), priceAtAdd: finalPrice, addedAt: new Date().toISOString() }];
       const { error: saveError } = await client.from("profiles")

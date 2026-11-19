@@ -1,0 +1,134 @@
+.wrap {
+  display: grid;
+  gap: var(--space-2);
+  justify-items: stretch;
+}
+
+.label {
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: 700;
+}
+
+.input {
+  display: none;
+}
+
+.dropzone {
+  display: grid;
+  justify-items: center;
+  gap: var(--space-2);
+  padding: var(--space-6) var(--space-4);
+  border: 1px dashed var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  text-align: center;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.dropzone:hover,
+.dropzone:focus-visible,
+.dragging {
+  border-color: var(--secondary);
+  background: var(--secondary-soft);
+  color: var(--secondary);
+}
+
+.dropzone i {
+  font-size: var(--font-2xl);
+}
+
+.dropzone b {
+  font-size: var(--font-sm);
+}
+
+.dropzone small {
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+}
+
+.preview {
+  display: grid;
+  gap: var(--space-2);
+  padding: var(--space-3);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-surface);
+}
+
+.previewImage {
+  width: 100%;
+  height: auto;
+  max-height: 240px;
+  border-radius: var(--radius-sm);
+  object-fit: contain;
+  background: var(--bg-elevated);
+}
+
+.previewActions {
+  display: flex;
+  gap: var(--space-2);
+}
+
+.previewActions button {
+  flex: 1;
+  min-height: 40px;
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-sm);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.previewActions button:hover:not(:disabled) {
+  background: var(--bg-elevated);
+}
+
+.previewActions .remove {
+  border-color: var(--danger);
+  color: var(--danger);
+}
+
+.previewActions button:disabled {
+  cursor: not-allowed;
+  opacity: 0.6;
+}
+
+.progressTrack {
+  height: 8px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: var(--bg-elevated);
+}
+
+.progressBar {
+  height: 100%;
+  border-radius: var(--radius-full);
+  background: var(--secondary);
+  transition: width 0.2s ease;
+}
+
+.progressLabel {
+  color: var(--secondary);
+  font-size: var(--font-xs);
+  font-weight: 700;
+}
+
+.fileName {
+  overflow: hidden;
+  color: var(--text-muted);
+  font-size: var(--font-xs);
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.error {
+  color: var(--danger);
+  font-size: var(--font-xs);
+  font-weight: 700;
+}

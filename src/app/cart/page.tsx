@@ -36,7 +36,7 @@ export default async function CartRoute() {
   if (ids.length > 0) {
     const { data, error } = await supabase.from("products")
       .select("*")
-      .in("id", ids)
+      .in("id", ids.map((id) => Number(id)))
       .eq("is_active", true);
     if (error) {
       console.error("Could not load cart catalog items:", error);

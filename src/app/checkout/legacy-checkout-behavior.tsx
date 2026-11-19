@@ -43,7 +43,7 @@ export function LegacyCheckoutBehavior() {
     }
 
     function subtotal() {
-      const map = new Map(products.map((product) => [product.id, product]));
+      const map = new Map(products.map((product) => [String(product.id), product]));
       return cart.reduce((sum, item) => {
         const product = map.get(item.id);
         return sum + (product ? finalPrice(product) * item.qty : 0);
@@ -55,7 +55,7 @@ export function LegacyCheckoutBehavior() {
       const method = shippingSelect?.value ?? "post";
       const shipping = method === "free" || sum >= 1_000_000 ? 0 : method === "tipax" ? 45_000 : 35_000;
       const productDiscount = cart.reduce((sumDiscount, item) => {
-        const product = products.find((candidate) => candidate.id === item.id);
+        const product = products.find((candidate) => String(candidate.id) === item.id);
         return sumDiscount + (product ? (product.price - finalPrice(product)) * item.qty : 0);
       }, 0);
       if (subtotalEl) subtotalEl.textContent = `${sum.toLocaleString("en-US")} تومان`;
@@ -97,7 +97,7 @@ export function LegacyCheckoutBehavior() {
           const { data, error } = await client
             .from("products")
             .select("*")
-            .in("id", ids)
+            .in("id", ids.map((id) => Number(id)))
             .eq("is_active", true);
           if (error) throw error;
           products = data ?? [];
@@ -114,7 +114,7 @@ export function LegacyCheckoutBehavior() {
         const container = document.getElementById("summary-items");
         if (container) {
           container.innerHTML = cart.map((item) => {
-            const product = products.find((candidate) => candidate.id === item.id);
+            const product = products.find((candidate) => String(candidate.id) === item.id);
             if (!product) return "";
             return `<div class="summary-item"><div class="item-info"><img src="${escapeAttribute(product.image_url ?? "")}" class="item-img-mini" onerror="this.onerror=null;this.src='/images/Placeholder.png'"><div class="item-details"><h4>${escapeHtml(product.name)}</h4><p>رنگ: ${escapeHtml(item.color)} | تعداد: ${item.qty}</p></div></div><div style="font-weight:700">${(finalPrice(product) * item.qty).toLocaleString("en-US")}</div></div>`;
           }).join("");

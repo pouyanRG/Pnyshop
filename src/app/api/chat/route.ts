@@ -1,6 +1,30 @@
 import { GoogleGenAI } from "@google/genai";
+import { createSupabaseAdminClient } from "@/lib/supabase/admin";
 
 export const runtime = "nodejs";
+
+const MAX_MESSAGE_LENGTH = 2000;
+const MAX_HISTORY_ITEMS = 16;
+
+function clientKey(request: Request): string {
+  const forwarded = request.headers.get("x-forwarded-for");
+  return forwarded?.split(",")[0]?.trim() || "global";
+}
+
+async function isAllowed(key: string): Promise<boolean> {
+  const { data, error } = await createSupabaseAdminClient().rpc(
+    "consume_api_rate_limit",
+    {
+      p_rate_key: `chat:${key}`,
+      p_window_seconds: 300,
+      p_max_requests: 20,
+    },
+  );
+  if (error) return false;
+  return data === true;
+}
+
+type ChatMessage = { role: string; text: string };
 
 export async function POST(request: Request) {
   try {
@@ -12,15 +36,52 @@ export async function POST(request: Request) {
       );
     }
 
-    const body = await request.json() as {
-      message?: string;
-      history?: Array<{ role: string; text: string }>;
+    if (!(await isAllowed(clientKey(request)))) {
+      return Response.json(
+        {
+          success: false,
+          reply: "تعداد درخواست‌ها به حد مجاز رسیده است. کمی بعد دوباره تلاش کنید.",
+        },
+        { status: 429 },
+      );
+    }
+
+    const body = (await request.json().catch(() => null)) as {
+      message?: unknown;
+      history?: unknown;
       userProfile?: unknown;
       productsCatalog?: unknown;
-    };
-    if (!body.message?.trim()) {
+    } | null;
+
+    if (!body || typeof body.message !== "string" || !body.message.trim()) {
       return Response.json(
         { success: false, reply: "پیام کاربر یافت نشد." },
+        { status: 400 },
+      );
+    }
+    if (body.message.length > MAX_MESSAGE_LENGTH) {
+      return Response.json(
+        { success: false, reply: "طول پیام بیش از حد مجاز است." },
+        { status: 400 },
+      );
+    }
+
+    const history: ChatMessage[] = Array.isArray(body.history)
+      ? body.history
+          .filter(
+            (item): item is ChatMessage =>
+              typeof item === "object" &&
+              item !== null &&
+              typeof (item as { role?: unknown }).role === "string" &&
+              typeof (item as { text?: unknown }).text === "string" &&
+              (item as { text: string }).text.length <= MAX_MESSAGE_LENGTH,
+          )
+          .slice(-8)
+      : [];
+
+    if (Array.isArray(body.history) && body.history.length > MAX_HISTORY_ITEMS) {
+      return Response.json(
+        { success: false, reply: "طول تاریخچهٔ گفتگو بیش از حد مجاز است." },
         { status: 400 },
       );
     }
@@ -35,7 +96,7 @@ export async function POST(request: Request) {
     }
 
     const ai = new GoogleGenAI({ apiKey });
-    const contents = (body.history ?? []).slice(-8).map((item) => ({
+    const contents = history.map((item) => ({
       role: item.role === "bot" || item.role === "model" ? "model" : "user",
       parts: [{ text: item.text }],
     }));

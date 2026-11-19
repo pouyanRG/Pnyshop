@@ -45,7 +45,10 @@ export function CheckoutPage({
 }) {
   const router = useRouter();
   const cart = useMemo(() => parseCart(rawCart), [rawCart]);
-  const productMap = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
+  const productMap = useMemo(
+    () => new Map(products.map((product) => [String(product.id), product])),
+    [products],
+  );
   const [address, setAddress] = useState(profile?.address ?? "");
   const [postalCode, setPostalCode] = useState(profile?.postal_code ?? "");
   const [shippingMethod, setShippingMethod] = useState<"post" | "tipax" | "free">("post");

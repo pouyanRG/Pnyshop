@@ -12,7 +12,7 @@ function getProductId(value: string | string[] | undefined) {
   const raw = Array.isArray(value) ? value[0] : value;
   if (!raw || !/^\d+$/.test(raw)) return null;
   const id = Number(raw);
-  return Number.isSafeInteger(id) && id > 0 ? String(id) : null;
+  return Number.isSafeInteger(id) && id > 0 ? id : null;
 }
 
 export async function generateMetadata({ searchParams }: Props): Promise<Metadata> {

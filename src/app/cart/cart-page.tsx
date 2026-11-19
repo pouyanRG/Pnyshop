@@ -57,7 +57,10 @@ export function CartPage({
     loadError ? "خواندن سبد یا محصولات از سوپابیس انجام نشد. پس از بررسی اتصال و schema صفحه را تازه‌سازی کنید." : "",
   );
   const clientRef = useRef<ReturnType<typeof createSupabaseBrowserClient> | null>(null);
-  const productById = useMemo(() => new Map(products.map((product) => [product.id, product])), [products]);
+  const productById = useMemo(
+    () => new Map(products.map((product) => [String(product.id), product])),
+    [products],
+  );
 
   const selectedItems = cart.filter((item) => selected.has(item.id));
   const itemCount = selectedItems.reduce((sum, item) => sum + item.qty, 0);
