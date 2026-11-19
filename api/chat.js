@@ -2,9 +2,43 @@ import { GoogleGenAI } from '@google/genai';
 
 const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY });
 
+const SUPABASE_URL = process.env.SUPABASE_URL || process.env.NEXT_PUBLIC_SUPABASE_URL;
+const SUPABASE_SECRET_KEY = process.env.SUPABASE_SECRET_KEY;
+
+async function isRateAllowed(key) {
+  if (!SUPABASE_URL || !SUPABASE_SECRET_KEY) return false;
+  try {
+    const response = await fetch(`${SUPABASE_URL}/rest/v1/rpc/consume_api_rate_limit`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'apikey': SUPABASE_SECRET_KEY,
+        'Authorization': `Bearer ${SUPABASE_SECRET_KEY}`,
+      },
+      body: JSON.stringify({
+        p_rate_key: `chat:${key}`,
+        p_window_seconds: 300,
+        p_max_requests: 20,
+      }),
+    });
+    if (!response.ok) return false;
+    return (await response.json()) === true;
+  } catch (error) {
+    return false;
+  }
+}
+
 export default async function handler(req, res) {
   if (req.method !== 'POST') {
     return res.status(405).json({ success: false, reply: 'Method Not Allowed' });
+  }
+
+  const clientKey = (req.headers['x-forwarded-for'] || '').split(',')[0].trim() || 'global';
+  if (!(await isRateAllowed(clientKey))) {
+    return res.status(429).json({
+      success: false,
+      reply: 'تعداد درخواست‌ها به حد مجاز رسیده است. کمی بعد دوباره تلاش کنید.'
+    });
   }
 
   try {
@@ -17,8 +51,16 @@ export default async function handler(req, res) {
       });
     }
 
-    if (!message) {
+    if (typeof message !== 'string' || !message.trim()) {
       return res.status(400).json({ success: false, reply: 'پیام کاربر یافت نشد.' });
+    }
+
+    if (message.length > 2000) {
+      return res.status(400).json({ success: false, reply: 'طول پیام بیش از حد مجاز است.' });
+    }
+
+    if (history !== undefined && (!Array.isArray(history) || history.length > 16)) {
+      return res.status(400).json({ success: false, reply: 'طول تاریخچهٔ گفتگو بیش از حد مجاز است.' });
     }
 
     // ساخت دستورالعمل سیستم به همراه کاتالوگ محصولات و پروفایل کاربر

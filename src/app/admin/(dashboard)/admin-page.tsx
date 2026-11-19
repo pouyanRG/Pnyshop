@@ -2,7 +2,6 @@
 
 import Link from "next/link";
 import { useState, type FormEvent } from "react";
-import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { AuditLog, Coupon, Product } from "@/types/database";
 import styles from "./admin-page.module.css";
@@ -35,9 +34,7 @@ export function AdminPage({
   auditLogs: AuditLog[];
   loadError: boolean;
 }) {
-  const router = useRouter();
   const [tab, setTab] = useState<Tab>("products");
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [products, setProducts] = useState(initialProducts);
   const [coupons, setCoupons] = useState(initialCoupons);
   const [orders, setOrders] = useState(initialOrders);
@@ -91,7 +88,14 @@ export function AdminPage({
       } else {
         const { data, error } = await client
           .from("products")
-          .insert({ name, price, stock, description: "", is_active: true })
+          .insert({
+            name,
+            price,
+            stock,
+            description: "",
+            is_active: true,
+            status: "published",
+          })
           .select("*")
           .maybeSingle();
         if (error) throw error;
@@ -200,74 +204,28 @@ export function AdminPage({
     }
   }
 
-  async function logout() {
-    const client = await createSupabaseBrowserClient();
-    await client.auth.signOut();
-    router.replace("/login");
-  }
+  const tabs = [
+    ["products", "fa-layer-group", "محصولات"],
+    ["orders", "fa-shopping-basket", "سفارش‌ها"],
+    ["coupons", "fa-ticket-alt", "کدهای تخفیف"],
+    ["audit", "fa-history", "گزارش فعالیت"],
+  ] as const;
 
   return (
-    <div className={styles.page} dir="rtl">
-      <div className={styles.mobileTopbar}>
-        <button
-          type="button"
-          aria-label="باز کردن منوی مدیریت"
-          aria-expanded={mobileMenuOpen}
-          aria-controls="admin-navigation"
-          onClick={() => setMobileMenuOpen(true)}
-        >
-          <i className="fas fa-bars" />
-        </button>
-        <div className={styles.mobileBrand}><i className="fas fa-store" /> پنل مدیریت Pnyshop</div>
-        <span aria-hidden="true" />
-      </div>
-      <button
-        type="button"
-        className={`${styles.sidebarOverlay} ${mobileMenuOpen ? styles.sidebarOverlayVisible : ""}`}
-        aria-label="بستن منوی مدیریت"
-        tabIndex={mobileMenuOpen ? 0 : -1}
-        onClick={() => setMobileMenuOpen(false)}
-      />
-      <aside className={`${styles.sidebar} ${mobileMenuOpen ? styles.sidebarOpen : ""}`} id="admin-navigation">
-        <div className={styles.brand}>
-          <i className="fas fa-store" />
-          <div><b>Pnyshop</b><small>پنل مدیریت</small></div>
+    <div className={styles.embedded} dir="rtl">
+      <nav className={styles.embeddedTabs} aria-label="بخش‌های پنل مدیریت">
+        {tabs.map(([value, icon, label]) => (
           <button
             type="button"
-            className={styles.sidebarClose}
-            aria-label="بستن منوی مدیریت"
-            onClick={() => setMobileMenuOpen(false)}
+            key={value}
+            className={tab === value ? styles.activeTab : ""}
+            aria-current={tab === value ? "page" : undefined}
+            onClick={() => setTab(value)}
           >
-            <i className="fas fa-times" />
+            <i className={`fas ${icon}`} aria-hidden="true" /> {label}
           </button>
-        </div>
-        <nav aria-label="بخش‌های پنل مدیریت">
-          {([
-            ["products", "fa-layer-group", "محصولات"],
-            ["orders", "fa-shopping-basket", "سفارش‌ها"],
-            ["coupons", "fa-ticket-alt", "کدهای تخفیف"],
-            ["audit", "fa-history", "گزارش فعالیت"],
-          ] as const).map(([value, icon, label]) => (
-            <button
-              type="button"
-              key={value}
-              className={tab === value ? styles.active : ""}
-              aria-current={tab === value ? "page" : undefined}
-              onClick={() => {
-                setTab(value);
-                setMobileMenuOpen(false);
-              }}
-            >
-              <i className={`fas ${icon}`} /> {label}
-            </button>
-          ))}
-        </nav>
-        <div className={styles.account}>
-          <small>{email}</small>
-          <Link href="/">بازگشت به فروشگاه</Link>
-          <button type="button" onClick={logout}><i className="fas fa-sign-out-alt" /> خروج از حساب</button>
-        </div>
-      </aside>
+        ))}
+      </nav>
 
       <main className={styles.main}>
         <header className={styles.header}>

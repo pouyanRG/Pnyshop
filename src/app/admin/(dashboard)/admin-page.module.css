@@ -239,3 +239,46 @@
   .tableWrap table { min-width: 620px; }
   .header a { display: none; }
 }
+
+.embedded {
+  display: block;
+}
+
+.embeddedTabs {
+  display: flex;
+  gap: var(--space-2);
+  margin-bottom: var(--space-5);
+  overflow-x: auto;
+}
+
+.embeddedTabs button {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-2);
+  min-height: 40px;
+  padding: 0 var(--space-4);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-full);
+  background: var(--bg-surface);
+  color: var(--text-secondary);
+  font-size: var(--font-sm);
+  font-weight: 700;
+  white-space: nowrap;
+  cursor: pointer;
+  transition: var(--transition);
+}
+
+.embeddedTabs button:hover {
+  color: var(--text-primary);
+}
+
+.embeddedTabs .activeTab {
+  border-color: var(--secondary);
+  background: var(--secondary-soft);
+  color: var(--secondary);
+}
+
+.embedded .main {
+  min-height: 0;
+  padding: 0;
+}
