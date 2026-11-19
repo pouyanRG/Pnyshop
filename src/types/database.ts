@@ -135,6 +135,8 @@ export type SiteMedia = {
   updated_at: string;
 };
 
+export type ProductStripMode = "newest" | "bestseller" | "discount";
+
 export type SiteSetting = {
   id: number;
   logo_url: string | null;
@@ -147,6 +149,15 @@ export type SiteSetting = {
   whatsapp_url: string;
   twitter_url: string;
   aparat_url: string;
+  about_text: string;
+  copyright_text: string;
+  amazing_timer_title: string;
+  amazing_timer_is_active: boolean;
+  amazing_timer_starts_at: string | null;
+  amazing_timer_ends_at: string | null;
+  product_strip_title: string;
+  product_strip_mode: ProductStripMode;
+  product_strip_limit: number;
   updated_at: string;
 };
 

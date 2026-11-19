@@ -29,6 +29,7 @@ requirement. An ordinary authenticated user cannot grant themselves the role:
    - `supabase/migrations/202611190001_require_admin_mfa.sql`
    - `supabase/migrations/202611190002_admin_catalog_media.sql`
    - `supabase/migrations/202611190003_brand_description.sql`
+   - `supabase/migrations/202611190004_site_appearance.sql`
 
    Without them `user_roles`, `products`, `coupons`, `orders`, `audit_logs` and
    `is_admin()` do not exist, and `/admin` throws on its first query. The third
@@ -36,7 +37,10 @@ requirement. An ordinary authenticated user cannot grant themselves the role:
    `product_images`, `product_variants`, `site_media`, `site_settings`), the
    `pnyshop-media` public storage bucket, and variant-aware checkout functions.
    The fourth migration adds the brand `description` column used by the brand
-   manager.
+   manager. The fifth migration adds the storefront appearance columns to the
+   single-row `site_settings` table: the amazing-offer timer (title, active
+   flag, start/end), the product strip (title, mode, limit) and the footer
+   about/copyright texts.
 
 2. **Configure the environment.** Copy `.env.example` to `.env.local` and fill in
    at least `NEXT_PUBLIC_SUPABASE_URL`, `NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY`
@@ -96,6 +100,30 @@ object path.
 
 The legacy ImgBB route `api/upload-image.js` was removed; `IMGBB_API_KEY` is no
 longer used. Keep `SUPABASE_SECRET_KEY` server-side only.
+
+## Storefront appearance (phase 3)
+
+`/admin/media` manages the public storefront look and is available to admins
+with `aal2`:
+
+- **General settings** — logo, favicon, phone, email, address, social links and
+  the footer about/copyright texts. These write the single `site_settings`
+  row (`id = 1`) through server actions that re-check `is_admin()`.
+- **Amazing timer** — title, active flag and optional start/end window for the
+  countdown on the home page.
+- **Product strip** — title, selection mode (`newest`, `bestseller`,
+  `discount`) and item limit (1–24). The home page reads active catalog
+  products with this configuration.
+- **Site media** — every image is stored in `site_media` under a placement
+  (`hero`, `banner_r1`…`banner_r4`, `spotlight`, `category_circle`,
+  `product_strip`, `amazing_timer`, `other`), with an optional mobile image,
+  link, title, sort order, active flag and display window. Uploads go through
+  the same `/api/admin/media` route; deleting a media row also removes its
+  files from the public `pnyshop-media` bucket.
+
+The public can read active media and settings through the row-level-security
+policies from `202611190002_admin_catalog_media.sql`; writes stay
+admin-only.
 
 ## Troubleshooting
 

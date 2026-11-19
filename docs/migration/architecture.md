@@ -41,6 +41,12 @@
   `create_checkout_order` database function.
 - `/admin` is protected by Supabase `is_admin()` and provides product, coupon,
   order-status and audit-log management against RLS-protected tables.
+  `/admin/media` additionally manages the storefront appearance: the
+  single-row `site_settings` (logo, favicon, contact details, social links,
+  footer texts, amazing-timer window and product-strip configuration) and the
+  `site_media` placements (hero slider, banners, spotlight and other slots).
+  Public reads of active media and settings are allowed by RLS; writes require
+  an admin session with `aal2`.
 - `/ai` provides the Gemini-backed storefront assistant through a server-only
   Next.js API route; it does not expose the Gemini key to the browser.
 - Supabase browser, server and privileged clients are defined under
