@@ -1,0 +1,141 @@
+.ai-shell {
+  background: var(--bg-body);
+  color: var(--text-primary);
+}
+
+.ai-page {
+  padding-top: 76px;
+  background: var(--bg-body);
+}
+
+.ai-page .ai-shell {
+  height: calc(100vh - 76px);
+  min-height: 0;
+}
+
+.ai-page .ai-mobile-top,
+.ai-page .ai-desktop-top {
+  display: none !important;
+}
+
+.ai-app {
+  background: var(--bg-body);
+}
+
+.ai-sidebar {
+  border-left: 1px solid var(--border-light);
+  background: var(--bg-surface);
+}
+
+.ai-main-wrapper,
+.ai-main,
+.ai-content-container,
+.ai-desktop-top,
+.ai-composer-wrapper {
+  background: var(--bg-body);
+}
+
+.ai-desktop-top {
+  height: var(--header-h);
+  border-bottom: 1px solid var(--border-light);
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  backdrop-filter: blur(16px);
+}
+
+.ai-sidebar-title,
+.ai-sidebar-sub,
+.ai-hero-wrapper h1,
+.ai-hero-wrapper p,
+.ai-nav-item,
+.ai-sidebar-user,
+.ai-composer-input,
+.ai-composer-footer {
+  color: var(--text-primary);
+}
+
+.ai-sidebar-sub,
+.ai-hero-wrapper p,
+.ai-composer-footer,
+.ai-history-item,
+.ai-sidebar-user span span {
+  color: var(--text-muted);
+}
+
+.ai-nav-item,
+.ai-history-item,
+.ai-quick-card,
+.ai-composer,
+.ai-sidebar-promo {
+  border-color: var(--border-light);
+  background: var(--bg-surface);
+  box-shadow: var(--shadow-sm);
+  border-radius: var(--radius-md);
+}
+
+.ai-nav-item.active,
+.ai-history-item.active,
+.ai-btn-new-chat,
+.ai-send-btn {
+  background: var(--secondary);
+  color: #fff;
+}
+
+.ai-quick-card:hover {
+  border-color: var(--secondary);
+  box-shadow: var(--shadow-md);
+}
+
+.ai-composer {
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+}
+
+.ai-composer-inner {
+  background: var(--bg-surface);
+}
+
+.ai-composer-input {
+  background: transparent;
+}
+
+.ai-suggest-card,
+.ai-suggest-section {
+  border-color: var(--border-light);
+  background: var(--bg-surface);
+  border-radius: var(--radius-lg);
+}
+
+.ai-suggest-name {
+  color: var(--text-primary);
+}
+
+.ai-suggest-price {
+  color: var(--secondary);
+}
+
+.ai-msg-user {
+  background: var(--secondary-soft);
+  color: var(--text-primary);
+}
+
+.ai-msg-bot {
+  border: 1px solid var(--border-light);
+  background: var(--bg-surface);
+  color: var(--text-primary);
+}
+
+@media (max-width: 768px) {
+  .ai-mobile-top {
+    height: var(--header-h);
+    border-bottom: 1px solid var(--border-light);
+    background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  }
+
+  .ai-sidebar {
+    border-left: 0;
+  }
+
+  .ai-composer-wrapper {
+    padding-bottom: calc(8px + env(safe-area-inset-bottom));
+  }
+}

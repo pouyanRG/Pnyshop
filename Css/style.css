@@ -392,7 +392,6 @@ img { max-width: 100%; height: auto; display: block; }
         box-shadow 0.3s ease,
         transform 0.3s cubic-bezier(.4,0,.2,1);
 }
-}
 
 [data-theme="dark"] .main-header {
     background: rgba(20, 20, 20, 0.72);
@@ -1220,6 +1219,12 @@ img { max-width: 100%; height: auto; display: block; }
     .mobile-nav.mn-wide {
         width: 88%;
         max-width: none;
+    }
+}
+
+@media screen and (min-width: 769px) {
+    .mobile-nav {
+        display: none;
     }
 }
 

@@ -9,12 +9,12 @@
             if (!uid) return null;
             if (usersCache.has(uid)) return usersCache.get(uid);
             try {
-                const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'users', uid));
+                const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'users', uid));
                 const data = snap.exists() ? snap.data() : null;
                 usersCache.set(uid, data);
                 return data;
             } catch (e) {
-                console.error('خطا در خواندن اطلاعات کاربر از Firestore:', e);
+                console.error('خطا در خواندن اطلاعات کاربر از Supabase:', e);
                 return null;
             }
         }
@@ -40,11 +40,11 @@
 
         async function writeAuditLog(action, entityType, description) {
             try {
-                await window.fbAddDoc(window.fbCollection(window.fbDb, 'auditLogs'), {
+                await window.dbAddDoc(window.dbCollection(window.supabaseClient, 'auditLogs'), {
                     action,
                     entityType,
                     description,
-                    adminEmail: (window.fbAuth && window.fbAuth.currentUser) ? window.fbAuth.currentUser.email : 'admin',
+                    adminEmail: (window.dbAuth && window.dbAuth.currentUser) ? window.dbAuth.currentUser.email : 'admin',
                     adminUid: adminUid || null,
                     createdAt: new Date().toISOString()
                 });
@@ -68,8 +68,8 @@
             if (badge) badge.style.display = 'inline';
             renderStatusBox('auditStatusBox', 'loading', { text: 'در حال دریافت گزارش فعالیت‌ها...' });
             try {
-                const q = window.fbQuery(window.fbCollection(window.fbDb, 'auditLogs'), window.fbOrderBy('createdAt', 'desc'), window.fbLimit(80));
-                const snap = await window.fbGetDocs(q);
+                const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'auditLogs'), window.dbOrderBy('createdAt', 'desc'), window.dbLimit(80));
+                const snap = await window.dbGetDocs(q);
                 const logs = [];
                 snap.forEach(d => logs.push(d.data()));
                 if (logs.length === 0) {
@@ -110,8 +110,8 @@
                 // برای بازه‌های بزرگ‌تر (۹۰ روز)، سقف دریافت را بالاتر می‌بریم
                 // تا داده‌ی کافی برای محاسبه‌ی روند در دسترس باشد.
                 const fetchLimit = reportsRangeDays > 30 ? 1000 : 500;
-                const q = window.fbQuery(window.fbCollection(window.fbDb, 'orders'), window.fbOrderBy('createdAt', 'desc'), window.fbLimit(fetchLimit));
-                const snap = await window.fbGetDocs(q);
+                const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'orders'), window.dbOrderBy('createdAt', 'desc'), window.dbLimit(fetchLimit));
+                const snap = await window.dbGetDocs(q);
                 const list = [];
                 snap.forEach(d => list.push(d.data()));
                 return list;
@@ -400,7 +400,7 @@
             ordersHasNextPage = false;
         }
 
-        async function loadOrdersFromFirestore(direction = 'first') {
+        async function loadOrdersFromSupabase(direction = 'first') {
             const badge = document.getElementById('ordersLoadingBadge');
             if (badge) badge.style.display = 'inline';
             renderStatusBox('ordersStatusBox', 'loading', { text: 'در حال دریافت سفارشات از سرور...' });
@@ -413,11 +413,11 @@
                 const cursor = ordersPageCursors[ordersCurrentPageIndex];
                 let q;
                 if (cursor) {
-                    q = window.fbQuery(window.fbCollection(window.fbDb, 'orders'), window.fbOrderBy('createdAt', 'desc'), window.fbStartAfter(cursor), window.fbLimit(ORDERS_PAGE_SIZE + 1));
+                    q = window.dbQuery(window.dbCollection(window.supabaseClient, 'orders'), window.dbOrderBy('createdAt', 'desc'), window.dbStartAfter(cursor), window.dbLimit(ORDERS_PAGE_SIZE + 1));
                 } else {
-                    q = window.fbQuery(window.fbCollection(window.fbDb, 'orders'), window.fbOrderBy('createdAt', 'desc'), window.fbLimit(ORDERS_PAGE_SIZE + 1));
+                    q = window.dbQuery(window.dbCollection(window.supabaseClient, 'orders'), window.dbOrderBy('createdAt', 'desc'), window.dbLimit(ORDERS_PAGE_SIZE + 1));
                 }
-                const snap = await window.fbGetDocs(q);
+                const snap = await window.dbGetDocs(q);
                 const docsArr = [];
                 snap.forEach(docSnap => docsArr.push(docSnap));
 
@@ -432,7 +432,7 @@
                 renderStatusBox('ordersStatusBox', cachedOrders.length === 0 ? 'empty' : 'hidden', { text: 'سفارشی برای نمایش در این صفحه وجود ندارد.' });
                 updateOrdersPaginationUI();
             } catch (e) {
-                console.error('خطا در خواندن سفارشات از Firestore — کد:', e && e.code, e);
+                console.error('خطا در خواندن سفارشات از Supabase — کد:', e && e.code, e);
                 renderStatusBox('ordersStatusBox', 'error', { text: 'خطا در دریافت سفارشات از سرور.', error: e });
                 cachedOrders = [];
             } finally {
@@ -452,7 +452,7 @@
         async function goToOrdersPage(direction) {
             if (direction === 'next' && !ordersHasNextPage) return;
             if (direction === 'prev' && ordersCurrentPageIndex === 0) return;
-            await loadOrdersFromFirestore(direction);
+            await loadOrdersFromSupabase(direction);
             renderOrders(true);
         }
 
@@ -554,16 +554,16 @@
 
         async function loadCategoryTree() {
             try {
-                const ref = window.fbDoc(window.fbDb, 'settings', 'categoryTree');
-                const snap = await window.fbGetDoc(ref);
+                const ref = window.dbDoc(window.supabaseClient, 'settings', 'categoryTree');
+                const snap = await window.dbGetDoc(ref);
                 if (snap.exists() && snap.data() && snap.data().tree) {
                     CATEGORY_DATA = snap.data().tree;
                 } else {
-                    await window.fbSetDoc(ref, { tree: DEFAULT_CATEGORY_DATA, updatedAt: new Date().toISOString() });
+                    await window.dbSetDoc(ref, { tree: DEFAULT_CATEGORY_DATA, updatedAt: new Date().toISOString() });
                     CATEGORY_DATA = DEFAULT_CATEGORY_DATA;
                 }
             } catch (e) {
-                console.error('خطا در خواندن درخت دسته‌بندی از Firestore:', e);
+                console.error('خطا در خواندن درخت دسته‌بندی از Supabase:', e);
                 showToast('خطا در دریافت دسته‌بندی از سرور؛ از نسخه‌ی پیش‌فرض استفاده می‌شود ⚠️');
                 CATEGORY_DATA = DEFAULT_CATEGORY_DATA;
             }
@@ -603,12 +603,12 @@
             initCategories();
             initGalleryLinks();
             populateBulkCategorySelect();
-            loadProductsFromFirestore();
+            loadProductsFromSupabase();
             renderSlides();
             renderSpotlightAdminList();
             populateCouponScopeCategories();
             renderCurrentTimerSettings();
-            loadOrdersFromFirestore().then(() => {
+            loadOrdersFromSupabase().then(() => {
                 document.getElementById('stat-orders').innerText = cachedOrders.length;
             });
             renderDashboardCharts();
@@ -619,20 +619,20 @@
 
         async function loadSpotlightCards() {
             try {
-                const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'spotlightCards'));
+                const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'settings', 'spotlightCards'));
                 return (snap.exists() && Array.isArray(snap.data().cards)) ? snap.data().cards : [];
             } catch (e) {
-                console.error('خطا در خواندن ویترین ویژه از Firestore:', e);
+                console.error('خطا در خواندن ویترین ویژه از Supabase:', e);
                 return [];
             }
         }
 
         async function saveSpotlightCards(cards) {
             try {
-                await window.fbSetDoc(window.fbDoc(window.fbDb, 'settings', 'spotlightCards'), { cards, updatedAt: new Date().toISOString() });
+                await window.dbSetDoc(window.dbDoc(window.supabaseClient, 'settings', 'spotlightCards'), { cards, updatedAt: new Date().toISOString() });
                 return true;
             } catch (e) {
-                console.error('خطا در ذخیره ویترین ویژه در Firestore:', e);
+                console.error('خطا در ذخیره ویترین ویژه در Supabase:', e);
                 showToast('خطا در ذخیره ویترین ویژه ❌');
                 return false;
             }
@@ -707,16 +707,16 @@ function populateCouponScopeCategories() {
     if (Object.keys(CATEGORY_DATA).includes(current)) sel.value = current;
 }
 
-async function loadCouponsFromFirestore() {
+async function loadCouponsFromSupabase() {
     renderStatusBox('couponsStatusBox', 'loading', { text: 'در حال دریافت کدهای تخفیف از سرور...' });
     try {
-        const q = window.fbQuery(window.fbCollection(window.fbDb, 'coupons'), window.fbOrderBy('order', 'asc'));
-        const snap = await window.fbGetDocs(q);
+        const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'coupons'), window.dbOrderBy('order', 'asc'));
+        const snap = await window.dbGetDocs(q);
         cachedCoupons = [];
         snap.forEach(d => cachedCoupons.push({ ...d.data(), _docId: d.id }));
         renderStatusBox('couponsStatusBox', cachedCoupons.length === 0 ? 'empty' : 'hidden', { text: 'هنوز کد تخفیفی ثبت نشده است.' });
     } catch (e) {
-        console.error('خطا در خواندن کدهای تخفیف از Firestore:', e);
+        console.error('خطا در خواندن کدهای تخفیف از Supabase:', e);
         renderStatusBox('couponsStatusBox', 'error', { text: 'خطا در دریافت کدهای تخفیف.', error: e });
         cachedCoupons = [];
     }
@@ -811,20 +811,20 @@ document.getElementById('couponForm').addEventListener('submit', async function 
         submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...';
 
         if (isCouponEditingMode && editingDocId) {
-            await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'coupons', editingDocId), couponData);
+            await window.dbUpdateDoc(window.dbDoc(window.supabaseClient, 'coupons', editingDocId), couponData);
             showToast('کد تخفیف بروزرسانی شد ✨');
             writeAuditLog('update', 'coupon', `کد تخفیف «${code}» ویرایش شد`);
         } else {
             couponData.createdAt = new Date().toISOString();
-            await window.fbAddDoc(window.fbCollection(window.fbDb, 'coupons'), couponData);
+            await window.dbAddDoc(window.dbCollection(window.supabaseClient, 'coupons'), couponData);
             showToast('کد تخفیف ثبت شد ✨');
             writeAuditLog('create', 'coupon', `کد تخفیف «${code}» ایجاد شد`);
         }
 
         resetCouponForm();
-        await loadCouponsFromFirestore();
+        await loadCouponsFromSupabase();
     } catch (err) {
-        console.error('خطا در ذخیره کد تخفیف در Firestore:', err);
+        console.error('خطا در ذخیره کد تخفیف در Supabase:', err);
         showToast('خطا در ارتباط با سرور ❌');
     } finally {
         submitBtn.disabled = false;
@@ -890,10 +890,10 @@ document.getElementById('couponForm').addEventListener('submit', async function 
         const target = cachedCoupons.find(c => c._docId === docId);
         if (!confirm(`آیا از حذف کد تخفیف «${target ? target.code : docId}» اطمینان دارید؟ این عملیات قابل بازگشت نیست.`)) return;
         try {
-            await window.fbDeleteDoc(window.fbDoc(window.fbDb, 'coupons', docId));
+            await window.dbDeleteDoc(window.dbDoc(window.supabaseClient, 'coupons', docId));
             showToast('کد تخفیف حذف شد 🗑️');
             writeAuditLog('delete', 'coupon', `کد تخفیف «${target ? target.code : docId}» حذف شد`);
-            await loadCouponsFromFirestore();
+            await loadCouponsFromSupabase();
         } catch (err) {
             console.error('خطا در حذف کد تخفیف:', err);
             showToast('خطا در حذف کد تخفیف ❌');
@@ -909,7 +909,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
         async function checkIsAdmin(uid) {
             try {
-                const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'admins', uid));
+                const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'admins', uid));
                 return snap.exists();
             } catch (e) {
                 console.error('خطا در بررسی دسترسی ادمین:', e);
@@ -918,9 +918,9 @@ document.getElementById('couponForm').addEventListener('submit', async function 
         }
 
         function initAuthGate() {
-            if (!window.fbAuth || !window.fbOnAuthStateChanged) return;
+            if (!window.dbAuth || !window.dbOnAuthStateChanged) return;
 
-            window.fbOnAuthStateChanged(window.fbAuth, async (user) => {
+            window.dbOnAuthStateChanged(window.dbAuth, async (user) => {
                 showAuthChecking(true);
                 if (!user) {
                     adminUid = null;
@@ -939,7 +939,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                     showAdminApp(true, user.email);
                 } else {
                     adminUid = null;
-                    await window.fbSignOut(window.fbAuth);
+                    await window.dbSignOut(window.dbAuth);
                     showAdminApp(false);
                     showAuthGate(true, 'این حساب کاربری دسترسی مدیریت ندارد. با مدیر سیستم تماس بگیرید.');
                 }
@@ -957,7 +957,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ورود...';
 
             try {
-                await window.fbSignInWithEmailAndPassword(window.fbAuth, email, password);
+                await window.dbSignInWithEmailAndPassword(window.dbAuth, email, password);
             } catch (err) {
                 let msg = 'ورود ناموفق بود. ایمیل یا رمز عبور را بررسی کنید.';
                 if (err && err.code === 'auth/invalid-credential') msg = 'ایمیل یا رمز عبور اشتباه است.';
@@ -972,7 +972,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
         async function adminLogout() {
             if (!confirm('از پنل مدیریت خارج شوید؟')) return;
             try {
-                await window.fbSignOut(window.fbAuth);
+                await window.dbSignOut(window.dbAuth);
             } catch (e) {
                 console.error(e);
             }
@@ -1004,7 +1004,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             if (tabName === 'orders') renderOrders();
             else if (tabName === 'reports') { renderReports(); renderDashboardCharts(); } // ← تغییر: رفرش نمودارها هم انجام می‌شود
             else if (tabName === 'slider') renderCurrentTimerSettings();
-            else if (tabName === 'coupons') { populateCouponScopeCategories(); loadCouponsFromFirestore(); }
+            else if (tabName === 'coupons') { populateCouponScopeCategories(); loadCouponsFromSupabase(); }
             else if (tabName === 'audit') loadAuditLog();
             if (window.innerWidth <= 900) toggleSidebar(false);
         }
@@ -1419,11 +1419,11 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             };
 
             try {
-                await window.fbSetDoc(window.fbDoc(window.fbDb, 'settings', 'amazingTimer'), settings);
+                await window.dbSetDoc(window.dbDoc(window.supabaseClient, 'settings', 'amazingTimer'), settings);
                 showToast('تنظیمات تایمر شگفت‌انگیز با موفقیت روی سرور ذخیره شد ✅');
                 renderCurrentTimerSettings();
             } catch (e) {
-                console.error('خطا در ذخیره تایمر در Firestore:', e);
+                console.error('خطا در ذخیره تایمر در Supabase:', e);
                 showToast('خطا در ذخیره تنظیمات تایمر روی سرور ❌');
             }
         }
@@ -1433,7 +1433,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             if (!box) return;
             box.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال خواندن تنظیمات تایمر از سرور...';
             try {
-                const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'amazingTimer'));
+                const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'settings', 'amazingTimer'));
                 if (!snap.exists()) {
                     box.innerHTML = '<i class="fas fa-info-circle"></i> هنوز تایمری تنظیم نشده است.';
                     return;
@@ -1455,21 +1455,21 @@ document.getElementById('couponForm').addEventListener('submit', async function 
         }
 
         let productsLoadFailed = false;
-        async function loadProductsFromFirestore() {
+        async function loadProductsFromSupabase() {
             const badge = document.getElementById('productsLoadingBadge');
             badge.style.display = 'inline';
-            renderStatusBox('productsStatusBox', 'loading', { text: 'در حال دریافت محصولات از Firestore...' });
+            renderStatusBox('productsStatusBox', 'loading', { text: 'در حال دریافت محصولات از Supabase...' });
             productsLoadFailed = false;
             try {
-                const q = window.fbQuery(window.fbCollection(window.fbDb, 'products'), window.fbOrderBy('id', 'desc'));
-                const snap = await window.fbGetDocs(q);
+                const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'products'), window.dbOrderBy('id', 'desc'));
+                const snap = await window.dbGetDocs(q);
                 cachedProducts = [];
                 snap.forEach(docSnap => {
                     cachedProducts.push({ ...docSnap.data(), _docId: docSnap.id });
                 });
                 renderStatusBox('productsStatusBox', 'hidden');
             } catch (e) {
-                console.error('خطا در خواندن محصولات از Firestore — کد:', e && e.code, e);
+                console.error('خطا در خواندن محصولات از Supabase — کد:', e && e.code, e);
                 renderStatusBox('productsStatusBox', 'error', { text: 'خطا در بارگذاری محصولات از سرور.', error: e });
                 cachedProducts = [];
                 productsLoadFailed = true;
@@ -1557,7 +1557,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
                 if (isEditingMode) {
                     if (editingDocId) {
-                        await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'products', editingDocId), productData);
+                        await window.dbUpdateDoc(window.dbDoc(window.supabaseClient, 'products', editingDocId), productData);
                         showToast('محصول بروزرسانی شد ✨');
                         writeAuditLog('update', 'product', `محصول «${productData.name}» ویرایش شد`);
                     } else {
@@ -1565,14 +1565,14 @@ document.getElementById('couponForm').addEventListener('submit', async function 
                     }
                 } else {
                     productData.createdAt = new Date().toISOString();
-                    await window.fbAddDoc(window.fbCollection(window.fbDb, 'products'), productData);
+                    await window.dbAddDoc(window.dbCollection(window.supabaseClient, 'products'), productData);
                     showToast('محصول ثبت شد ✨');
                     writeAuditLog('create', 'product', `محصول «${productData.name}» ایجاد شد`);
                 }
                 resetForm();
-                await loadProductsFromFirestore();
+                await loadProductsFromSupabase();
             } catch (err) {
-                console.error('خطا در ذخیره محصول در Firestore:', err);
+                console.error('خطا در ذخیره محصول در Supabase:', err);
                 showToast('❌ ' + (err && err.message ? err.message : 'خطا در ارتباط با سرور. دوباره تلاش کنید'));
             } finally {
                 submitBtn.disabled = false;
@@ -1880,12 +1880,12 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             if (!confirm(`آیا از حذف کالای «${target ? target.name : docId}» اطمینان دارید؟ این عملیات قابل بازگشت نیست.`)) return;
 
             try {
-                await window.fbDeleteDoc(window.fbDoc(window.fbDb, 'products', docId));
+                await window.dbDeleteDoc(window.dbDoc(window.supabaseClient, 'products', docId));
                 showToast('کالا حذف شد 🗑️');
                 writeAuditLog('delete', 'product', `محصول «${target ? target.name : docId}» حذف شد`);
-                await loadProductsFromFirestore();
+                await loadProductsFromSupabase();
             } catch (err) {
-                console.error('خطا در حذف محصول از Firestore:', err);
+                console.error('خطا در حذف محصول از Supabase:', err);
                 showToast('خطا در حذف محصول از سرور ❌');
             }
         }
@@ -1946,9 +1946,9 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             let okCount = 0;
             for (const chunk of chunks) {
                 try {
-                    const batch = window.fbWriteBatch(window.fbDb);
+                    const batch = window.dbWriteBatch(window.supabaseClient);
                     chunk.forEach(docId => {
-                        batch.update(window.fbDoc(window.fbDb, 'products', docId), { category: newCat, breadcrumb: newCat, categoryPath: [newCat] });
+                        batch.update(window.dbDoc(window.supabaseClient, 'products', docId), { category: newCat, breadcrumb: newCat, categoryPath: [newCat] });
                     });
                     await batch.commit();
                     okCount += chunk.length;
@@ -1959,7 +1959,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             writeAuditLog('update', 'product', `دسته‌بندی ${okCount.toLocaleString('fa-IR')} کالا به‌صورت گروهی به «${newCat}» تغییر کرد`);
             showToast(`دسته‌بندی ${okCount.toLocaleString('fa-IR')} کالا بروزرسانی شد ✅`);
             selectedProductDocIds.clear();
-            await loadProductsFromFirestore();
+            await loadProductsFromSupabase();
         }
 
         async function applyBulkDelete() {
@@ -1972,9 +1972,9 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             let okCount = 0;
             for (const chunk of chunks) {
                 try {
-                    const batch = window.fbWriteBatch(window.fbDb);
+                    const batch = window.dbWriteBatch(window.supabaseClient);
                     chunk.forEach(docId => {
-                        batch.delete(window.fbDoc(window.fbDb, 'products', docId));
+                        batch.delete(window.dbDoc(window.supabaseClient, 'products', docId));
                     });
                     await batch.commit();
                     okCount += chunk.length;
@@ -1985,7 +1985,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             writeAuditLog('delete', 'product', `${okCount.toLocaleString('fa-IR')} کالا به‌صورت گروهی حذف شد`);
             showToast(`${okCount.toLocaleString('fa-IR')} کالا حذف شد 🗑️`);
             selectedProductDocIds.clear();
-            await loadProductsFromFirestore();
+            await loadProductsFromSupabase();
         }
 
         async function saveQuickEdit(docId, btnEl) {
@@ -2000,11 +2000,11 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             btnEl.disabled = true;
             btnEl.innerHTML = '<i class="fas fa-spinner fa-spin"></i>';
             try {
-                await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'products', docId), { price, stock, discount, updatedAt: new Date().toISOString() });
+                await window.dbUpdateDoc(window.dbDoc(window.supabaseClient, 'products', docId), { price, stock, discount, updatedAt: new Date().toISOString() });
                 const target = cachedProducts.find(p => p._docId === docId);
                 writeAuditLog('update', 'product', `قیمت/موجودی «${target ? target.name : docId}» به‌صورت سریع ویرایش شد`);
                 showToast('تغییرات سریع ذخیره شد ✅');
-                await loadProductsFromFirestore();
+                await loadProductsFromSupabase();
             } catch (e) {
                 console.error('خطا در ویرایش سریع محصول:', e);
                 showToast('خطا در ذخیره تغییرات ❌');
@@ -2035,7 +2035,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
             if (!skipReload) {
                 tbody.innerHTML = '';
-                await loadOrdersFromFirestore('first');
+                await loadOrdersFromSupabase('first');
             }
             document.getElementById('stat-orders').innerText = cachedOrders.length;
 
@@ -2155,9 +2155,9 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
 
             try {
-                await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'orders', currentViewOrderId), updatePayload);
+                await window.dbUpdateDoc(window.dbDoc(window.supabaseClient, 'orders', currentViewOrderId), updatePayload);
             } catch (e) {
-                console.error('خطا در بروزرسانی وضعیت سفارش در Firestore:', e);
+                console.error('خطا در بروزرسانی وضعیت سفارش در Supabase:', e);
                 showToast('خطا در ذخیره وضعیت سفارش روی سرور ❌');
                 document.getElementById('modal-status-select').value = oldStatus;
                 return;
@@ -2170,15 +2170,15 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             if (newStatus === 'delivered' && oldStatus !== 'delivered') {
                 const pointsToAdd = calculatePoints(order.totalAmount);
                 try {
-                    const userRef = window.fbDoc(window.fbDb, 'users', order.userId);
-                    const userSnap = await window.fbGetDoc(userRef);
+                    const userRef = window.dbDoc(window.supabaseClient, 'users', order.userId);
+                    const userSnap = await window.dbGetDoc(userRef);
                     const currentPoints = (userSnap.exists() && userSnap.data().points) ? userSnap.data().points : 0;
-                    await window.fbUpdateDoc(userRef, { points: currentPoints + pointsToAdd });
+                    await window.dbUpdateDoc(userRef, { points: currentPoints + pointsToAdd });
                     usersCache.delete(order.userId);
                     showToast(`سفارش تأیید شد. ${pointsToAdd} امتیاز به کاربر اضافه شد ✨`);
                     writeAuditLog('update', 'order', `سفارش #${orderLabel} به «تحویل داده شده» تغییر کرد و ${pointsToAdd.toLocaleString('fa-IR')} امتیاز اعطا شد`);
                 } catch (e) {
-                    console.error('خطا در بروزرسانی امتیاز کاربر در Firestore:', e);
+                    console.error('خطا در بروزرسانی امتیاز کاربر در Supabase:', e);
                     showToast('وضعیت سفارش تغییر کرد ولی امتیاز کاربر ثبت نشد ⚠️');
                     writeAuditLog('update', 'order', `سفارش #${orderLabel} به «تحویل داده شده» تغییر کرد (ثبت امتیاز ناموفق)`);
                 }
@@ -2200,7 +2200,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             const tbody = document.getElementById('deliveredOrdersTableBody');
             tbody.innerHTML = '<tr><td colspan="4" style="text-align:center;padding:30px;color:var(--text-light);"><i class="fas fa-spinner fa-spin"></i> در حال محاسبه گزارشات از سرور...</td></tr>';
 
-            await loadOrdersFromFirestore();
+            await loadOrdersFromSupabase();
             const deliveredOrders = cachedOrders.filter(o => o.status === 'delivered');
 
             let totalSales = 0;
@@ -2233,23 +2233,23 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             tbody.innerHTML = rows.join('');
         }
 
-        async function loadSlidesFromFirestore() {
+        async function loadSlidesFromSupabase() {
             try {
-                const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'slides'));
+                const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'settings', 'slides'));
                 return (snap.exists() && Array.isArray(snap.data().slides)) ? snap.data().slides : [];
             } catch (e) {
-                console.error('خطا در خواندن اسلایدها از Firestore:', e);
+                console.error('خطا در خواندن اسلایدها از Supabase:', e);
                 showToast('خطا در دریافت اسلایدها از سرور ❌');
                 return [];
             }
         }
 
-        async function saveSlidesToFirestore(slides) {
+        async function saveSlidesToSupabase(slides) {
             try {
-                await window.fbSetDoc(window.fbDoc(window.fbDb, 'settings', 'slides'), { slides, updatedAt: new Date().toISOString() });
+                await window.dbSetDoc(window.dbDoc(window.supabaseClient, 'settings', 'slides'), { slides, updatedAt: new Date().toISOString() });
                 return true;
             } catch (e) {
-                console.error('خطا در ذخیره اسلایدها در Firestore:', e);
+                console.error('خطا در ذخیره اسلایدها در Supabase:', e);
                 showToast('خطا در ذخیره اسلایدها روی سرور ❌');
                 return false;
             }
@@ -2276,9 +2276,9 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             }
 
             const newSlide = { image: imageUrl, link: link, title: title };
-            const slides = await loadSlidesFromFirestore();
+            const slides = await loadSlidesFromSupabase();
             slides.push(newSlide);
-            const saved = await saveSlidesToFirestore(slides);
+            const saved = await saveSlidesToSupabase(slides);
             if (!saved) return;
 
             fileInput.value = '';
@@ -2292,7 +2292,7 @@ document.getElementById('couponForm').addEventListener('submit', async function 
         }
 
         async function renderSlides() {
-            const slides = await loadSlidesFromFirestore();
+            const slides = await loadSlidesFromSupabase();
             const container = document.getElementById('adminSliderList');
             document.getElementById('stat-slides').innerText = slides.length;
 
@@ -2318,10 +2318,10 @@ document.getElementById('couponForm').addEventListener('submit', async function 
 
         async function deleteSlide(index) {
             if (!confirm('آیا از حذف این اسلاید اطمینان دارید؟')) return;
-            const slides = await loadSlidesFromFirestore();
+            const slides = await loadSlidesFromSupabase();
             const removed = slides[index];
             slides.splice(index, 1);
-            const saved = await saveSlidesToFirestore(slides);
+            const saved = await saveSlidesToSupabase(slides);
             if (!saved) return;
             writeAuditLog('delete', 'slide', `اسلاید «${removed && removed.title ? removed.title : 'بدون عنوان'}» حذف شد`);
             await renderSlides();
@@ -2335,5 +2335,5 @@ document.getElementById('couponForm').addEventListener('submit', async function 
             setTimeout(() => t.classList.remove('show'), 3000);
         }
 
-        window.addEventListener('firebase-ready', initAuthGate);
-        if (window.fbAuth) initAuthGate();
+        window.addEventListener('supabase-ready', initAuthGate);
+        if (window.dbAuth) initAuthGate();

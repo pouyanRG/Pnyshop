@@ -1,0 +1,61 @@
+@import "../../Css/style.css";
+@import "../../Css/home.css";
+
+/* Shared storefront visual language for all migrated Next.js routes */
+:root {
+  --storefront-header-height: 64px;
+  --storefront-radius-card: 16px;
+  --storefront-radius-control: 12px;
+}
+
+body {
+  font-family: "Vazirmatn", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+.migration-state,
+.main-header,
+.header-inner,
+.mobile-nav,
+.summary-card,
+.cart-item-v2,
+.pdp-wrap,
+.profile-card,
+.authContainer {
+  font-family: "Vazirmatn", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+button,
+input,
+textarea,
+select {
+  font-family: "Vazirmatn", -apple-system, BlinkMacSystemFont, sans-serif;
+}
+
+/* Common fixed-header spacing for every migrated page */
+.profile-page,
+.storefront-product-page,
+.cart-page,
+.checkout-page,
+.ai-page,
+.login-page,
+.admin-page {
+  padding-top: 76px;
+}
+
+.migration-state {
+  display: grid;
+  justify-items: center;
+  gap: 12px;
+  min-height: 60vh;
+  padding: 48px 20px;
+  text-align: center;
+}
+
+.migration-state p {
+  color: var(--text-muted);
+}
+
+.migration-state a {
+  color: var(--secondary);
+  font-weight: 800;
+}

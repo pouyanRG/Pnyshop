@@ -1,0 +1,103 @@
+# Pnyshop architecture and migration status
+
+## Target
+
+- **Web:** Next.js App Router, React, strict TypeScript and the existing
+  Persian RTL storefront styles.
+- **Database and auth:** PostgreSQL and Supabase Auth. Keep privileged keys in
+  server-only code; use row-level security for browser access.
+- **Files:** Supabase Storage for managed product and storefront media.
+- **Integrations:** Gemini and Resend remain server-side integrations.
+- **Deployment:** Vercel is configured by the existing project structure;
+  deployment status has not been verified.
+
+## Current implementation
+
+- `/` renders the existing storefront markup and styles through Next.js.
+- `/login` provides Supabase email/password sign-in, email registration with a
+  one-time verification code, Google OAuth and password recovery. Registration
+  requires a 12-character password with uppercase, lowercase, numeric and
+  symbol characters. Admins must complete TOTP MFA before the admin route or
+  admin-protected row-level-security policies allow access.
+- `/profile` reads the authenticated user's profile and orders server-side,
+  allows editing non-sensitive profile fields, and keeps email, wallet balance
+  and points read-only. Profile updates are subject to the database grants and
+  row-level security policies.
+- `/product?id=<numeric-id>` reads an active catalog product and related
+  products from Supabase; signed-in users can update their cart and wishlist.
+- `/cart` requires authentication, reads the user's JSONB cart and current
+  active product prices/stock from Supabase, and persists cart edits through
+  the user's row-level-security-protected profile.
+- The new cart intentionally does not submit payment: the real payment gateway
+  is not configured. Its payment control stays disabled rather than simulating
+  checkout success. The home page's mobile cart link points to `/cart`.
+- `/checkout` requires authentication, loads the JSONB cart and active catalog,
+  validates coupon and shipping inputs, and calls the atomic
+  `create_checkout_order` database function.
+- `/admin` is protected by Supabase `is_admin()` and provides product, coupon,
+  order-status and audit-log management against RLS-protected tables.
+- `/ai` provides the Gemini-backed storefront assistant through a server-only
+  Next.js API route; it does not expose the Gemini key to the browser.
+- Supabase browser, server and privileged clients are defined under
+  `src/lib/supabase/`.
+- The existing multi-page storefront uses `Js/supabase-bridge.js` to keep its
+  current page behavior while routing authentication and data access through
+  Supabase Auth and PostgREST.
+- The browser receives only the Supabase URL and publishable key from
+  `/api/public-config`; the secret key remains server-only.
+- `supabase/migrations/202611180001_initial_schema.sql` defines profiles,
+  roles, products, coupons, orders, storefront settings, audit logs, OTP and
+  rate-limit tables with row-level security.
+- Checkout uses the `create_checkout_order` database function to price items
+  from the catalog and insert pending orders atomically. No client-side action
+  can mark an order paid. An authorized admin or a verified payment-provider
+  callback must confirm payment; that transition rechecks inventory and coupon
+  limits atomically. A real payment provider is not configured yet, and the
+  cart is not cleared automatically.
+- Checkout, admin, AI and remaining legacy flows have not yet been ported into
+  the Next.js application. The home page account link points to `/profile`;
+  product search and some product-card behavior remain legacy/incomplete.
+- The catalog storage bucket is private and admin-only. Public storefront media
+  must be served through an explicitly designed public asset path or signed URL.
+- Upstash Redis is not currently used; the application does not yet have a
+  cache or transient-data requirement that justifies an additional dependency.
+
+## Verification and blockers
+
+- Auth behavior depends on Supabase project settings that are not changed by
+  local code: require email confirmation and copy
+  `supabase/templates/confirm-signup.html` into Authentication > Email Templates
+  > Confirm signup. The template must display `{{ .Token }}` and omit
+  `{{ .ConfirmationURL }}` to send a one-time code instead of a link. Set the
+  OTP length to eight, match the password requirements and breached-password
+  protection, enable the Google provider and TOTP MFA, configure an SMS
+  provider for phone signup/login/recovery, and allow the `/login` callback
+  URL for OAuth and password recovery.
+  Configure a trusted SMTP sender and server-side Auth rate limits before
+  production.
+  CAPTCHA is intentionally not enabled; the browser cooldown is only a UX
+  guard and honeypot, not a substitute for Supabase-side rate limits.
+- The login UI uses Supabase SSR browser cookies. Moving auth exchange to
+  server-managed `HttpOnly` cookies, enforcing remember-me duration, and
+  recording terms acceptance/version server-side remain API tasks; the current
+  client-side control does not alter cookie persistence.
+- Apply `supabase/migrations/202611190001_require_admin_mfa.sql` to enforce
+  `aal2` inside `is_admin()` and all RLS policies that rely on it. The admin
+  route guides authorized admins through TOTP enrollment and challenge.
+- `/checkout`, `/admin`, `/ai`, `/cart` and `/product` are implemented in the
+  Next.js App Router. Live Supabase reads and writes remain blocked until the
+  migration is applied and the configured project URL/database are reachable.
+- `/ai` has a server-only Gemini API route, but `GEMINI_API_KEY` is currently
+  empty or unavailable in the local environment.
+- Supabase Auth health responds successfully using the configured public
+  project URL.
+- The `products` REST endpoint is not available yet (HTTP 404), so the schema
+  migration has not been applied.
+- The new login and profile routes build and render, but live profile/order
+  reads, profile updates and authenticated flows depend on the Supabase schema
+  migration being applied; they have not been verified against live data.
+- The configured PostgreSQL connection hostname could not be resolved from
+  this environment. No schema writes were attempted.
+- No production deployment or end-to-end application behavior has been
+  verified. Continue with the migration only after the configured database
+  connection is reachable and the schema is applied.

@@ -78,13 +78,13 @@ function initSearch() {
 
         searchDebounceTimer = setTimeout(async () => {
             try {
-                const searchQuery = window.fbQuery(
-                    window.fbCollection(window.fbDb, 'products'),
-                    window.fbWhere('name', '>=', q),
-                    window.fbWhere('name', '<=', q + '\uf8ff'),
-                    window.fbLimit(6)
+                const searchQuery = window.dbQuery(
+                    window.dbCollection(window.supabaseClient, 'products'),
+                    window.dbWhere('name', '>=', q),
+                    window.dbWhere('name', '<=', q + '\uf8ff'),
+                    window.dbLimit(6)
                 );
-                const snap = await window.fbGetDocs(searchQuery);
+                const snap = await window.dbGetDocs(searchQuery);
                 const matches = [];
                 snap.forEach(d => matches.push(d.data()));
 
@@ -114,7 +114,7 @@ function initSearch() {
 }
 
 async function getUserProfile(uid) {
-    try { const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'users', uid)); return snap.exists() ? snap.data() : null; }
+    try { const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'users', uid)); return snap.exists() ? snap.data() : null; }
     catch (e) { return null; }
 }
 function updateAuthUI() {
@@ -131,9 +131,9 @@ function updateCartUI(cart) {
     if (hc) hc.innerText = c.toLocaleString('fa-IR');
     if (nc) nc.innerText = c.toLocaleString('fa-IR');
 }
-function initFirebaseAuth() {
-    if (!window.fbAuth || !window.fbOnAuthStateChanged) return;
-    window.fbOnAuthStateChanged(window.fbAuth, async (user) => {
+function initSupabaseAuth() {
+    if (!window.dbAuth || !window.dbOnAuthStateChanged) return;
+    window.dbOnAuthStateChanged(window.dbAuth, async (user) => {
         if (user) {
             const profile = await getUserProfile(user.uid);
             state.currentUser = { uid: user.uid, ...(profile || {}) };
@@ -147,8 +147,8 @@ function initFirebaseAuth() {
 }
 
 async function fetchProductById(id) {
-    const q = window.fbQuery(window.fbCollection(window.fbDb, 'products'), window.fbWhere('id', '==', id), window.fbLimit(5));
-    const snap = await window.fbGetDocs(q);
+    const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'products'), window.dbWhere('id', '==', id), window.dbLimit(5));
+    const snap = await window.dbGetDocs(q);
     if (snap.empty) return null;
     const matches = []; snap.forEach(d => matches.push({ ...d.data(), _docId: d.id }));
     if (matches.length > 1) matches.sort((a, b) => new Date(b.updatedAt || b.createdAt || 0) - new Date(a.updatedAt || a.createdAt || 0));
@@ -160,8 +160,8 @@ async function fetchRelatedProducts(product) {
         const category = product.category;
         const excludeId = product.id;
         const path = (product.categoryPath && product.categoryPath.length) ? product.categoryPath : (product.breadcrumb ? product.breadcrumb.split(' > ') : []);
-        const q = window.fbQuery(window.fbCollection(window.fbDb, 'products'), window.fbWhere('category', '==', category), window.fbLimit(30));
-        const snap = await window.fbGetDocs(q);
+        const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'products'), window.dbWhere('category', '==', category), window.dbLimit(30));
+        const snap = await window.dbGetDocs(q);
         const list = [];
         snap.forEach(d => { const data = d.data(); if (data.id !== excludeId) list.push(data); });
         function pathOverlap(other) {
@@ -524,7 +524,7 @@ async function addToCart() {
        
         let freshCart = [];
         try {
-            const userSnap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'users', state.currentUser.uid));
+            const userSnap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'users', state.currentUser.uid));
             if (userSnap.exists()) {
                 const userData = userSnap.data();
                 freshCart = Array.isArray(userData.cart) ? [...userData.cart] : [];
@@ -541,7 +541,7 @@ async function addToCart() {
         }
         btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ثبت...';
         try {
-            await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'users', state.currentUser.uid), { cart });
+            await window.dbUpdateDoc(window.dbDoc(window.supabaseClient, 'users', state.currentUser.uid), { cart });
             state.currentUser.cart = cart;
             updateCartUI(cart);
             showToast(`با رنگ ${state.selectedColor} به سبد اضافه شد`);
@@ -584,8 +584,8 @@ async function toggleWishlist() {
 
 async function saveWishlistWithRetry(wl, wasActive, btn, icon, attempt) {
     try {
-        // ذخیره یکپارچه روی Firestore با استفاده از تابع سرویس
-        await wishlistService.persistToFirestore(state.currentUser.uid, wl, window.fbUpdateDoc, window.fbDoc, window.fbDb);
+        // ذخیره یکپارچه روی Supabase با استفاده از تابع سرویس
+        await wishlistService.persistToDatabase(state.currentUser.uid, wl, window.dbUpdateDoc, window.dbDoc, window.supabaseClient);
         state.currentUser.wishlist = wl;
         showToast(wasActive ? 'حذف شد' : 'اضافه شد');
         btn.disabled = false;
@@ -709,10 +709,10 @@ function runInit() {
     if (isAppInitialized) return;
     isAppInitialized = true;
     initPage();
-    initFirebaseAuth();
+    initSupabaseAuth();
 }
-window.addEventListener('firebase-ready', runInit);
-if (window.fbAuth && window.fbDb) {
+window.addEventListener('supabase-ready', runInit);
+if (window.dbAuth && window.supabaseClient) {
     runInit();
 }
 

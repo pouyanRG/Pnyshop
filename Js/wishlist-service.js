@@ -1,5 +1,5 @@
 /**
- * Unified wishlist service — Firestore-backed with localStorage guest fallback.
+ * Unified wishlist service — Supabase-backed with localStorage guest fallback.
  * Items: { id, priceAtAdd?, addedAt? } (legacy: plain number ids)
  */
 const LEGACY_KEY = 'shop_wishlist';
@@ -130,7 +130,7 @@ export function computeBackInStock(wishlist, catalog, previouslyOutOfStockIds) {
     });
 }
 
-export async function persistToFirestore(uid, list, updateDoc, doc, db) {
+export async function persistToDatabase(uid, list, updateDoc, doc, db) {
     const normalized = normalizeList(list);
     await updateDoc(doc(db, 'users', uid), { wishlist: normalized });
     return normalized;
@@ -141,7 +141,7 @@ export async function syncWishlistOnLogin(uid, remoteRaw, updateDoc, doc, db) {
     const remote = normalizeList(remoteRaw);
     const merged = mergeLocalAndRemote(local, remote);
     if (merged.length !== remote.length || local.length > 0) {
-        await persistToFirestore(uid, merged, updateDoc, doc, db);
+        await persistToDatabase(uid, merged, updateDoc, doc, db);
         if (local.length) clearLegacyLocal();
     }
     return merged;

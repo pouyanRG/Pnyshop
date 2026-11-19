@@ -28,14 +28,14 @@ const state = {
 // --- Initialization ---
 let checkoutInitialized = false;
 
-window.addEventListener('firebase-ready', initCheckout);
-if (window.fbAuth) initCheckout();
+window.addEventListener('supabase-ready', initCheckout);
+if (window.dbAuth) initCheckout();
 
 function initCheckout() {
     if (checkoutInitialized) return;
     checkoutInitialized = true;
 
-    window.fbOnAuthStateChanged(window.fbAuth, async (user) => {
+    window.dbOnAuthStateChanged(window.dbAuth, async (user) => {
         try {
             if (!user) {
                 localStorage.removeItem(DB.legacySession);
@@ -83,22 +83,22 @@ function initCheckout() {
 
 async function getUserProfile(uid) {
     try {
-        const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'users', uid));
+        const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'users', uid));
         return snap.exists() ? snap.data() : null;
     } catch (e) {
-        console.error('خطا در خواندن پروفایل از Firestore:', e);
+        console.error('خطا در خواندن پروفایل از Supabase:', e);
         return null;
     }
 }
 
 async function loadProducts() {
     try {
-        const q = window.fbQuery(window.fbCollection(window.fbDb, 'products'), window.fbOrderBy('id', 'desc'));
-        const snap = await window.fbGetDocs(q);
+        const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'products'), window.dbOrderBy('id', 'desc'));
+        const snap = await window.dbGetDocs(q);
         state.products = [];
         snap.forEach(docSnap => state.products.push(docSnap.data()));
     } catch (e) {
-        console.error('خطا در خواندن محصولات از Firestore:', e);
+        console.error('خطا در خواندن محصولات از Supabase:', e);
         state.products = [];
         showToast('خطا در دریافت محصولات از سرور', 'error');
     }
@@ -216,8 +216,8 @@ function setCouponUI(mode, message) {
 async function findCouponByCode(rawCode) {
     const code = rawCode.trim().toUpperCase();
     if (!code) return null;
-    const q = window.fbQuery(window.fbCollection(window.fbDb, 'coupons'), window.fbWhere('code', '==', code));
-    const snap = await window.fbGetDocs(q);
+    const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'coupons'), window.dbWhere('code', '==', code));
+    const snap = await window.dbGetDocs(q);
     if (snap.empty) return null;
     let result = null;
     snap.forEach(d => { result = { ...d.data(), _docId: d.id }; });
@@ -338,55 +338,7 @@ function removeCoupon() {
     setCouponUI('idle', '');
     calculateTotals();
 }
-// --- ADVANCED PAYMENT SIMULATION LOGIC ---
-
-function generateUniqueTransactionId(gateway) {
-    // Generate a unique ID based on timestamp, random number, and gateway prefix
-    const timestamp = Date.now().toString(36).toUpperCase();
-    const randomPart = Math.floor(Math.random() * 900000) + 100000;
-    const prefix = gateway === 'zarinpal' ? 'ZP' : (gateway === 'melat' ? 'MLT' : 'PPG');
-
-    // Create a simple hash-like string for uniqueness
-    return `${prefix}_${timestamp}_${randomPart}`;
-}
-
-function simulateBankConnection(txnId, gateway, amount) {
-    return new Promise((resolve, reject) => {
-        const loadingText = document.getElementById('loadingText');
-        const subText = document.getElementById('subText');
-        const codeDisplay = document.getElementById('txnCode');
-
-        codeDisplay.innerText = `TXN_ID: ${txnId}`;
-
-        // Simulate network delay steps
-        const steps = [
-            { time: 1000, text: 'ارتباط با سرور بانک...', sub: 'در حال برقراری پروتکل امن...' },
-            { time: 2500, text: 'تایید مبلغ تراکنش...', sub: `مبلغ: ${amount.toLocaleString('en-US')} تومان` },
-            { time: 4000, text: 'در حال انتقال به درگاه...', sub: 'انتظار کنید...' }
-        ];
-
-        let stepIndex = 0;
-
-        const interval = setInterval(() => {
-            if (stepIndex < steps.length) {
-                loadingText.innerText = steps[stepIndex].text;
-                subText.innerText = steps[stepIndex].sub;
-                stepIndex++;
-            } else {
-                clearInterval(interval);
-
-                // Simulate success/failure randomly (90% success rate)
-                const isSuccess = Math.random() > 0.1;
-
-                if (isSuccess) {
-                    resolve({ status: 'SUCCESS', txnId, gateway, amount });
-                } else {
-                    reject({ status: 'FAILED', txnId, gateway, amount, reason: 'خطای شبکه یا موجودی ناکافی' });
-                }
-            }
-        }, 1500); // Each step takes 1.5 seconds
-    });
-}
+// No payment provider is configured; the browser can only create pending orders.
 
 async function processOrder() {
     if (!state.user) {
@@ -415,6 +367,7 @@ async function processOrder() {
 
     // 2. Prepare Order Data
     const orderData = {
+        idempotencyKey: crypto.randomUUID(),
         userId: state.user.uid,
         items: JSON.parse(JSON.stringify(state.cart)),
         totalAmount: state.finalTotal,
@@ -428,109 +381,23 @@ async function processOrder() {
         createdAt: new Date().toISOString()
     };
 
-    // 3. Start Payment Process
-    showLoading(true, 'در حال برقراری ارتباط...', 'لطفاً صبر کنید');
-
-    // Generate Unique Transaction ID
-    state.currentTxnId = generateUniqueTransactionId(state.paymentMethod);
-
+    showLoading(true, 'در حال ثبت سفارش...', 'لطفاً صبر کنید');
     try {
-        // Call the simulated bank connection
-        const result = await simulateBankConnection(state.currentTxnId, state.paymentMethod, state.finalTotal);
-
-        // If successful
-        await handlePaymentSuccess(result, orderData);
-
-    } catch (error) {
-        // If failed
-        await handlePaymentFailure(error, orderData);
+        await window.dbAddDoc(window.dbCollection(window.supabaseClient, 'orders'), orderData);
+    } catch (e) {
+        console.error('خطا در ثبت سفارش در Supabase:', e);
+        hideLoading();
+        showToast('ثبت سفارش با خطا مواجه شد. لطفاً دوباره تلاش کنید.', 'error');
+        return;
     } finally {
         payBtn.disabled = false;
     }
-}
-
-async function handlePaymentSuccess(paymentResult, orderData) {
-    // 1. بروزرسانی وضعیت سفارش
-    orderData.status = 'paid';
-    orderData.paymentGateway = paymentResult.gateway;
-    orderData.transactionId = paymentResult.txnId;
-    orderData.paidAt = new Date().toISOString();
-
-    try {
-        // 2. ذخیره سفارش در کالکشن "orders" روی Firestore
-        //    توجه: طبق firestore.rules، سفارش ابتدا فقط با status
-        //    'pending_payment' قابل ساخت است؛ سپس بلافاصله با یک
-        //    updateDoc جداگانه به 'paid' تغییر می‌کند (چون rules
-        //    اجازه‌ی ساخت مستقیم سفارش با status='paid' را نمی‌دهد).
-        const pendingData = { ...orderData, status: 'pending_payment' };
-        delete pendingData.paymentGateway;
-        delete pendingData.transactionId;
-        delete pendingData.paidAt;
-
-        const orderRef = await window.fbAddDoc(window.fbCollection(window.fbDb, 'orders'), pendingData);
-        await window.fbUpdateDoc(orderRef, {
-            status: 'paid',
-            paymentGateway: orderData.paymentGateway,
-            transactionId: orderData.transactionId,
-            paidAt: orderData.paidAt
-        });
-
-        // 3. خالی کردن سبد خرید کاربر در Firestore
-        await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'users', state.user.uid), { cart: [] });
-        state.user.cart = [];
-        state.cart = [];
-        if (state.couponCode && state.couponDocId) {
-            try {
-                await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'coupons', state.couponDocId), {
-                    usedCount: window.fbIncrement(1)
-                });
-            } catch (e) {
-                console.error('خطا در بروزرسانی تعداد استفاده از کد تخفیف:', e);
-                // این خطا نباید جلوی تکمیل موفق سفارش را بگیرد، فقط لاگ می‌شود
-            }
-        }
-    } catch (e) {
-        console.error('خطا در ثبت سفارش در Firestore:', e);
-        hideLoading();
-        showToast('پرداخت انجام شد ولی ثبت سفارش با خطا مواجه شد. با پشتیبانی تماس بگیرید.', 'error');
-        return;
-    }
 
     hideLoading();
-    showToast(`پرداخت با موفقیت انجام شد.\nشماره پیگیری: ${paymentResult.txnId}`, 'success');
-
-    // بازگشت به صفحه اصلی پس از نمایش پیام
+    showToast('سفارش ثبت شد، اما تا اتصال درگاه واقعی در وضعیت «در انتظار پرداخت» باقی می‌ماند.', 'success');
     setTimeout(() => {
-        window.location.href = 'index.html';
+        window.location.href = 'profile.html';
     }, 2500);
-}
-
-async function handlePaymentFailure(failResult, orderData) {
-    hideLoading();
-
-    // Keep order as pending or cancel? Let's keep it pending but mark as failed
-    orderData.status = 'failed_payment';
-    orderData.transactionId = failResult.txnId;
-    orderData.failureReason = failResult.reason;
-
-    try {
-        // طبق firestore.rules، ساخت مستقیم سفارش با status='failed_payment'
-        // مجاز نیست؛ ابتدا با pending_payment ساخته و سپس آپدیت می‌شود.
-        const pendingData = { ...orderData, status: 'pending_payment' };
-        delete pendingData.transactionId;
-        delete pendingData.failureReason;
-
-        const orderRef = await window.fbAddDoc(window.fbCollection(window.fbDb, 'orders'), pendingData);
-        await window.fbUpdateDoc(orderRef, {
-            status: 'failed_payment',
-            transactionId: orderData.transactionId,
-            failureReason: orderData.failureReason
-        });
-    } catch (e) {
-        console.error('خطا در ثبت سفارش ناموفق در Firestore:', e);
-    }
-
-    showToast(`پرداخت ناموفق بود.\nدلیل: ${failResult.reason}\nشماره پیگیری: ${failResult.txnId}`, 'error');
 }
 
 function showLoading(show, mainText, subText) {
@@ -572,4 +439,3 @@ function showToast(msg, type = 'success') {
         toast.classList.remove('show');
     }, 4000); // Longer duration for error messages with transaction ID
 }
-

@@ -2745,8 +2745,8 @@
 .color-swatch-box { width: 46px; height: 46px; border-radius: var(--radius-md); border: 1.5px solid var(--border-default); box-shadow: inset 0 0 0 2px var(--bg-surface); transition: var(--transition); }
 .color-swatch-item.active .color-swatch-box { border-color: var(--primary); box-shadow: 0 0 0 3px var(--primary-soft2); transform: scale(1.05); }
 .color-swatch-label { font-size: 11px; font-weight: 700; color: var(--text-secondary); }
-.color-swatch-item.active .color-swatch-label { color：var(--primary); }
-.filter-empty-note { font-size：12px; color：var(--text-secondary); padding：var(--space-3) 0; text-align：center; }
+.color-swatch-item.active .color-swatch-label { color: var(--primary); }
+.filter-empty-note { font-size: 12px; color: var(--text-secondary); padding: var(--space-3) 0; text-align: center; }
 
 /* ===== توگل‌سوییچ ===== */
 .toggle-row { display: flex; align-items: center; justify-content: space-between; padding: var(--space-3) 0; cursor: pointer; }
@@ -3406,4 +3406,3 @@
         font-size: 14px;
     }
 }
-

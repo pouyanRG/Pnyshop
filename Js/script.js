@@ -46,11 +46,11 @@ const Store = {
         let cursor = null;
         try {
             while (list.length < SAFETY_MAX_DOCS) {
-                const clauses = [window.fbCollection(window.fbDb, 'products'), window.fbOrderBy('id', 'desc')];
-                if (cursor) clauses.push(window.fbStartAfter(cursor));
-                clauses.push(window.fbLimit(BATCH_SIZE));
-                const q = window.fbQuery(...clauses);
-                const snap = await window.fbGetDocs(q);
+                const clauses = [window.dbCollection(window.supabaseClient, 'products'), window.dbOrderBy('id', 'desc')];
+                if (cursor) clauses.push(window.dbStartAfter(cursor));
+                clauses.push(window.dbLimit(BATCH_SIZE));
+                const q = window.dbQuery(...clauses);
+                const snap = await window.dbGetDocs(q);
                 if (snap.empty) break;
                 let lastDoc = null;
                 snap.forEach(docSnap => { list.push(docSnap.data()); lastDoc = docSnap; });
@@ -64,14 +64,14 @@ const Store = {
     },
     async getProductById(id) {
         try {
-            const q = window.fbQuery(window.fbCollection(window.fbDb, 'products'), window.fbWhere('id', '==', id), window.fbLimit(1));
-            const snap = await window.fbGetDocs(q);
+            const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'products'), window.dbWhere('id', '==', id), window.dbLimit(1));
+            const snap = await window.dbGetDocs(q);
             if (snap.empty) return null;
             let result = null;
             snap.forEach(d => { result = d.data(); });
             return result;
         } catch (e) {
-            console.error('خطا در دریافت محصول از Firestore:', e);
+            console.error('خطا در دریافت محصول از Supabase:', e);
             return null;
         }
     },
@@ -128,25 +128,25 @@ const Store = {
     },
     async getUserProfile(uid) {
         try {
-            const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'users', uid));
+            const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'users', uid));
             return snap.exists() ? snap.data() : null;
         } catch(e) {
-            console.error('خطا در خواندن پروفایل از Firestore:', e);
+            console.error('خطا در خواندن پروفایل از Supabase:', e);
             return null;
         }
     },
     async updateUserProfile(uid, partialData) {
         try {
-            await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'users', uid), partialData);
+            await window.dbUpdateDoc(window.dbDoc(window.supabaseClient, 'users', uid), partialData);
             return true;
         } catch(e) {
-            console.error('خطا در بروزرسانی پروفایل در Firestore:', e);
+            console.error('خطا در بروزرسانی پروفایل در Supabase:', e);
             return false;
         }
     },
     async getAmazingTimerSettings() {
         try {
-            const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'amazingTimer'));
+            const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'settings', 'amazingTimer'));
             return snap.exists() ? snap.data() : null;
         } catch(e) {
             console.error('خطا در خواندن تنظیمات تایمر:', e);
@@ -157,13 +157,13 @@ const Store = {
        دیگر هیچ کپی هاردکد شده‌ای از دسته‌بندی در index.html نگه‌داری نمی‌شود. */
     async getCategoryTree() {
         try {
-            const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'categoryTree'));
+            const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'settings', 'categoryTree'));
             if (snap.exists() && snap.data() && snap.data().tree) {
                 return snap.data().tree;
             }
             return null;
         } catch(e) {
-            console.error('خطا در خواندن درخت دسته‌بندی از Firestore:', e);
+            console.error('خطا در خواندن درخت دسته‌بندی از Supabase:', e);
             return null;
         }
     }
@@ -477,10 +477,10 @@ function createAmazingSlide(p) {
  
 async function loadSpotlightCards() {
     try {
-        const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'settings', 'spotlightCards'));
+        const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'settings', 'spotlightCards'));
         return (snap.exists() && Array.isArray(snap.data().cards)) ? snap.data().cards : [];
     } catch (e) {
-        console.error('خطا در خواندن ویترین ویژه از Firestore:', e);
+        console.error('خطا در خواندن ویترین ویژه از Supabase:', e);
         return [];
     }
 }
@@ -1483,7 +1483,7 @@ function setSrpViewMode(mode) {
 }
 
 /* ============================================
-   QUICK ADD TO CART از کارت‌های نتایج جستجو (Firestore-backed)
+   QUICK ADD TO CART از کارت‌های نتایج جستجو (Supabase-backed)
    ============================================ */
 const srpAddInProgress = new Set();
 async function quickAddToCart(id, btnEl) {
@@ -1508,8 +1508,8 @@ async function quickAddToCart(id, btnEl) {
 
     try {
         const colorName = (Array.isArray(product.colors) && product.colors.length) ? product.colors[0].name : 'مشکی';
-        const userRef = window.fbDoc(window.fbDb, 'users', state.currentUser.uid);
-        const userSnap = await window.fbGetDoc(userRef);
+        const userRef = window.dbDoc(window.supabaseClient, 'users', state.currentUser.uid);
+        const userSnap = await window.dbGetDoc(userRef);
         let cart = (userSnap.exists() && Array.isArray(userSnap.data().cart)) ? [...userSnap.data().cart] : [];
         const existing = cart.find(x => Number(x.id) === pid && x.color === colorName);
         if (existing) {
@@ -1518,7 +1518,7 @@ async function quickAddToCart(id, btnEl) {
         } else {
             cart.push({ id: pid, qty: 1, color: colorName, name: product.name });
         }
-        await window.fbUpdateDoc(userRef, { cart });
+        await window.dbUpdateDoc(userRef, { cart });
         state.currentUser.cart = cart;
         updateCartUI(cart);
         showToast('به سبد خرید اضافه شد');
@@ -1538,7 +1538,7 @@ async function quickAddToCart(id, btnEl) {
    به‌جای اتکا به state لوکال که ممکن است کاملاً بارگذاری نشده
    باشد یا داده‌ی قدیمی داشته باشد، ابتدا تلاش می‌کنیم شناسه را
    در state موجود پیدا کنیم (برای پاسخ فوری)، اما وجود واقعی و
-   امنِ محصول را با یک کوئری مستقیم و امن به Firestore
+   امنِ محصول را با یک کوئری مستقیم و امن به Supabase
    (where('id','==',id)) — هماهنگ با روش product.html — تأیید
    می‌کنیم، به‌جای فرض قطعی صحت state محلی.
    ============================================ */
@@ -1562,7 +1562,7 @@ async function openProduct(id) {
 }
  
 /* ============================================
-   CART BADGE SYNC (Firestore-backed)
+   CART BADGE SYNC (Supabase-backed)
    ============================================ */
 function updateCartUI(cart) {
     const list = Array.isArray(cart) ? cart : [];
@@ -1586,9 +1586,9 @@ function updateAuthUI() {
     }
 }
  
-function initFirebaseAuth() {
-    if (!window.fbAuth || !window.fbOnAuthStateChanged) return;
-    window.fbOnAuthStateChanged(window.fbAuth, async (user) => {
+function initSupabaseAuth() {
+    if (!window.dbAuth || !window.dbOnAuthStateChanged) return;
+    window.dbOnAuthStateChanged(window.dbAuth, async (user) => {
         if (user) {
             let profile = await Store.getUserProfile(user.uid);
             if (!profile) {
@@ -1615,7 +1615,7 @@ function initFirebaseAuth() {
  
 /* ============================================
    AMAZING OFFERS TIMER — از پنل ادمین مدیریت می‌شود
-   (Firestore -> settings/amazingTimer)
+   (Supabase -> settings/amazingTimer)
    ============================================ */
 
    function initAmazingTimer() {
@@ -1769,7 +1769,7 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     initHeroSwiper(); // اسلایدر هیرو با داده‌ی محلی بلافاصله مقداردهی می‌شود
     initSearch();
  
-    // درخت دسته‌بندی را از Firestore (منبع واحد که admin.html هم از آن
+    // درخت دسته‌بندی را از Supabase (منبع واحد که admin.html هم از آن
     // می‌خواند/می‌نویسد) بارگذاری می‌کنیم؛ دیگر هیچ نسخه‌ی هاردکد محلی
     // در این صفحه نگه‌داری نمی‌شود.
     const tree = await Store.getCategoryTree();
@@ -1792,24 +1792,24 @@ document.addEventListener('DOMContentLoaded', async ()=>{
     window.addEventListener('resize', setMobileThemeBtn);
 });
  
-// اتصال به Firebase Auth — چه قبل و چه بعد از DOMContentLoaded آماده شود
-window.addEventListener('firebase-ready', initFirebaseAuth);
-if (window.fbAuth) initFirebaseAuth();
+// اتصال به Supabase Auth — چه قبل و چه بعد از DOMContentLoaded آماده شود
+window.addEventListener('supabase-ready', initSupabaseAuth);
+if (window.dbAuth) initSupabaseAuth();
  
  
  
 /* ============================================
-   COUPON CARDS — کالکشن Firestore به نام "coupons"
+   COUPON CARDS — کالکشن Supabase به نام "coupons"
    ============================================ */
 async function loadCoupons() {
     try {
-        const q = window.fbQuery(window.fbCollection(window.fbDb, 'coupons'), window.fbOrderBy('order', 'asc'));
-        const snap = await window.fbGetDocs(q);
+        const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'coupons'), window.dbOrderBy('order', 'asc'));
+        const snap = await window.dbGetDocs(q);
         const list = [];
         snap.forEach(d => list.push({ ...d.data(), _docId: d.id }));
         return list;
     } catch (e) {
-        console.error('خطا در خواندن کدهای تخفیف از Firestore:', e);
+        console.error('خطا در خواندن کدهای تخفیف از Supabase:', e);
         return [];
     }
 }

@@ -1,0 +1,125 @@
+.header {
+  position: fixed;
+  z-index: 1000;
+  top: 0;
+  left: 50%;
+  width: 100%;
+  max-width: 1440px;
+  height: 64px;
+  transform: translateX(-50%);
+  border-bottom: 1px solid var(--border-light);
+  border-radius: 0;
+  background: color-mix(in srgb, var(--bg-surface) 88%, transparent);
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.04);
+  backdrop-filter: blur(24px) saturate(180%);
+  -webkit-backdrop-filter: blur(24px) saturate(180%);
+}
+
+.inner {
+  display: flex;
+  height: 100%;
+  align-items: center;
+  gap: 8px;
+  padding: 0 8px;
+}
+
+.logo {
+  display: flex;
+  width: 62px;
+  height: 48px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+}
+
+.logo img {
+  width: 62px;
+  height: 62px;
+  object-fit: contain;
+}
+
+.search {
+  display: flex;
+  height: 38px;
+  min-width: 0;
+  flex: 1;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  border: 1px solid transparent;
+  border-radius: 999px;
+  background: var(--bg-elevated);
+  color: var(--text-muted);
+}
+
+.search:focus-within {
+  border-color: var(--secondary);
+  box-shadow: 0 0 0 3px var(--secondary-soft);
+}
+
+.search i {
+  flex-shrink: 0;
+  font-size: 14px;
+}
+
+.search input {
+  min-width: 0;
+  flex: 1;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: var(--text-primary);
+  font-family: inherit;
+  font-size: 12px;
+}
+
+.search input::placeholder {
+  color: var(--text-muted);
+}
+
+.actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+}
+
+.actions button {
+  display: grid;
+  width: 40px;
+  height: 40px;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: transparent;
+  color: var(--text-secondary);
+  font-size: 17px;
+  cursor: pointer;
+}
+
+[data-theme="dark"] .header {
+  border-color: var(--ai-fab-border);
+  background: var(--ai-fab-bg);
+}
+
+@media (min-width: 721px) {
+  .header {
+    top: 0;
+  }
+}
+
+@media (max-width: 720px) {
+  .header {
+    top: 10px;
+    width: calc(100% - 24px);
+    max-width: 720px;
+    height: 56px;
+    border: 1px solid var(--ai-fab-border);
+    border-radius: 40px;
+    background: var(--ai-fab-bg);
+    box-shadow:
+      0 8px 24px var(--ai-fab-shadow),
+      0 2px 8px rgba(15, 23, 42, 0.05),
+      inset 0 1px 0 var(--ai-fab-highlight);
+  }
+}

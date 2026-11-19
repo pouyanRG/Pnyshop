@@ -6,17 +6,17 @@
     <title>پنل ادمین</title>
 
     <script src="Js/admin.js" defer></script>
-    <script type="module" src="Js/admin-bridge.js"></script>
+    <script type="module" src="Js/supabase-bridge.js"></script>
     <script src="https://browser.sentry-cdn.com/7.120.3/bundle.min.js" crossorigin="anonymous"></script>
     <script src="Js/sentry-init.js"></script>
 
     <meta http-equiv="Content-Security-Policy" content="
         default-src 'self';
-        script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://www.gstatic.com https://browser.sentry-cdn.com;
+        script-src 'self' 'unsafe-inline' https://cdn.jsdelivr.net https://esm.sh https://browser.sentry-cdn.com;
         style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://cdnjs.cloudflare.com;
         font-src 'self' https://fonts.gstatic.com https://cdnjs.cloudflare.com data:;
         img-src 'self' data: https: blob:;
-        connect-src 'self' https://firestore.googleapis.com https://identitytoolkit.googleapis.com https://securetoken.googleapis.com https://www.googleapis.com https://firebasestorage.googleapis.com https://pnyshops.firebaseapp.com https://*.ingest.de.sentry.io https://*.ingest.us.sentry.io;
+        connect-src 'self' https://*.supabase.co https://*.supabase.in https://*.ingest.de.sentry.io https://*.ingest.us.sentry.io;
         object-src 'none';
         base-uri 'self';
         form-action 'self';
@@ -61,7 +61,7 @@
 </head>
 <body>
 
-    <!-- ===== AUTH CHECKING SCREEN (shown while Firebase determines auth state) ===== -->
+    <!-- ===== AUTH CHECKING SCREEN (shown while Supabase determines auth state) ===== -->
     <div id="authCheckingScreen">
         <div class="auth-spinner"></div>
         <div class="auth-checking-text">در حال بررسی دسترسی مدیریت...</div>
@@ -91,7 +91,7 @@
             </form>
 
             <div class="auth-gate-status">
-                <i class="fas fa-shield-alt"></i> این پنل فقط برای حساب‌های تأییدشده در Firestore قابل دسترسی است
+                <i class="fas fa-shield-alt"></i> این پنل فقط برای حساب‌های تأییدشده در Supabase قابل دسترسی است
             </div>
         </div>
     </div>
@@ -374,7 +374,7 @@
                             <div class="wizard-nav" style="margin-top:20px;">
                                 <button type="button" class="wizard-btn wizard-prev" onclick="wizardGoTo(4)"><i class="fas fa-arrow-right"></i> ویرایش اطلاعات</button>
                                 <button type="submit" class="submit-btn" id="submitBtn" style="margin:0;width:auto;padding:12px 28px;">
-                                    <i class="fas fa-cloud-upload-alt"></i> ذخیره نهایی محصول در Firestore
+                                    <i class="fas fa-cloud-upload-alt"></i> ذخیره نهایی محصول در Supabase
                                 </button>
                             </div>
                         </div>
@@ -389,7 +389,7 @@
                         <div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap;">
                             <span id="prod-filter-count" style="font-size:12px;color:var(--text-light);font-weight:700;"></span>
                             <span id="productsLoadingBadge" class="loading-badge" style="display:none;"><i class="fas fa-spinner fa-spin"></i> در حال بروزرسانی...</span>
-                            <button type="button" onclick="loadProductsFromFirestore()" class="action-btn edit-btn" style="padding:6px 12px;font-size:12px;" title="بازخوانی از سرور"><i class="fas fa-sync-alt"></i> تازه‌سازی</button>
+                            <button type="button" onclick="loadProductsFromSupabase()" class="action-btn edit-btn" style="padding:6px 12px;font-size:12px;" title="بازخوانی از سرور"><i class="fas fa-sync-alt"></i> تازه‌سازی</button>
                         </div>
                     </div>
 
@@ -567,7 +567,7 @@
                 <div class="admin-card">
                     <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
                         <h3 style="margin:0;"><i class="fas fa-list"></i> لیست کدهای تخفیف تعریف‌شده</h3>
-                        <button type="button" onclick="loadCouponsFromFirestore()" class="action-btn edit-btn" style="padding:6px 12px;font-size:12px;"><i class="fas fa-sync-alt"></i> تازه‌سازی</button>
+                        <button type="button" onclick="loadCouponsFromSupabase()" class="action-btn edit-btn" style="padding:6px 12px;font-size:12px;"><i class="fas fa-sync-alt"></i> تازه‌سازی</button>
                     </div>
 
                     <div id="couponsStatusBox" style="display:none;"></div>
@@ -662,7 +662,7 @@
                     <div id="timer-date-hint" style="font-size:11px;color:var(--text-light);margin-top:6px;margin-bottom:10px;"></div>
 
                     <button type="button" onclick="saveAmazingTimerSettings()" class="submit-btn" style="background:linear-gradient(135deg, #10b981, #059669);">
-                        <i class="fas fa-save"></i> ذخیره تنظیمات تایمر در Firestore
+                        <i class="fas fa-save"></i> ذخیره تنظیمات تایمر در Supabase
                     </button>
                 </div>
 
@@ -717,7 +717,7 @@
                         <h3 style="margin:0;"><i class="fas fa-shopping-bag"></i> لیست سفارشات مشتریان (نیازمند پردازش)</h3>
                         <div style="display:flex;gap:10px;align-items:center;">
                             <span id="ordersLoadingBadge" class="loading-badge" style="display:none;"><i class="fas fa-spinner fa-spin"></i> در حال بارگذاری...</span>
-                            <button type="button" onclick="loadOrdersFromFirestore('first').then(()=>renderOrders(true))" class="action-btn edit-btn" style="padding:6px 12px;font-size:12px;"><i class="fas fa-sync-alt"></i> تازه‌سازی</button>
+                            <button type="button" onclick="loadOrdersFromSupabase('first').then(()=>renderOrders(true))" class="action-btn edit-btn" style="padding:6px 12px;font-size:12px;"><i class="fas fa-sync-alt"></i> تازه‌سازی</button>
                         </div>
                     </div>
 

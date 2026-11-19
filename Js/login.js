@@ -1,28 +1,5 @@
-// =============================================
-// LOGIN / REGISTER LOGIC — استخراج‌شده از login.html
-// -----------------------------------------------
-// این فایل خودش یک ماژول کامل و مستقل است (بر خلاف بقیه‌ی صفحات از
-// الگوی window.fb* استفاده نمی‌کند، چون امضای احراز هویتش کاملاً
-// اختصاصی و متفاوت از بقیه‌ی صفحات است: signInWithPopup،
-// GoogleAuthProvider، sendPasswordResetEmail، deleteUser و ...).
-// در login.html با <script type="module" src="Js/login.js"></script> لود شود.
-// =============================================
-import { auth, db } from "./firebase-config.js";
-import {
-    signInWithEmailAndPassword,
-    createUserWithEmailAndPassword,
-    updateProfile,
-    sendEmailVerification,
-    sendPasswordResetEmail,
-    GoogleAuthProvider,
-    signInWithPopup,
-    signInWithRedirect,
-    getRedirectResult,
-    deleteUser
-} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-auth.js";
-import {
-    doc, setDoc, getDoc, serverTimestamp, collection, query, where, getDocs, limit
-} from "https://www.gstatic.com/firebasejs/12.16.0/firebase-firestore.js";
+// LOGIN / REGISTER LOGIC — Supabase Auth
+import { dbDoc, dbGetDoc, supabaseClient } from "./supabase-bridge.js";
 
 /* =========================================================
    THEME
@@ -78,21 +55,16 @@ window.sanitizeMobileInput = function (inputEl) {
    ========================================================= */
 function mapAuthError(code) {
     const map = {
-        'auth/invalid-email': 'فرمت ایمیل وارد شده صحیح نیست',
-        'auth/user-not-found': 'ایمیل یا رمز عبور اشتباه است',
-        'auth/wrong-password': 'ایمیل یا رمز عبور اشتباه است',
-        'auth/invalid-credential': 'ایمیل یا رمز عبور اشتباه است',
-        'auth/email-already-in-use': 'این ایمیل قبلاً ثبت‌نام کرده است. وارد شوید.',
-        'auth/weak-password': 'رمز عبور باید حداقل ۸ کاراکتر و شامل حرف و عدد باشد',
-        'auth/too-many-requests': 'تعداد تلاش‌های ناموفق زیاد بود. کمی صبر کنید.',
-        'auth/popup-closed-by-user': 'پنجره ورود بسته شد',
-        'auth/popup-blocked': 'مرورگر شما پنجره ورود را مسدود کرد؛ در حال هدایت مستقیم...',
-        'auth/network-request-failed': 'خطا در اتصال به شبکه. اتصال اینترنت را بررسی کنید.'
+        invalid_credentials: 'ایمیل یا رمز عبور اشتباه است',
+        email_not_confirmed: 'ابتدا ایمیل خود را از طریق پیوند تأیید ارسال‌شده تأیید کنید',
+        user_already_exists: 'این ایمیل قبلاً ثبت‌نام کرده است. وارد شوید.',
+        weak_password: 'رمز عبور باید حداقل ۸ کاراکتر و شامل حرف و عدد باشد',
+        over_email_send_rate_limit: 'تعداد درخواست‌های ایمیل زیاد بود. کمی صبر کنید.',
+        too_many_requests: 'تعداد تلاش‌های ناموفق زیاد بود. کمی صبر کنید.'
     };
     const msg = map[code];
     if (!msg) {
-        // کدهای ناشناخته دیگر بی‌صدا بلعیده نمی‌شوند؛ برای دیباگ لاگ می‌شوند
-        console.error('[Auth] کد خطای ناشناخته Firebase:', code);
+        console.error('[Auth] خطای احراز هویت:', code);
     }
     return msg || 'خطایی رخ داد. دوباره تلاش کنید.';
 }
@@ -131,7 +103,7 @@ function focusFirstError(prefix) {
    -------------------------------------------------------
    قبلاً فرم‌ها با novalidate اعتبارسنجی native را غیرفعال
    کرده بودند اما جایگزین JS فقط «خالی نبودن» را چک می‌کرد؛
-   رشته‌ای مثل "abc" مستقیم به Firebase ارسال می‌شد.
+   رشته‌ای مثل "abc" مستقیم به سرویس احراز هویت ارسال می‌شد.
    ========================================================= */
 function isValidEmail(val) {
     return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(val);
@@ -185,77 +157,41 @@ function isStrongEnoughPassword(rawVal) {
 }
 
 /* =========================================================
-   ایجاد/به‌روزرسانی پروفایل کاربر در Firestore
+   ایجاد/به‌روزرسانی پروفایل کاربر در Supabase
    ========================================================= */
-async function ensureUserProfile(user, extra = {}) {
-    const ref = doc(db, 'users', user.uid);
-    const snap = await getDoc(ref);
+async function ensureUserProfile(user) {
+    const userId = user.id || user.uid;
+    const ref = dbDoc(supabaseClient, 'users', userId);
+    const { error } = await supabaseClient.rpc('ensure_current_user_profile');
+    if (error) throw error;
+    const snap = await dbGetDoc(ref);
     if (!snap.exists()) {
-        await setDoc(ref, {
-            uid: user.uid,
-            email: user.email || '',
-            name: extra.name || user.displayName || '',
-            mobile: extra.mobile || '',
-            melli: '', address: '', post: '',
-            wallet: 0, points: 0,
-            cart: [], wishlist: [], orders: [],
-            emailVerified: !!user.emailVerified,
-            createdAt: serverTimestamp()
-        });
-    }
-}
-
-/* =========================================================
-   بررسی یکتا بودن شماره موبایل قبل از ثبت‌نام
-   -------------------------------------------------------
-   ⚠️ محدودیت شناخته‌شده: طبق firestore.rules فعلی، خواندن
-   سند users/{uid} فقط برای owner یا admin مجاز است؛ کاربر
-   تازه‌وارد (هنوز احراز هویت نشده) اجازه‌ی این کوئری روی
-   اسناد کاربران دیگر را ندارد و Firestore با permission-denied
-   پاسخ می‌دهد. اجرای واقعی و امنِ این قانون فقط با یکی از این دو
-   راه ممکن است: (الف) یک Cloud Function که با دسترسی ادمین
-   موبایل را چک کند، یا (ب) یک کالکشن عمومیِ فقط-شناسه مثل
-   mobileIndex/{mobile} که صرفاً «تکراری بودن» را افشا کند، نه
-   کل پروفایل کاربر — که هر دو نیازمند تغییر firestore.rules
-   هستند و خارج از این فایل است.
-   تا آن زمان، خطای دسترسی به‌صورت شفاف لاگ می‌شود (نه بلعیده‌
-   شدن بی‌صدا) و رفتار محافظه‌کارانه‌ی فعلی (عدم مسدودسازی
-   ثبت‌نام در صورت خطا) با آگاهی کامل حفظ شده است.
-   ========================================================= */
-async function isMobileTaken(mobile) {
-    if (!mobile) return false;
-    try {
-        const q = query(collection(db, 'users'), where('mobile', '==', mobile), limit(1));
-        const snap = await getDocs(q);
-        return !snap.empty;
-    } catch (e) {
-        console.error('[MobileCheck] خطا در بررسی یکتایی شماره موبایل (احتمالاً permission-denied طبق firestore.rules فعلی):', e.code || e);
-        return false; // در صورت خطا مانع ثبت‌نام نمی‌شویم (تصمیم آگاهانه، نه سکوت)
+        throw new Error('Supabase did not return the authenticated user profile');
     }
 }
 
 /* پل موقت با سیستم قدیمی مبتنی بر localStorage */
 function bridgeSession(user) {
-    localStorage.setItem('current_user', user.uid);
+    localStorage.setItem('current_user', user.id || user.uid);
 }
 
 /* =========================================================
    finishAuth اکنون async است و خطای واقعی ensureUserProfile را
    می‌بلعد نه با .finally() (که قبلاً چه موفق چه ناموفق، کاربر
    را ریدایرکت می‌کرد). اگر ساخت پروفایل شکست بخورد، کاربر در
-   Firebase Auth لاگین می‌ماند اما به‌جای ریدایرکت کور به
+   Supabase Auth لاگین می‌ماند اما به‌جای ریدایرکت کور به
    index.html (که بعداً توسط profile.html/sabad.html به‌خاطر
    نبود سند users/{uid} به همین صفحه پرت می‌شد)، خطای واقعی
    نمایش داده و دکمه فعال می‌شود تا کاربر بتواند دوباره تلاش کند.
    ========================================================= */
-async function finishAuth(user, extra = {}, activeBtnId, activeBtnLabel) {
+async function finishAuth(user, activeBtnId, activeBtnLabel) {
     try {
-        await ensureUserProfile(user, extra);
+        await ensureUserProfile(user);
         bridgeSession(user);
         toast('خوش آمدید! در حال انتقال...', 'success');
         setTimeout(() => window.location.href = 'index.html', 1200);
     } catch (err) {
-        console.error('[Profile] خطا در ساخت/خواندن پروفایل کاربر در Firestore:', err && err.code, err);
+        console.error('[Profile] خطا در ساخت/خواندن پروفایل کاربر در Supabase:', err && err.code, err);
         toast('ورود انجام شد اما ساخت پروفایل با خطا مواجه شد. لطفاً دوباره تلاش کنید.', 'error');
         releaseAllAuthLocks();
         if (activeBtnId) setLoading(activeBtnId, false, activeBtnLabel);
@@ -297,7 +233,7 @@ let lastSubmitTsGoogle = 0;
    را دارند)؛ یعنی با کلیک‌های پیاپی روی «رمز عبور را فراموش‌
    کرده‌اید؟» می‌شد به هر ایمیل دلخواه، بدون هیچ محدودیتی، پی‌درپی
    ایمیل ریست رمز عبور فرستاد (email-bombing روی صندوق ورودی
-   قربانی + مصرف بی‌رویه‌ی کوتای Firebase). حالا throttle + قفل
+   قربانی). حالا throttle + قفل
    دکمه در حین ارسال درخواست اضافه شده است. */
 let lastSubmitTsForgot = 0;
 let isForgotInProgress = false;
@@ -348,16 +284,15 @@ document.getElementById('loginForm').addEventListener('submit', function (e) {
 
     lockAllAuthEntryPoints();
     setLoading('loginBtn', true);
-    signInWithEmailAndPassword(auth, email, pass)
-        .then(cred => finishAuth(cred.user, {}, 'loginBtn', 'ورود به حساب'))
+    supabaseClient.auth.signInWithPassword({ email, password: pass })
+        .then(({ data, error }) => {
+            if (error) throw error;
+            return finishAuth(data.user, 'loginBtn', 'ورود به حساب');
+        })
         .catch(err => {
             releaseAllAuthLocks();
             setLoading('loginBtn', false, 'ورود به حساب');
-            // پیام یکسان و عمومی برای هر سه کد خطا تا وجود/عدم‌وجود
-            // حساب با این ایمیل افشا نشود (جلوگیری از account enumeration)
-            if (err.code === 'auth/invalid-email' || err.code === 'auth/user-not-found' ||
-                err.code === 'auth/wrong-password' || err.code === 'auth/invalid-credential') {
-                console.error('[Login] کد خطای واقعی Firebase (فقط برای دیباگ، به کاربر نشان داده نمی‌شود):', err.code);
+            if (err.code === 'invalid_credentials') {
                 setFieldError('login-pass', 'ایمیل یا رمز عبور اشتباه است', true);
             } else {
                 console.error('[Login] خطای ورود:', err.code, err);
@@ -401,17 +336,16 @@ window.handleForgotPassword = function () {
     if (forgotLink) { forgotLink.style.pointerEvents = 'none'; forgotLink.style.opacity = '0.6'; }
 
     const genericSuccessMsg = 'اگر حسابی با این ایمیل ثبت شده باشد، لینک بازیابی رمز عبور برایش ارسال می‌شود.';
-    sendPasswordResetEmail(auth, email)
-        .then(() => { toast(genericSuccessMsg, 'success'); })
+    supabaseClient.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/login.html`
+    })
+        .then(({ error }) => {
+            if (error) throw error;
+            toast(genericSuccessMsg, 'success');
+        })
         .catch(err => {
-            if (err.code === 'auth/user-not-found' || err.code === 'auth/invalid-email') {
-                // پیام یکسان نمایش داده می‌شود؛ کد واقعی فقط در کنسول لاگ می‌شود
-                console.error('[ForgotPassword] کد خطای واقعی:', err.code);
-                toast(genericSuccessMsg, 'success');
-            } else {
-                console.error('[ForgotPassword] خطا:', err.code, err);
-                toast(mapAuthError(err.code), 'error');
-            }
+            console.error('[ForgotPassword] خطا:', err.code, err);
+            toast(mapAuthError(err.code), 'error');
         })
         .finally(() => {
             isForgotInProgress = false;
@@ -422,11 +356,8 @@ window.handleForgotPassword = function () {
 /* =========================================================
    ثبت‌نام با ایمیل
    -------------------------------------------------------
-   بهبود کارایی: بررسی یکتایی موبایل و ساخت حساب Firebase
-   اکنون به‌صورت موازی (Promise.all) اجرا می‌شوند نه پشت‌سرهم؛
-   اگر (در آینده با تغییر قوانین Firestore) مشخص شد موبایل
-   تکراری است، حساب Auth تازه‌ساخته‌شده بلافاصله حذف (rollback)
-   و خطا به کاربر نشان داده می‌شود.
+   ساخت پروفایل هنگام ایجاد حساب انجام می‌شود و یکتایی موبایل
+   با قید دیتابیس تضمین می‌شود.
    ========================================================= */
 document.getElementById('registerForm').addEventListener('submit', async function (e) {
     e.preventDefault();
@@ -458,75 +389,54 @@ document.getElementById('registerForm').addEventListener('submit', async functio
     setLoading('registerBtn', true);
 
     try {
-        // هر دو عملیات (چک موبایل + ساخت حساب) به‌صورت موازی شروع می‌شوند
-        const mobileCheckPromise = mobile ? isMobileTaken(mobile) : Promise.resolve(false);
-        const createUserPromise = createUserWithEmailAndPassword(auth, email, pass);
+        const { data, error } = await supabaseClient.auth.signUp({
+            email,
+            password: pass,
+            options: {
+                data: { name, mobile },
+                emailRedirectTo: `${window.location.origin}/index.html`
+            }
+        });
+        if (error) throw error;
 
-        const [mobileTaken, cred] = await Promise.all([mobileCheckPromise, createUserPromise]);
-
-        if (mobileTaken) {
-            // rollback: حساب Auth تازه‌ساخته‌شده حذف می‌شود چون موبایل تکراری بود
-            try { await deleteUser(cred.user); } catch (delErr) { console.error('[Register] خطا در rollback حساب:', delErr); }
+        if (!data.session) {
             releaseAllAuthLocks();
             setLoading('registerBtn', false, 'ایجاد حساب و ورود');
-            setFieldError('reg-mobile', 'این شماره موبایل قبلاً ثبت شده است', true);
+            toast('برای تکمیل ثبت‌نام، پیوند تأیید ارسال‌شده به ایمیل را باز کنید.', 'success');
             return;
         }
 
-        await updateProfile(cred.user, { displayName: name });
-        // ارسال ایمیل تأیید — عدم موفقیت در ارسال نباید جلوی ثبت‌نام را بگیرد
-        sendEmailVerification(cred.user).catch(err => console.warn('[Register] ارسال ایمیل تأیید ناموفق بود:', err));
-        await finishAuth(cred.user, { name, mobile }, 'registerBtn', 'ایجاد حساب و ورود');
+        await finishAuth(data.user, 'registerBtn', 'ایجاد حساب و ورود');
     } catch (err) {
         releaseAllAuthLocks();
         setLoading('registerBtn', false, 'ایجاد حساب و ورود');
         console.error('[Register] خطا در ثبت‌نام:', err.code, err);
-        if (err.code === 'auth/email-already-in-use') setFieldError('reg-email', mapAuthError(err.code), true);
-        else if (err.code === 'auth/invalid-email') setFieldError('reg-email', mapAuthError(err.code), true);
-        else if (err.code === 'auth/weak-password') setFieldError('reg-pass', mapAuthError(err.code), true);
+        if (err.code === 'user_already_exists') setFieldError('reg-email', mapAuthError(err.code), true);
+        else if (err.code === 'weak_password') setFieldError('reg-pass', mapAuthError(err.code), true);
         else toast(mapAuthError(err.code), 'error');
     }
 });
 
-/* =========================================================
-   ورود با گوگل — با fallback به redirect در صورت مسدود شدن popup
-   ========================================================= */
+/* ورود با Google OAuth از طریق Supabase Auth */
 window.handleGoogleAuth = function () {
     if (isAuthInProgress) return;
     if (throttled(() => lastSubmitTsGoogle, v => lastSubmitTsGoogle = v)) return;
 
     lockAllAuthEntryPoints();
-    const provider = new GoogleAuthProvider();
-    signInWithPopup(auth, provider)
-        .then(cred => finishAuth(cred.user, {}, null, null))
-        .catch(err => {
-            if (err.code === 'auth/popup-blocked' || err.code === 'auth/operation-not-supported-in-this-environment') {
-                toast(mapAuthError('auth/popup-blocked'), 'error');
-                signInWithRedirect(auth, provider).catch(redirectErr => {
-                    console.error('[GoogleAuth] خطا در هدایت redirect:', redirectErr);
-                    releaseAllAuthLocks();
-                });
-                return;
-            }
-            releaseAllAuthLocks();
-            // این دو کد یعنی کاربر خودش پنجره را بست/لغو کرد — رفتار طبیعی
-            // است، نه خطای واقعی، پس toast نشان داده نمی‌شود
-            if (err.code !== 'auth/popup-closed-by-user' && err.code !== 'auth/cancelled-popup-request') {
-                console.error('[GoogleAuth] خطا:', err.code, err);
-                toast(mapAuthError(err.code), 'error');
-            }
-        });
+    supabaseClient.auth.signInWithOAuth({
+        provider: 'google',
+        options: { redirectTo: `${window.location.origin}/index.html` }
+    }).then(({ error }) => {
+        if (!error) return;
+        releaseAllAuthLocks();
+        console.error('[GoogleAuth] خطا:', error.code, error);
+        toast(mapAuthError(error.code), 'error');
+    }).catch(error => {
+        releaseAllAuthLocks();
+        console.error('[GoogleAuth] خطا:', error);
+        toast(mapAuthError(error.code), 'error');
+    });
 };
-
-// در صورتی که ورود گوگل از طریق redirect انجام شده، نتیجه را هنگام بازگشت به صفحه بگیر
-getRedirectResult(auth).then(result => {
-    if (result && result.user) finishAuth(result.user, {}, null, null);
-}).catch(err => {
-    if (err && err.code) {
-        console.error('[GoogleAuth][Redirect] خطا:', err.code, err);
-        toast(mapAuthError(err.code), 'error');
-    }
-});
 
 /* =========================================================
    UI Utilities

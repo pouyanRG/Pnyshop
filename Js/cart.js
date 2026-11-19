@@ -54,14 +54,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let appInitialized = false;
-window.addEventListener('firebase-ready', initApp);
-if (window.fbAuth) initApp();
+window.addEventListener('supabase-ready', initApp);
+if (window.dbAuth) initApp();
 
 function initApp() {
     if (appInitialized) return;
     appInitialized = true;
 
-    window.fbOnAuthStateChanged(window.fbAuth, async (user) => {
+    window.dbOnAuthStateChanged(window.dbAuth, async (user) => {
         if (!user) {
             localStorage.removeItem(DB.legacySession);
             window.location.href = 'login.html';
@@ -96,10 +96,10 @@ function initApp() {
 // --- FIRESTORE HELPERS ---
 async function getUserProfile(uid) {
     try {
-        const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'users', uid));
+        const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'users', uid));
         return snap.exists() ? snap.data() : null;
     } catch (e) {
-        console.error('خطا در خواندن پروفایل از Firestore:', e);
+        console.error('خطا در خواندن پروفایل از Supabase:', e);
         showToast('خطا در ارتباط با سرور', 'error');
         return null;
     }
@@ -107,12 +107,12 @@ async function getUserProfile(uid) {
 
 async function loadProducts() {
     try {
-        const q = window.fbQuery(window.fbCollection(window.fbDb, 'products'), window.fbOrderBy('id', 'desc'));
-        const snap = await window.fbGetDocs(q);
+        const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'products'), window.dbOrderBy('id', 'desc'));
+        const snap = await window.dbGetDocs(q);
         state.products = [];
         snap.forEach(docSnap => state.products.push(docSnap.data()));
     } catch (e) {
-        console.error('خطا در خواندن محصولات از Firestore:', e);
+        console.error('خطا در خواندن محصولات از Supabase:', e);
         state.products = [];
         showToast('خطا در دریافت محصولات از سرور', 'error');
     }
@@ -391,10 +391,10 @@ async function removeItem(id) {
 async function saveCart() {
     if (!state.user) return;
     try {
-        await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'users', state.user.uid), { cart: state.cart });
+        await window.dbUpdateDoc(window.dbDoc(window.supabaseClient, 'users', state.user.uid), { cart: state.cart });
         state.user.cart = state.cart;
     } catch (e) {
-        console.error('خطا در ذخیره سبد خرید در Firestore:', e);
+        console.error('خطا در ذخیره سبد خرید در Supabase:', e);
         showToast('خطا در ذخیره سبد خرید روی سرور', 'error');
     }
 }
@@ -411,7 +411,7 @@ async function toggleWishlistFromCart(id) {
     const currentList = getWishlist();
     const { list: updatedList } = wishlistService.toggle(currentList, id, product);
     try {
-        await wishlistService.persistToFirestore(state.user.uid, updatedList, window.fbUpdateDoc, window.fbDoc, window.fbDb);
+        await wishlistService.persistToDatabase(state.user.uid, updatedList, window.dbUpdateDoc, window.dbDoc, window.supabaseClient);
         state.user.wishlist = updatedList;
         renderCart();
         showToast('علاقه‌مندی‌ها بروزرسانی شد', 'success');
@@ -482,14 +482,14 @@ function updateSummary(subtotal, discount) {
 async function findCouponByCode(code) {
     if (!code) return null;
     try {
-        const q = window.fbQuery(window.fbCollection(window.fbDb, 'coupons'), window.fbWhere('code', '==', code));
-        const snap = await window.fbGetDocs(q);
+        const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'coupons'), window.dbWhere('code', '==', code));
+        const snap = await window.dbGetDocs(q);
         if (snap.empty) return null;
         let result = null;
         snap.forEach(d => { if (!result) result = { ...d.data(), _docId: d.id }; });
         return result;
     } catch (e) {
-        console.error('خطا در خواندن کد تخفیف از Firestore:', e);
+        console.error('خطا در خواندن کد تخفیف از Supabase:', e);
         return null;
     }
 }

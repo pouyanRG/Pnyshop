@@ -13,7 +13,7 @@ let state = {
     theme: localStorage.getItem(THEME_KEY) || 'light',
     products: [],
     user: null,      // { uid, name, mobile, melli, email, address, post, date, wallet, points, cart, ... }
-    orders: []        // آخرین سفارشات این کاربر از Firestore
+    orders: []        // آخرین سفارشات این کاربر از Supabase
 };
 
 /* --- Window Load & Preloader Elimination --- */
@@ -58,14 +58,14 @@ window.addEventListener('scroll', () => {
 
 let appInitialized = false;
 
-window.addEventListener('firebase-ready', initApp);
-if (window.fbAuth) initApp();
+window.addEventListener('supabase-ready', initApp);
+if (window.dbAuth) initApp();
 
 function initApp() {
     if (appInitialized) return;
     appInitialized = true;
 
-    window.fbOnAuthStateChanged(window.fbAuth, async (user) => {
+    window.dbOnAuthStateChanged(window.dbAuth, async (user) => {
         if (!user) {
             localStorage.removeItem(LEGACY_SESSION_KEY);
             window.location.href = 'login.html';
@@ -112,12 +112,12 @@ function toggleTheme() {
 /* --- Products (for header live search) --- */
 async function loadProductsForSearch() {
     try {
-        const q = window.fbQuery(window.fbCollection(window.fbDb, 'products'), window.fbOrderBy('id', 'desc'));
-        const snap = await window.fbGetDocs(q);
+        const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'products'), window.dbOrderBy('id', 'desc'));
+        const snap = await window.dbGetDocs(q);
         state.products = [];
         snap.forEach(docSnap => state.products.push(docSnap.data()));
     } catch (e) {
-        console.error('خطا در خواندن محصولات از Firestore:', e);
+        console.error('خطا در خواندن محصولات از Supabase:', e);
         state.products = [];
     }
 }
@@ -172,7 +172,7 @@ function revealProfileContent() {
     if (real) real.classList.remove('hidden');
 }
 
-/* --- User Profile Loader (Firestore) --- */
+/* --- User Profile Loader (Supabase) --- */
 async function loadUserData(uid) {
     let profile = await getUserProfile(uid);
 
@@ -184,9 +184,9 @@ async function loadUserData(uid) {
             wallet: 0, points: 0, cart: [], wishlist: []
         };
         try {
-            await window.fbSetDoc(window.fbDoc(window.fbDb, 'users', uid), profile);
+            await window.dbSetDoc(window.dbDoc(window.supabaseClient, 'users', uid), profile);
         } catch (e) {
-            console.error('خطا در ساخت پروفایل پیش‌فرض در Firestore:', e);
+            console.error('خطا در ساخت پروفایل پیش‌فرض در Supabase:', e);
         }
     }
 
@@ -195,9 +195,9 @@ async function loadUserData(uid) {
         profile.wishlist = await wishlistService.syncWishlistOnLogin(
             uid,
             profile.wishlist || [],
-            window.fbUpdateDoc,
-            window.fbDoc,
-            window.fbDb
+            window.dbUpdateDoc,
+            window.dbDoc,
+            window.supabaseClient
         );
     } catch (e) {
         console.error('خطا در همگام‌سازی علاقه‌مندی‌ها هنگام ورود:', e);
@@ -243,10 +243,10 @@ async function loadUserData(uid) {
 
 async function getUserProfile(uid) {
     try {
-        const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'users', uid));
+        const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'users', uid));
         return snap.exists() ? snap.data() : null;
     } catch (e) {
-        console.error('خطا در خواندن پروفایل از Firestore:', e);
+        console.error('خطا در خواندن پروفایل از Supabase:', e);
         return null;
     }
 }
@@ -295,7 +295,7 @@ function toggleEdit(status) {
     document.getElementById('save-btn').style.display = status ? 'inline-flex' : 'none';
 }
 
-/* --- Save User Information (Firestore) --- */
+/* --- Save User Information (Supabase) --- */
 async function saveUserData() {
     if (!state.user || !state.user.uid) return;
 
@@ -329,13 +329,13 @@ async function saveUserData() {
     saveBtn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> در حال ذخیره...';
 
     try {
-        await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'users', state.user.uid), updatedData);
+        await window.dbUpdateDoc(window.dbDoc(window.supabaseClient, 'users', state.user.uid), updatedData);
         Object.assign(state.user, updatedData);
         alert("اطلاعات حساب با موفقیت ذخیره شد.");
         toggleEdit(false);
         await loadUserData(state.user.uid);
     } catch (e) {
-        console.error('خطا در ذخیره پروفایل در Firestore:', e);
+        console.error('خطا در ذخیره پروفایل در Supabase:', e);
         alert("خطا در ذخیره اطلاعات روی سرور. دوباره تلاش کنید.");
     } finally {
         saveBtn.disabled = false;
@@ -343,7 +343,7 @@ async function saveUserData() {
     }
 }
 
-/* --- Wishlist (Firestore & Local Storage Sync) --- */
+/* --- Wishlist (Supabase & Local Storage Sync) --- */
 function getWishlistIds() {
     if (state.user && Array.isArray(state.user.wishlist) && state.user.wishlist.length > 0) {
         return wishlistService.getIds(state.user.wishlist);
@@ -412,12 +412,12 @@ async function removeFromFav(id) {
     }
     wishlistService.saveLegacyLocal(updatedList);
 
-    // ذخیره همگام روی دیتابیس Firestore
+    // ذخیره همگام روی دیتابیس Supabase
     if (state.user && state.user.uid) {
         try {
-            await wishlistService.persistToFirestore(state.user.uid, updatedList, window.fbUpdateDoc, window.fbDoc, window.fbDb);
+            await wishlistService.persistToDatabase(state.user.uid, updatedList, window.dbUpdateDoc, window.dbDoc, window.supabaseClient);
         } catch (e) {
-            console.error('خطا در به‌روزرسانی علاقه‌مندی‌ها در Firestore:', e);
+            console.error('خطا در به‌روزرسانی علاقه‌مندی‌ها در Supabase:', e);
         }
     }
 
@@ -455,29 +455,29 @@ async function addToCartFromWishlist(id) {
     }
 
     try {
-        await window.fbUpdateDoc(window.fbDoc(window.fbDb, 'users', state.user.uid), { cart: userCart });
+        await window.dbUpdateDoc(window.dbDoc(window.supabaseClient, 'users', state.user.uid), { cart: userCart });
         state.user.cart = userCart;
         updateCartBadges(userCart);
         alert("محصول با موفقیت به سبد خرید اضافه شد.");
     } catch (e) {
-        console.error('خطا در بروزرسانی سبد خرید در Firestore:', e);
+        console.error('خطا در بروزرسانی سبد خرید در Supabase:', e);
         alert("خطا در افزودن به سبد خرید. دوباره تلاش کنید.");
     }
 }
-/* --- Orders (Firestore) ---
+/* --- Orders (Supabase) ---
    کالکشن "orders" دارای فیلد userId (برابر uid کاربر) است؛
    برای جلوگیری از نیاز به ایندکس ترکیبی، فقط با where فیلتر
    می‌کنیم و مرتب‌سازی بر اساس تاریخ را در سمت کلاینت انجام می‌دهیم. */
 async function renderOrders() {
     if (!state.user || !state.user.uid) return;
     try {
-        const q = window.fbQuery(window.fbCollection(window.fbDb, 'orders'), window.fbWhere('userId', '==', state.user.uid));
-        const snap = await window.fbGetDocs(q);
+        const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'orders'), window.dbWhere('userId', '==', state.user.uid));
+        const snap = await window.dbGetDocs(q);
         state.orders = [];
         snap.forEach(docSnap => state.orders.push({ ...docSnap.data(), _docId: docSnap.id }));
         state.orders.sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
     } catch (e) {
-        console.error('خطا در خواندن سفارشات از Firestore:', e);
+        console.error('خطا در خواندن سفارشات از Supabase:', e);
         state.orders = [];
     }
     renderOrdersList('current');
@@ -624,8 +624,8 @@ function renderOrdersList(filterType = 'current') {
     });
 }
 
-/* --- Cancel Order (Firestore Sync) ---
-   ⚠️ طبق firestore.rules، مالک سفارش فقط زمانی می‌تواند خودش سفارش را
+/* --- Cancel Order (Supabase Sync) ---
+   ⚠️ طبق Supabase.rules، مالک سفارش فقط زمانی می‌تواند خودش سفارش را
    تغییر/حذف کند که وضعیت هنوز pending_payment باشد (یعنی پولی واقعاً
    کم نشده). برای سفارش‌های paid/processing، بازگشت وجه خودکار از سمت
    کلاینت مجاز نیست (برای جلوگیری از کلاهبرداری مالی) و باید توسط ادمین
@@ -637,12 +637,12 @@ async function cancelOrder(docId) {
     if (targetOrder.status === 'pending_payment') {
         if (!confirm('آیا از انصراف از این سفارش (که هنوز پرداخت نشده) اطمینان دارید؟')) return;
         try {
-            await window.fbDeleteDoc(window.fbDoc(window.fbDb, 'orders', docId));
+            await window.dbDeleteDoc(window.dbDoc(window.supabaseClient, 'orders', docId));
             state.orders = state.orders.filter(o => o._docId !== docId);
             alert('سفارش با موفقیت لغو شد.');
             renderOrdersList('current');
         } catch (e) {
-            console.error('خطا در لغو سفارش در Firestore:', e);
+            console.error('خطا در لغو سفارش در Supabase:', e);
             alert('خطا در لغو سفارش. لطفاً دوباره تلاش کنید.');
         }
         return;
@@ -654,10 +654,10 @@ async function cancelOrder(docId) {
 }
 
 
-/* --- Secure Session Logout (Firebase) --- */
+/* --- Secure Session Logout (Supabase) --- */
 function logout() {
     if (confirm("آیا برای خروج از حساب کاربری خود اطمینان دارید؟")) {
-        window.fbSignOut(window.fbAuth).finally(() => {
+        window.dbSignOut(window.dbAuth).finally(() => {
             localStorage.removeItem(LEGACY_SESSION_KEY);
             window.location.href = 'index.html';
         });

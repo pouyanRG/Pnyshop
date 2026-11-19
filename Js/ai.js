@@ -10,7 +10,7 @@ const LEGACY_SESSION_KEY = 'current_user';
 const state = {
     theme: localStorage.getItem(THEME_KEY) || 'light',
     user: null,        // { uid, name, cart, wishlist, ... } یا null برای مهمان
-    products: [],       // کاتالوگ محصولات Firestore
+    products: [],       // کاتالوگ محصولات Supabase
     chatStarted: false
 };
 
@@ -84,14 +84,14 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 let appInitialized = false;
-window.addEventListener('firebase-ready', initApp);
-if (window.fbAuth) initApp();
+window.addEventListener('supabase-ready', initApp);
+if (window.dbAuth) initApp();
 
 function initApp() {
     if (appInitialized) return;
     appInitialized = true;
 
-    window.fbOnAuthStateChanged(window.fbAuth, async (user) => {
+    window.dbOnAuthStateChanged(window.dbAuth, async (user) => {
         if (user) {
             localStorage.setItem(LEGACY_SESSION_KEY, user.uid);
             const profile = await getUserProfile(user.uid);
@@ -109,22 +109,22 @@ function initApp() {
 
 async function getUserProfile(uid) {
     try {
-        const snap = await window.fbGetDoc(window.fbDoc(window.fbDb, 'users', uid));
+        const snap = await window.dbGetDoc(window.dbDoc(window.supabaseClient, 'users', uid));
         return snap.exists() ? snap.data() : null;
     } catch (e) {
-        console.error('خطا در خواندن پروفایل از Firestore:', e);
+        console.error('خطا در خواندن پروفایل از Supabase:', e);
         return null;
     }
 }
 
 async function loadProducts() {
     try {
-        const q = window.fbQuery(window.fbCollection(window.fbDb, 'products'), window.fbOrderBy('id', 'desc'), window.fbLimit(200));
-        const snap = await window.fbGetDocs(q);
+        const q = window.dbQuery(window.dbCollection(window.supabaseClient, 'products'), window.dbOrderBy('id', 'desc'), window.dbLimit(200));
+        const snap = await window.dbGetDocs(q);
         state.products = [];
         snap.forEach(d => state.products.push(d.data()));
     } catch (e) {
-        console.error('خطا در خواندن محصولات از Firestore:', e);
+        console.error('خطا در خواندن محصولات از Supabase:', e);
         state.products = [];
     }
 }
@@ -261,7 +261,7 @@ async function toggleWish(id) {
     const currentList = getWishlist();
     const { list: updatedList } = wishlistService.toggle(currentList, id, product);
     try {
-        await wishlistService.persistToFirestore(state.user.uid, updatedList, window.fbUpdateDoc, window.fbDoc, window.fbDb);
+        await wishlistService.persistToDatabase(state.user.uid, updatedList, window.dbUpdateDoc, window.dbDoc, window.supabaseClient);
         state.user.wishlist = updatedList;
         renderSuggestions();
     } catch (e) {
