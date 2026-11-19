@@ -61,6 +61,7 @@ export type Brand = {
   id: number;
   name: string;
   slug: string;
+  description: string;
   logo_url: string | null;
   is_active: boolean;
   created_at: string;
