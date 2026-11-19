@@ -1,42 +1,57 @@
+import type { Metadata } from "next";
+import { cache } from "react";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { LegacyHomeBehavior } from "@/components/storefront/legacy-home-behavior";
+import { getHomeData, type HomeData } from "@/lib/storefront/home-data";
+import {
+  renderAmazingSlides,
+  renderAmazingTitle,
+  renderBanners,
+  renderCategoryCircles,
+  renderFooter,
+  renderHeroSlides,
+  renderProductStrip,
+  renderSpotlight,
+  escapeAttr,
+} from "@/lib/storefront/home-markup";
 
-const heroSlides = [
-  {
-    image:
-      "https://dkstatics-public.digikala.com/digikala-adservice-banners/114974665b95b81ac9f34f5c4541ed103cbeefc6_1781939408.jpg?x-oss-process=image/quality,q_95/format,webp",
-  },
-  {
-    image:
-      "https://dkstatics-public.digikala.com/digikala-adservice-banners/9187933a6a5d160c4dd53aa11d2ed21e3864fda1_1781700091.gif?x-oss-process=image?x-oss-process=image/format,webp",
-  },
-  {
-    image:
-      "https://dkstatics-public.digikala.com/digikala-adservice-banners/106a9545642ec0528d7bcb59f56625689ccac627_1781703061.jpg?x-oss-process=image/quality,q_95/format,webp",
-  },
-];
+const getCachedHomeData = cache(async () => getHomeData());
 
-async function getLegacyHomeMarkup() {
+export async function generateMetadata(): Promise<Metadata> {
+  const { settings } = await getCachedHomeData();
+  return {
+    title: "Pnyshop فروشگاه اینترنتی",
+    description:
+      settings.about_text.slice(0, 160) || "فروشگاه اینترنتی Pnyshop",
+    icons: settings.favicon_url ? { icon: settings.favicon_url } : undefined,
+  };
+}
+
+async function getLegacyHomeMarkup(): Promise<string> {
   const source = await readFile(path.join(process.cwd(), "index.html"), "utf8");
   const body = source.match(/<body[^>]*>([\s\S]*?)<\/body>/i)?.[1];
   if (!body) {
     throw new Error("Could not read the legacy storefront body from index.html");
   }
+  return body;
+}
 
-  const trackMarker = 'id="sliderTrack"></div>';
-  if (!body.includes(trackMarker)) {
-    throw new Error("Could not find the legacy hero slider in index.html");
-  }
+function replaceOnce(
+  source: string,
+  pattern: string | RegExp,
+  replacement: string,
+) {
+  return source.replace(pattern, replacement);
+}
 
-  const slides = heroSlides
-    .map(
-      ({ image }) =>
-        `<div class="swiper-slide"><img src="${image}" alt="" loading="eager" onerror="this.onerror=null;this.src='/img/banner-card--r1-wide.png'"></div>`,
-    )
-    .join("");
+async function buildHomeMarkup(home: HomeData): Promise<string> {
+  const { settings } = home;
+  const logoUrl = settings.logo_url || "/images/Pnyshop-img-logo.png";
 
-  return body
+  let html = await getLegacyHomeMarkup();
+
+  html = html
     .replace(
       /<div class="loading-screen" id="loadingScreen">[\s\S]*?(?=<header class="main-header")/i,
       "",
@@ -48,25 +63,110 @@ async function getLegacyHomeMarkup() {
     .replace(/href=(["'])sabad\.html\1/gi, 'href="/cart"')
     .replace(/href=(["'])checkout\.html\1/gi, 'href="/checkout"')
     .replace(/href=(["'])admin\.html\1/gi, 'href="/admin"')
-    .replace(/href=(["'])Ai\.html\1/gi, 'href="/ai"')
-    .replace(trackMarker, `id="sliderTrack">${slides}</div>`)
-    .replace(/(["'(])\/?img\//g, "$1/images/")
-    .replace('id="heroLoadingState"', 'id="heroLoadingState" style="display:none;"')
-    .replace(
-      'id="heroSwiperContainer" dir="rtl" style="display:none;"',
-      'id="heroSwiperContainer" dir="rtl"',
-    )
-    .replace('id="amazingSkeletonRow"', 'id="amazingSkeletonRow" style="display:none;"')
-    .replace('id="amazingEmptyState" style="display:none;"', 'id="amazingEmptyState"')
-    .replace('id="spotlightLoadingState"', 'id="spotlightLoadingState" style="display:none;"')
-    .replace(
-      'id="spotlightGrid" style="display:none;"></div>',
-      'id="spotlightGrid"><div class="spotlight-empty-state"><i class="fas fa-store"></i><div class="se-title">ویترین ویژه فعلاً خالی است</div><div class="se-sub">به‌زودی محصولات منتخب اینجا نمایش داده می‌شوند.</div></div></div>',
+    .replace(/href=(["'])Ai\.html\1/gi, 'href="/ai"');
+
+  /* Product strip (real catalog products) */
+  html = replaceOnce(
+    html,
+    /<section class="product-nav-section">[\s\S]*?<\/section>/,
+    renderProductStrip(home.stripProducts, settings.product_strip_title),
+  );
+
+  /* Category circles */
+  html = replaceOnce(
+    html,
+    /<section class="section" aria-label="دسته‌بندی‌ها">[\s\S]*?<\/section>/,
+    renderCategoryCircles(home.categories, home.extraCircles),
+  );
+
+  /* Spotlight */
+  html = replaceOnce(
+    html,
+    /<section class="section" aria-label="ویترین ویژه">[\s\S]*?<\/section>/,
+    renderSpotlight(home.spotlight),
+  );
+
+  /* Banners */
+  html = replaceOnce(
+    html,
+    /<section class="section" aria-label="بنرها">[\s\S]*?<\/section>/,
+    renderBanners(home.banners),
+  );
+
+  /* Footer */
+  html = replaceOnce(
+    html,
+    /<footer class="site-footer" role="contentinfo">[\s\S]*?<\/footer>/,
+    renderFooter(settings),
+  );
+
+  /* Amazing offers */
+  const amazingSlides = renderAmazingSlides(home.amazingProducts);
+  html = replaceOnce(
+    html,
+    /<div class="ah-right-title">[\s\S]*?<\/div>/,
+    `<div class="ah-right-title">${renderAmazingTitle(settings.amazing_timer_title)}</div>`,
+  );
+  html = replaceOnce(
+    html,
+    'id="dealsScroll"></div>',
+    `id="dealsScroll">${amazingSlides}</div>`,
+  );
+  html = replaceOnce(
+    html,
+    'id="amazingSkeletonRow"',
+    'id="amazingSkeletonRow" style="display:none;"',
+  );
+  html = replaceOnce(
+    html,
+    '<div class="swiper amazing-swiper" id="amazingSwiperEl" dir="rtl" hidden>',
+    `<div class="swiper amazing-swiper" id="amazingSwiperEl" dir="rtl"${amazingSlides ? "" : " hidden"}>`,
+  );
+  if (!amazingSlides) {
+    html = replaceOnce(
+      html,
+      'id="amazingEmptyState" style="display:none;"',
+      'id="amazingEmptyState"',
     );
+  }
+  html = replaceOnce(
+    html,
+    '<section class="section" aria-label="پیشنهادهای شگفت‌انگیز" id="amazingSectionRoot">',
+    `<section class="section" aria-label="پیشنهادهای شگفت‌انگیز" id="amazingSectionRoot" data-timer-active="${settings.amazing_timer_is_active ? "true" : "false"}" data-timer-start="${escapeAttr(settings.amazing_timer_starts_at ?? "")}" data-timer-end="${escapeAttr(settings.amazing_timer_ends_at ?? "")}">`,
+  );
+
+  /* Hero slider */
+  html = replaceOnce(
+    html,
+    'id="sliderTrack"></div>',
+    `id="sliderTrack">${renderHeroSlides(home.hero)}</div>`,
+  );
+  html = replaceOnce(
+    html,
+    'id="heroLoadingState"',
+    'id="heroLoadingState" style="display:none;"',
+  );
+  html = replaceOnce(
+    html,
+    'id="heroSwiperContainer" dir="rtl" style="display:none;"',
+    'id="heroSwiperContainer" dir="rtl"',
+  );
+
+  /* Logo */
+  html = replaceOnce(
+    html,
+    'src="img/Pnyshop-img-logo.png"',
+    `src="${escapeAttr(logoUrl)}"`,
+  );
+
+  html = html.replace(/(["'(])\/?img\//g, "$1/images/");
+
+  return html;
 }
 
 export default async function HomePage() {
-  const markup = await getLegacyHomeMarkup();
+  const home = await getCachedHomeData();
+  const markup = await buildHomeMarkup(home);
 
   return (
     <>
