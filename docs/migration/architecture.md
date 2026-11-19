@@ -47,6 +47,14 @@
   `site_media` placements (hero slider, banners, spotlight and other slots).
   Public reads of active media and settings are allowed by RLS; writes require
   an admin session with `aal2`.
+- `/` keeps the legacy storefront shell but renders its content from Supabase:
+  the logo, favicon, footer texts and social links come from `site_settings`;
+  the hero slider, banners, spotlight and extra category circles come from
+  `site_media`; the category circles and the amazing/product strips come from
+  the active `categories` and `products` rows. The search-results overlay
+  loads the published catalog in the browser and supports text search,
+  category/mode selection, brand/color/price/rating filters, sorting, chunked
+  rendering, wishlist toggles and add-to-cart.
 - `/ai` provides the Gemini-backed storefront assistant through a server-only
   Next.js API route; it does not expose the Gemini key to the browser.
 - Supabase browser, server and privileged clients are defined under
