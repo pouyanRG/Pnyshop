@@ -5,7 +5,6 @@ import { useState, type FormEvent } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { AuditLog, Coupon, Product } from "@/types/database";
-import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import styles from "./admin-page.module.css";
 
 type Tab = "products" | "orders" | "coupons" | "audit";
@@ -38,6 +37,7 @@ export function AdminPage({
 }) {
   const router = useRouter();
   const [tab, setTab] = useState<Tab>("products");
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [products, setProducts] = useState(initialProducts);
   const [coupons, setCoupons] = useState(initialCoupons);
   const [orders, setOrders] = useState(initialOrders);
@@ -207,18 +207,57 @@ export function AdminPage({
   }
 
   return (
-    <div className={`${styles.page} admin-page`} dir="rtl">
-      <StorefrontHeader />
-      <aside className={styles.sidebar}>
-        <div className={styles.brand}><i className="fas fa-store" /><div><b>Pnyshop</b><small>پنل مدیریت</small></div></div>
-        <nav>
+    <div className={styles.page} dir="rtl">
+      <div className={styles.mobileTopbar}>
+        <button
+          type="button"
+          aria-label="باز کردن منوی مدیریت"
+          aria-expanded={mobileMenuOpen}
+          aria-controls="admin-navigation"
+          onClick={() => setMobileMenuOpen(true)}
+        >
+          <i className="fas fa-bars" />
+        </button>
+        <div className={styles.mobileBrand}><i className="fas fa-store" /> پنل مدیریت Pnyshop</div>
+        <span aria-hidden="true" />
+      </div>
+      <button
+        type="button"
+        className={`${styles.sidebarOverlay} ${mobileMenuOpen ? styles.sidebarOverlayVisible : ""}`}
+        aria-label="بستن منوی مدیریت"
+        tabIndex={mobileMenuOpen ? 0 : -1}
+        onClick={() => setMobileMenuOpen(false)}
+      />
+      <aside className={`${styles.sidebar} ${mobileMenuOpen ? styles.sidebarOpen : ""}`} id="admin-navigation">
+        <div className={styles.brand}>
+          <i className="fas fa-store" />
+          <div><b>Pnyshop</b><small>پنل مدیریت</small></div>
+          <button
+            type="button"
+            className={styles.sidebarClose}
+            aria-label="بستن منوی مدیریت"
+            onClick={() => setMobileMenuOpen(false)}
+          >
+            <i className="fas fa-times" />
+          </button>
+        </div>
+        <nav aria-label="بخش‌های پنل مدیریت">
           {([
             ["products", "fa-layer-group", "محصولات"],
             ["orders", "fa-shopping-basket", "سفارش‌ها"],
             ["coupons", "fa-ticket-alt", "کدهای تخفیف"],
             ["audit", "fa-history", "گزارش فعالیت"],
           ] as const).map(([value, icon, label]) => (
-            <button type="button" key={value} className={tab === value ? styles.active : ""} onClick={() => setTab(value)}>
+            <button
+              type="button"
+              key={value}
+              className={tab === value ? styles.active : ""}
+              aria-current={tab === value ? "page" : undefined}
+              onClick={() => {
+                setTab(value);
+                setMobileMenuOpen(false);
+              }}
+            >
               <i className={`fas ${icon}`} /> {label}
             </button>
           ))}
@@ -226,7 +265,7 @@ export function AdminPage({
         <div className={styles.account}>
           <small>{email}</small>
           <Link href="/">بازگشت به فروشگاه</Link>
-          <button type="button" onClick={logout}><i className="fas fa-sign-out-alt" /> خروج</button>
+          <button type="button" onClick={logout}><i className="fas fa-sign-out-alt" /> خروج از حساب</button>
         </div>
       </aside>
 
