@@ -1,3 +1,16 @@
+/*
+ * Css/style.css (imported globally by app/globals.css) reserves space on <body>
+ * for the fixed storefront header and bottom nav on every route: 64px on top and
+ * about 88px at the bottom. Auth screens render neither, but they still inherited
+ * that padding, so <body> became 100dvh + ~152px tall and the page always had a
+ * scrollbar even when the form fit on screen. Remove the reserved space while an
+ * auth screen is mounted (this also covers /admin/mfa, which reuses this module).
+ */
+:global(body):has(.authPage) {
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
 .authPage {
   display: grid;
   min-height: 100vh;
