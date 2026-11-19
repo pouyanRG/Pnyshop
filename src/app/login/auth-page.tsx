@@ -419,6 +419,7 @@ export function AuthPage() {
                   id="auth-email"
                   name="email"
                   type="email"
+                  placeholder="name@example.com"
                   autoComplete="email"
                   autoCapitalize="none"
                   spellCheck={false}
