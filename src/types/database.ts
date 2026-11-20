@@ -205,6 +205,7 @@ export type Order = {
   payment_gateway: string | null;
   transaction_id: string | null;
   paid_at: string | null;
+  delivered_at: string | null;
   failure_reason: string | null;
   created_at: string;
   updated_at: string;

@@ -1,6 +1,7 @@
 import type {
   Brand,
   Category,
+  Coupon,
   Product,
   ProductImage,
   ProductStripMode,
@@ -92,4 +93,58 @@ export type SiteMediaInput = {
   ends_at: string;
 };
 
-export type { Brand, Category, SiteMedia, SiteSetting };
+export const ORDER_STATUSES = [
+  "pending_payment",
+  "paid",
+  "processing",
+  "shipped",
+  "delivered",
+  "failed_payment",
+] as const;
+
+export type OrderStatus = (typeof ORDER_STATUSES)[number];
+
+export const ORDER_STATUS_LABELS: Record<OrderStatus, string> = {
+  pending_payment: "در انتظار پرداخت",
+  paid: "پرداخت‌شده",
+  processing: "در حال پردازش",
+  shipped: "ارسال‌شده",
+  delivered: "تحویل‌شده",
+  failed_payment: "پرداخت ناموفق",
+};
+
+/** Statuses an admin may move an order to from each status. */
+export const ORDER_STATUS_TRANSITIONS: Record<
+  OrderStatus,
+  readonly OrderStatus[]
+> = {
+  pending_payment: ["paid", "failed_payment"],
+  paid: ["processing", "shipped", "delivered", "failed_payment"],
+  processing: ["shipped", "delivered", "failed_payment"],
+  shipped: ["delivered", "failed_payment"],
+  delivered: [],
+  failed_payment: ["pending_payment"],
+};
+
+export type CouponInput = {
+  code: string;
+  title: string;
+  icon_url: string | null;
+  discount_type: "percent" | "fixed";
+  discount_value: number;
+  minimum_amount: number;
+  maximum_discount: number | null;
+  usage_limit: number | null;
+  sort_order: number;
+  /** empty string or YYYY-MM-DD */
+  starts_at: string;
+  /** empty string or YYYY-MM-DD */
+  ends_at: string;
+  audience: "all" | "newUsers" | "oldUsers";
+  audience_days: number | null;
+  scope: "all" | "category";
+  scope_category: string;
+  is_active: boolean;
+};
+
+export type { Brand, Category, Coupon, SiteMedia, SiteSetting };
