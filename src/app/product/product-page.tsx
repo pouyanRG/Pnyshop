@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
-import type { Json, Product } from "@/types/database";
+import type { Json, Product, ProductVariant } from "@/types/database";
 import styles from "./product-page.module.css";
 
 type CartItem = { id: string; qty: number; color: string; name?: string };
@@ -62,7 +62,12 @@ function serializeCart(items: CartItem[]): Json[] {
   }));
 }
 
-export function ProductPage({ product, related }: { product: Product; related: Product[] }) {
+export type ProductPageVariant = Pick<
+  ProductVariant,
+  "color_name" | "price" | "discount" | "is_active"
+>;
+
+export function ProductPage({ product, related, variants }: { product: Product; related: Product[]; variants: ProductPageVariant[] }) {
   const router = useRouter();
   const colors = useMemo(() => asColors(product.colors), [product.colors]);
   const images = useMemo(() => asImages(product), [product]);
@@ -106,7 +111,27 @@ export function ProductPage({ product, related }: { product: Product; related: P
   }, [product.id]);
 
   const stock = selectedColor?.stock ?? product.stock;
-  const finalPrice = Math.round(product.price * (1 - product.discount / 100));
+  const sellableVariants = useMemo(
+    () => variants.filter((variant) => variant.is_active),
+    [variants],
+  );
+  const colorOffer = useMemo(() => {
+    if (!selectedColor) return null;
+    const offers = sellableVariants
+      .filter((variant) => variant.color_name === selectedColor.name)
+      .map((variant) => ({
+        final: Math.round(variant.price * (1 - variant.discount / 100)),
+        price: variant.price,
+        discount: variant.discount,
+      }));
+    if (offers.length === 0) return null;
+    return offers.reduce((best, offer) => (offer.final < best.final ? offer : best));
+  }, [sellableVariants, selectedColor]);
+  const finalPrice =
+    colorOffer?.final ?? Math.round(product.price * (1 - product.discount / 100));
+  const oldPrice = colorOffer
+    ? (colorOffer.discount > 0 ? colorOffer.price : null)
+    : (product.discount > 0 ? product.price : null);
   const displayedImage = selectedColor?.image || images[imageIndex] || null;
 
   async function addToCart() {
@@ -247,7 +272,10 @@ export function ProductPage({ product, related }: { product: Product; related: P
           </section>
 
           <section className={styles.details}>
-            <span className={styles.category}><i className="fas fa-check-circle" /> {product.category || "محصول فروشگاه"}</span>
+            <div className={styles.metaRow}>
+              <span className={styles.category}><i className="fas fa-check-circle" /> {product.category || "محصول فروشگاه"}</span>
+              {product.brand ? <span className={styles.brand}>{product.brand}</span> : null}
+            </div>
             <h1>{product.name}</h1>
             {product.is_hot && <span className={styles.hot}><i className="fas fa-fire" /> فروش ویژه</span>}
             <div className={styles.rating}>
@@ -259,7 +287,7 @@ export function ProductPage({ product, related }: { product: Product; related: P
               </em>
             </div>
             <div className={styles.prices}>
-              {product.discount > 0 && <del>{Number(product.price).toLocaleString("fa-IR")} تومان</del>}
+              {oldPrice !== null && <del>{Number(oldPrice).toLocaleString("fa-IR")} تومان</del>}
               <strong>{finalPrice.toLocaleString("fa-IR")} <small>تومان</small></strong>
             </div>
 
@@ -283,6 +311,12 @@ export function ProductPage({ product, related }: { product: Product; related: P
                 </div>
               </div>
             )}
+
+            {product.warranty ? (
+              <p className={styles.warranty}>
+                <i className="fas fa-shield-alt" /> {product.warranty}
+              </p>
+            ) : null}
 
             <div className={styles.actions}>
               <div className={styles.quantity}>

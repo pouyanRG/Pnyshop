@@ -47,6 +47,7 @@ export type ProductInput = {
   description: string;
   warranty: string;
   status: "draft" | "published";
+  is_hot: boolean;
   price: number;
   stock: number;
   discount: number;
@@ -177,12 +178,18 @@ function specificationsToObject(
 function buildLegacyColors(variants: ProductVariantInput[]) {
   const colors = new Map<
     string,
-    { name: string; image: string | null; stock: number }
+    { name: string; code: string | null; image: string | null; stock: number }
   >();
   for (const variant of variants) {
     const name = variant.color_name || "پیش‌فرض";
-    const entry = colors.get(name) ?? { name, image: variant.image_url, stock: 0 };
+    const entry = colors.get(name) ?? {
+      name,
+      code: variant.color_code || null,
+      image: variant.image_url,
+      stock: 0,
+    };
     entry.stock += variant.stock;
+    if (!entry.code && variant.color_code) entry.code = variant.color_code;
     if (!entry.image && variant.image_url) entry.image = variant.image_url;
     colors.set(name, entry);
   }
@@ -401,13 +408,16 @@ export async function createProduct(
     brandId,
   );
 
+  // Only active variants drive the storefront price, stock and colors.
+  const sellable = variants.filter((variant) => variant.is_active);
+
   const productPrice =
-    variants.length > 0
-      ? Math.min(...variants.map((variant) => variant.price))
+    sellable.length > 0
+      ? Math.min(...sellable.map((variant) => variant.price))
       : (asNumber(input.price) ?? 0);
   const productStock =
-    variants.length > 0
-      ? variants.reduce((sum, variant) => sum + variant.stock, 0)
+    sellable.length > 0
+      ? sellable.reduce((sum, variant) => sum + variant.stock, 0)
       : (asNumber(input.stock) ?? 0);
 
   const { data: product, error } = await supabase
@@ -418,16 +428,17 @@ export async function createProduct(
       description: asString(input.description),
       warranty: asString(input.warranty).slice(0, 200),
       status: input.status,
+      is_hot: asBoolean(input.is_hot),
       price: productPrice,
       stock: productStock,
-      discount: variants.length > 0 ? 0 : (asNumber(input.discount) ?? 0),
+      discount: sellable.length > 0 ? 0 : (asNumber(input.discount) ?? 0),
       category: categoryName,
       brand: brandName,
       category_id: categoryId,
       brand_id: brandId,
       image_url: images.find((image) => image.is_primary)?.url ?? images[0]?.url ?? null,
       gallery: images.map((image) => image.url),
-      colors: buildLegacyColors(variants),
+      colors: buildLegacyColors(sellable),
       specifications: specificationsToObject(specifications),
       is_active: true,
     })
@@ -498,13 +509,16 @@ export async function updateProduct(
     brandId,
   );
 
+  // Only active variants drive the storefront price, stock and colors.
+  const sellable = variants.filter((variant) => variant.is_active);
+
   const productPrice =
-    variants.length > 0
-      ? Math.min(...variants.map((variant) => variant.price))
+    sellable.length > 0
+      ? Math.min(...sellable.map((variant) => variant.price))
       : (asNumber(input.price) ?? 0);
   const productStock =
-    variants.length > 0
-      ? variants.reduce((sum, variant) => sum + variant.stock, 0)
+    sellable.length > 0
+      ? sellable.reduce((sum, variant) => sum + variant.stock, 0)
       : (asNumber(input.stock) ?? 0);
 
   const { error } = await supabase
@@ -517,15 +531,16 @@ export async function updateProduct(
       status: input.status,
       price: productPrice,
       stock: productStock,
-      discount: variants.length > 0 ? 0 : (asNumber(input.discount) ?? 0),
+      discount: sellable.length > 0 ? 0 : (asNumber(input.discount) ?? 0),
       category: categoryName,
       brand: brandName,
       category_id: categoryId,
       brand_id: brandId,
       image_url: images.find((image) => image.is_primary)?.url ?? images[0]?.url ?? null,
       gallery: images.map((image) => image.url),
-      colors: buildLegacyColors(variants),
+      colors: buildLegacyColors(sellable),
       specifications: specificationsToObject(specifications),
+      is_hot: asBoolean(input.is_hot),
       updated_at: new Date().toISOString(),
     })
     .eq("id", id);
@@ -598,6 +613,7 @@ export async function duplicateProduct(id: number): Promise<ProductResult> {
       description: product.description,
       warranty: product.warranty,
       status: "draft",
+      is_hot: product.is_hot,
       price: product.price,
       stock: product.stock,
       discount: product.discount,

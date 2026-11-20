@@ -2,7 +2,7 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type { Product } from "@/types/database";
-import { ProductPage } from "./product-page";
+import { ProductPage, type ProductPageVariant } from "./product-page";
 
 type Props = {
   searchParams: Promise<{ id?: string | string[] }>;
@@ -91,5 +91,16 @@ export default async function ProductRoute({ searchParams }: Props) {
     }
   }
 
-  return <ProductPage product={product} related={related} />;
+  let variants: ProductPageVariant[] = [];
+  const variantsResult = await supabase
+    .from("product_variants")
+    .select("color_name, price, discount, is_active")
+    .eq("product_id", product.id);
+  if (variantsResult.error) {
+    console.error("Could not load product variants:", variantsResult.error);
+  } else {
+    variants = variantsResult.data ?? [];
+  }
+
+  return <ProductPage product={product} related={related} variants={variants} />;
 }

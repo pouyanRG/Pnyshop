@@ -25,6 +25,7 @@ type FormState = {
   description: string;
   warranty: string;
   status: "draft" | "published";
+  is_hot: boolean;
   price: number;
   stock: number;
   discount: number;
@@ -103,6 +104,7 @@ function initialState(product?: AdminProduct | null): FormState {
       description: "",
       warranty: "",
       status: "draft",
+      is_hot: false,
       price: 0,
       stock: 0,
       discount: 0,
@@ -120,6 +122,7 @@ function initialState(product?: AdminProduct | null): FormState {
     description: product.description,
     warranty: product.warranty,
     status: product.status,
+    is_hot: product.is_hot,
     price: product.price,
     stock: product.stock,
     discount: product.discount,
@@ -431,6 +434,17 @@ export function ProductForm({
                   </select>
                 </label>
 
+                <label className={`${styles.field} ${styles.checkField}`}>
+                  <input
+                    type="checkbox"
+                    checked={form.is_hot}
+                    onChange={(event) =>
+                      setForm({ ...form, is_hot: event.target.checked })
+                    }
+                  />
+                  <span>فروش ویژه (نمایش نشان 🔥 در صفحه محصول)</span>
+                </label>
+
                 <label className={styles.field}>
                   <span>قیمت پایه (تومان)</span>
                   <input
@@ -670,6 +684,7 @@ export function ProductForm({
                     <span>
                       وضعیت: {form.status === "published" ? "منتشرشده" : "پیش‌نویس"}
                     </span>
+                    {form.is_hot && <span>🔥 فروش ویژه</span>}
                   </div>
                 </div>
                 <div className={styles.previewImages}>
