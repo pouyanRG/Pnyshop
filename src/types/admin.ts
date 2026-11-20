@@ -147,4 +147,24 @@ export type CouponInput = {
   is_active: boolean;
 };
 
+export const AUDIT_ACTIONS = ["create", "update", "delete"] as const;
+
+export type AuditAction = (typeof AUDIT_ACTIONS)[number];
+
+export const AUDIT_ACTION_LABELS: Record<AuditAction, string> = {
+  create: "ایجاد",
+  update: "ویرایش",
+  delete: "حذف",
+};
+
+export const AUDIT_ENTITY_LABELS: Record<string, string> = {
+  brand: "برند",
+  category: "دسته‌بندی",
+  coupon: "کد تخفیف",
+  order: "سفارش",
+  product: "محصول",
+  site_media: "رسانهٔ سایت",
+  site_settings: "تنظیمات سایت",
+};
+
 export type { Brand, Category, Coupon, SiteMedia, SiteSetting };
