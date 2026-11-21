@@ -2,33 +2,14 @@
 
 import Image from "next/image";
 import Link from "next/link";
-import { useEffect, useMemo, useRef, useState, useSyncExternalStore } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import type { Product } from "@/types/database";
 import styles from "./ai-page.module.css";
 
 type Message = { role: "user" | "assistant"; text: string };
-const THEME_EVENT = "pnyshop-theme-change";
-
-function subscribeToTheme(onStoreChange: () => void) {
-  window.addEventListener("storage", onStoreChange);
-  window.addEventListener(THEME_EVENT, onStoreChange);
-  return () => {
-    window.removeEventListener("storage", onStoreChange);
-    window.removeEventListener(THEME_EVENT, onStoreChange);
-  };
-}
-
-function getThemeSnapshot(): "light" | "dark" {
-  return window.localStorage.getItem("theme") === "dark" ? "dark" : "light";
-}
-
-function getThemeServerSnapshot(): "light" | "dark" {
-  return "light";
-}
 
 export function AiPage() {
-  const theme = useSyncExternalStore(subscribeToTheme, getThemeSnapshot, getThemeServerSnapshot);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [busy, setBusy] = useState(false);
@@ -40,8 +21,6 @@ export function AiPage() {
   const logRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
-    const saved = window.localStorage.getItem("theme") === "dark" ? "dark" : "light";
-    document.documentElement.dataset.theme = saved;
     void (async () => {
       try {
         const client = await createSupabaseBrowserClient();
@@ -81,13 +60,6 @@ export function AiPage() {
     })),
     [products],
   );
-
-  function toggleTheme() {
-    const next = theme === "dark" ? "light" : "dark";
-    window.localStorage.setItem("theme", next);
-    document.documentElement.dataset.theme = next;
-    window.dispatchEvent(new Event(THEME_EVENT));
-  }
 
   async function send(text?: string) {
     const message = (text ?? input).trim();
@@ -156,7 +128,6 @@ export function AiPage() {
         <header className={styles.header}>
           <button type="button" className={styles.menuButton} onClick={() => setDrawerOpen(true)} aria-label="منو"><i className="fas fa-bars" /></button>
           <span><i className="fas fa-sparkles" /> Gemini AI</span>
-          <button type="button" onClick={toggleTheme} aria-label="تغییر تم"><i className={`fas ${theme === "dark" ? "fa-sun" : "fa-moon"}`} /></button>
         </header>
         <div className={styles.chatArea}>
           {messages.length === 0 ? (

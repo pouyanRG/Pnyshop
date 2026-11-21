@@ -124,7 +124,7 @@ export function CartPage({
 
   return (
     <div className={`${styles.page} cart-page`} dir="rtl">
-      <StorefrontHeader />
+      <StorefrontHeader showHeader={false} />
       <main className={styles.content}>
         <div className={styles.titleRow}>
           <h1><i className="fas fa-shopping-basket" /> سبد خرید</h1>

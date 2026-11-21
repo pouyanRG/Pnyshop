@@ -82,19 +82,26 @@
   display: flex;
   flex-shrink: 0;
   align-items: center;
+  gap: 8px;
 }
 
-.actions button {
+.actionLink {
   display: grid;
   width: 40px;
   height: 40px;
   place-items: center;
-  border: 0;
   border-radius: 50%;
   background: transparent;
   color: var(--text-secondary);
   font-size: 17px;
+  text-decoration: none;
   cursor: pointer;
+}
+
+@media (max-width: 720px) {
+  .actions {
+    display: none;
+  }
 }
 
 [data-theme="dark"] .header {

@@ -22,9 +22,6 @@ function parseCart(value: Json): CartItem[] {
 export function LegacyCheckoutBehavior() {
   const router = useRouter();
   useEffect(() => {
-    const theme = window.localStorage.getItem("theme") === "dark" ? "dark" : "light";
-    document.documentElement.dataset.theme = theme;
-
     let cart: CartItem[] = [];
     let products: Product[] = [];
     let couponDiscount = 0;

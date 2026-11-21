@@ -8,7 +8,6 @@ import type {
   SiteSetting,
 } from "@/types/database";
 import {
-  PRODUCT_STRIP_MODES,
   SITE_MEDIA_PLACEMENTS,
   type SiteMediaInput,
   type SiteSettingsInput,
@@ -34,15 +33,9 @@ const PLACEMENT_LABELS: Record<SiteMediaPlacement, string> = {
   banner_r4: "بنر دوم ردیف دو (۱:۱)",
   spotlight: "ویترین ویژه",
   category_circle: "دایره‌های دسته",
-  product_strip: "نوار محصولات",
+  product_strip: "نوار تزئینی صفحهٔ اصلی",
   amazing_timer: "تایمر شگفت‌انگیز",
   other: "سایر رسانه‌ها",
-};
-
-const STRIP_MODE_LABELS: Record<(typeof PRODUCT_STRIP_MODES)[number], string> = {
-  newest: "جدیدترین محصولات",
-  bestseller: "پرفروش‌ترین محصولات",
-  discount: "محصولات تخفیف‌دار",
 };
 
 function settingsToInput(settings: SiteSetting): SiteSettingsInput {
@@ -248,7 +241,7 @@ export function MediaClient({
         <div>
           <h1>تصاویر و ظاهر سایت</h1>
           <p>
-            لوگو، اسلایدر، بنرها، ویترین، تایمر شگفت‌انگیز، نوار محصولات و فوتر
+            لوگو، اسلایدر، بنرها، ویترین، تایمر شگفت‌انگیز، نوار تزئینی و فوتر
             فروشگاه را از این‌جا مدیریت کنید.
           </p>
         </div>
@@ -490,69 +483,6 @@ export function MediaClient({
           </label>
         </div>
 
-        <h2>نوار محصولات</h2>
-        <div className={styles.grid}>
-          <label className={styles.field}>
-            <span>عنوان نوار محصولات</span>
-            <input
-              value={settings.product_strip_title}
-              onChange={(event) =>
-                setSettings({ ...settings, product_strip_title: event.target.value })
-              }
-              maxLength={80}
-            />
-            {settingsErrors.product_strip_title && (
-              <small className={styles.error}>
-                {settingsErrors.product_strip_title}
-              </small>
-            )}
-          </label>
-          <label className={styles.field}>
-            <span>معیار انتخاب محصولات</span>
-            <select
-              value={settings.product_strip_mode}
-              onChange={(event) =>
-                setSettings({
-                  ...settings,
-                  product_strip_mode: event.target
-                    .value as SiteSettingsInput["product_strip_mode"],
-                })
-              }
-            >
-              {PRODUCT_STRIP_MODES.map((mode) => (
-                <option key={mode} value={mode}>
-                  {STRIP_MODE_LABELS[mode]}
-                </option>
-              ))}
-            </select>
-            {settingsErrors.product_strip_mode && (
-              <small className={styles.error}>
-                {settingsErrors.product_strip_mode}
-              </small>
-            )}
-          </label>
-          <label className={styles.field}>
-            <span>تعداد محصولات (۱ تا ۲۴)</span>
-            <input
-              type="number"
-              min={1}
-              max={24}
-              value={settings.product_strip_limit}
-              onChange={(event) =>
-                setSettings({
-                  ...settings,
-                  product_strip_limit: Number(event.target.value),
-                })
-              }
-            />
-            {settingsErrors.product_strip_limit && (
-              <small className={styles.error}>
-                {settingsErrors.product_strip_limit}
-              </small>
-            )}
-          </label>
-        </div>
-
         <div className={styles.formActions}>
           <button type="submit" className={styles.primary} disabled={busy}>
             {busy ? "در حال ذخیره…" : "ذخیرهٔ تنظیمات ظاهر"}
@@ -563,166 +493,9 @@ export function MediaClient({
       <section className={styles.sectionHead}>
         <div>
           <h2>رسانه‌های ظاهر سایت</h2>
-          <p>تصاویر اسلایدر، بنرها، ویترین و سایر جایگاه‌ها را مدیریت کنید.</p>
+          <p>برای نوار تزئینی، جایگاه «نوار تزئینی صفحهٔ اصلی» را انتخاب کنید و تصویر، عنوان و لینک بگذارید.</p>
         </div>
       </section>
-
-      {mediaForm && (
-        <form className={styles.form} onSubmit={saveMedia} noValidate>
-          <h2>
-            {mediaForm.id
-              ? `ویرایش رسانه — ${PLACEMENT_LABELS[mediaForm.placement]}`
-              : "رسانهٔ جدید"}
-          </h2>
-          <div className={styles.grid}>
-            <label className={styles.field}>
-              <span>جایگاه رسانه *</span>
-              <select
-                value={mediaForm.placement}
-                onChange={(event) =>
-                  setMediaForm({
-                    ...mediaForm,
-                    placement: event.target.value as SiteMediaPlacement,
-                  })
-                }
-              >
-                {SITE_MEDIA_PLACEMENTS.map((placement) => (
-                  <option key={placement} value={placement}>
-                    {PLACEMENT_LABELS[placement]}
-                  </option>
-                ))}
-              </select>
-              {mediaErrors.placement && (
-                <small className={styles.error}>{mediaErrors.placement}</small>
-              )}
-            </label>
-            <label className={styles.field}>
-              <span>عنوان</span>
-              <input
-                value={mediaForm.title}
-                onChange={(event) =>
-                  setMediaForm({ ...mediaForm, title: event.target.value })
-                }
-                maxLength={160}
-              />
-              {mediaErrors.title && (
-                <small className={styles.error}>{mediaErrors.title}</small>
-              )}
-            </label>
-            <div className={`${styles.field} ${styles.full}`}>
-              <ImageUploader
-                label="تصویر رسانه *"
-                value={mediaForm.image_url}
-                onChange={(url) => setMediaForm({ ...mediaForm, image_url: url })}
-                maxSizeMB={5}
-                compress={{ maxWidth: 1920, quality: 0.85 }}
-              />
-              {mediaErrors.image_url && (
-                <small className={styles.error}>{mediaErrors.image_url}</small>
-              )}
-            </div>
-            <div className={`${styles.field} ${styles.full}`}>
-              <ImageUploader
-                label="تصویر موبایل (اختیاری)"
-                value={mediaForm.mobile_image_url}
-                onChange={(url) =>
-                  setMediaForm({ ...mediaForm, mobile_image_url: url })
-                }
-                maxSizeMB={5}
-                compress={{ maxWidth: 1200, quality: 0.85 }}
-              />
-              {mediaErrors.mobile_image_url && (
-                <small className={styles.error}>
-                  {mediaErrors.mobile_image_url}
-                </small>
-              )}
-            </div>
-            <label className={`${styles.field} ${styles.full}`}>
-              <span>لینک</span>
-              <input
-                value={mediaForm.link}
-                onChange={(event) =>
-                  setMediaForm({ ...mediaForm, link: event.target.value })
-                }
-                maxLength={1000}
-                dir="ltr"
-              />
-              {mediaErrors.link && (
-                <small className={styles.error}>{mediaErrors.link}</small>
-              )}
-            </label>
-            <label className={styles.field}>
-              <span>ترتیب نمایش</span>
-              <input
-                type="number"
-                min={0}
-                value={mediaForm.sort_order}
-                onChange={(event) =>
-                  setMediaForm({
-                    ...mediaForm,
-                    sort_order: Number(event.target.value),
-                  })
-                }
-              />
-              {mediaErrors.sort_order && (
-                <small className={styles.error}>{mediaErrors.sort_order}</small>
-              )}
-            </label>
-            <label className={`${styles.field} ${styles.inline}`}>
-              <input
-                type="checkbox"
-                checked={mediaForm.is_active}
-                onChange={(event) =>
-                  setMediaForm({
-                    ...mediaForm,
-                    is_active: event.target.checked,
-                  })
-                }
-              />
-              <span>رسانه فعال باشد</span>
-            </label>
-            <label className={styles.field}>
-              <span>آغاز نمایش</span>
-              <input
-                type="datetime-local"
-                value={mediaForm.starts_at}
-                onChange={(event) =>
-                  setMediaForm({ ...mediaForm, starts_at: event.target.value })
-                }
-              />
-              {mediaErrors.starts_at && (
-                <small className={styles.error}>{mediaErrors.starts_at}</small>
-              )}
-            </label>
-            <label className={styles.field}>
-              <span>پایان نمایش</span>
-              <input
-                type="datetime-local"
-                value={mediaForm.ends_at}
-                onChange={(event) =>
-                  setMediaForm({ ...mediaForm, ends_at: event.target.value })
-                }
-              />
-              {mediaErrors.ends_at && (
-                <small className={styles.error}>{mediaErrors.ends_at}</small>
-              )}
-            </label>
-          </div>
-          <div className={styles.formActions}>
-            <button type="submit" className={styles.primary} disabled={busy}>
-              {busy ? "در حال ذخیره…" : "ذخیرهٔ رسانه"}
-            </button>
-            <button
-              type="button"
-              className={styles.ghost}
-              onClick={() => setMediaForm(null)}
-              disabled={busy}
-            >
-              انصراف
-            </button>
-          </div>
-        </form>
-      )}
 
       {grouped.map(({ placement, items }) => (
         <section key={placement} className={styles.group}>
@@ -743,6 +516,169 @@ export function MediaClient({
               <i className="fas fa-plus" aria-hidden="true" /> افزودن رسانه
             </button>
           </div>
+
+          {mediaForm?.placement === placement && (
+            <form className={styles.form} onSubmit={saveMedia} noValidate>
+              <h2>
+                {mediaForm.id
+                  ? `ویرایش رسانه — ${PLACEMENT_LABELS[mediaForm.placement]}`
+                  : "رسانهٔ جدید"}
+              </h2>
+              <div className={styles.grid}>
+                <label className={styles.field}>
+                  <span>جایگاه رسانه *</span>
+                  <select
+                    value={mediaForm.placement}
+                    onChange={(event) =>
+                      setMediaForm({
+                        ...mediaForm,
+                        placement: event.target.value as SiteMediaPlacement,
+                      })
+                    }
+                  >
+                    {SITE_MEDIA_PLACEMENTS.map((placementOption) => (
+                      <option key={placementOption} value={placementOption}>
+                        {PLACEMENT_LABELS[placementOption]}
+                      </option>
+                    ))}
+                  </select>
+                  {mediaErrors.placement && (
+                    <small className={styles.error}>{mediaErrors.placement}</small>
+                  )}
+                </label>
+                <label className={styles.field}>
+                  <span>عنوان</span>
+                  <input
+                    value={mediaForm.title}
+                    onChange={(event) =>
+                      setMediaForm({ ...mediaForm, title: event.target.value })
+                    }
+                    maxLength={160}
+                  />
+                  {mediaErrors.title && (
+                    <small className={styles.error}>{mediaErrors.title}</small>
+                  )}
+                </label>
+                <div className={`${styles.field} ${styles.full}`}>
+                  <ImageUploader
+                    label="تصویر رسانه *"
+                    value={mediaForm.image_url}
+                    onChange={(url) =>
+                      setMediaForm({ ...mediaForm, image_url: url })
+                    }
+                    maxSizeMB={5}
+                    compress={{ maxWidth: 1920, quality: 0.85 }}
+                  />
+                  {mediaErrors.image_url && (
+                    <small className={styles.error}>
+                      {mediaErrors.image_url}
+                    </small>
+                  )}
+                </div>
+                <div className={`${styles.field} ${styles.full}`}>
+                  <ImageUploader
+                    label="تصویر موبایل (اختیاری)"
+                    value={mediaForm.mobile_image_url}
+                    onChange={(url) =>
+                      setMediaForm({ ...mediaForm, mobile_image_url: url })
+                    }
+                    maxSizeMB={5}
+                    compress={{ maxWidth: 1200, quality: 0.85 }}
+                  />
+                  {mediaErrors.mobile_image_url && (
+                    <small className={styles.error}>
+                      {mediaErrors.mobile_image_url}
+                    </small>
+                  )}
+                </div>
+                <label className={`${styles.field} ${styles.full}`}>
+                  <span>لینک</span>
+                  <input
+                    value={mediaForm.link}
+                    onChange={(event) =>
+                      setMediaForm({ ...mediaForm, link: event.target.value })
+                    }
+                    maxLength={1000}
+                    dir="ltr"
+                  />
+                  {mediaErrors.link && (
+                    <small className={styles.error}>{mediaErrors.link}</small>
+                  )}
+                </label>
+                <label className={styles.field}>
+                  <span>ترتیب نمایش</span>
+                  <input
+                    type="number"
+                    min={0}
+                    value={mediaForm.sort_order}
+                    onChange={(event) =>
+                      setMediaForm({
+                        ...mediaForm,
+                        sort_order: Number(event.target.value),
+                      })
+                    }
+                  />
+                  {mediaErrors.sort_order && (
+                    <small className={styles.error}>
+                      {mediaErrors.sort_order}
+                    </small>
+                  )}
+                </label>
+                <label className={`${styles.field} ${styles.inline}`}>
+                  <input
+                    type="checkbox"
+                    checked={mediaForm.is_active}
+                    onChange={(event) =>
+                      setMediaForm({
+                        ...mediaForm,
+                        is_active: event.target.checked,
+                      })
+                    }
+                  />
+                  <span>رسانه فعال باشد</span>
+                </label>
+                <label className={styles.field}>
+                  <span>آغاز نمایش</span>
+                  <input
+                    type="datetime-local"
+                    value={mediaForm.starts_at}
+                    onChange={(event) =>
+                      setMediaForm({ ...mediaForm, starts_at: event.target.value })
+                    }
+                  />
+                  {mediaErrors.starts_at && (
+                    <small className={styles.error}>{mediaErrors.starts_at}</small>
+                  )}
+                </label>
+                <label className={styles.field}>
+                  <span>پایان نمایش</span>
+                  <input
+                    type="datetime-local"
+                    value={mediaForm.ends_at}
+                    onChange={(event) =>
+                      setMediaForm({ ...mediaForm, ends_at: event.target.value })
+                    }
+                  />
+                  {mediaErrors.ends_at && (
+                    <small className={styles.error}>{mediaErrors.ends_at}</small>
+                  )}
+                </label>
+              </div>
+              <div className={styles.formActions}>
+                <button type="submit" className={styles.primary} disabled={busy}>
+                  {busy ? "در حال ذخیره…" : "ذخیرهٔ رسانه"}
+                </button>
+                <button
+                  type="button"
+                  className={styles.ghost}
+                  onClick={() => setMediaForm(null)}
+                  disabled={busy}
+                >
+                  انصراف
+                </button>
+              </div>
+            </form>
+          )}
 
           {items.length === 0 ? (
             <p className={styles.empty}>هنوز رسانه‌ای در این جایگاه ثبت نشده است.</p>

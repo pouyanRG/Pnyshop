@@ -65,11 +65,11 @@ async function buildHomeMarkup(home: HomeData): Promise<string> {
     .replace(/href=(["'])admin\.html\1/gi, 'href="/admin"')
     .replace(/href=(["'])Ai\.html\1/gi, 'href="/ai"');
 
-  /* Product strip (real catalog products) */
+  /* Decorative product strip (admin-managed media) */
   html = replaceOnce(
     html,
     /<section class="product-nav-section">[\s\S]*?<\/section>/,
-    renderProductStrip(home.stripProducts, settings.product_strip_title),
+    renderProductStrip(home.productStrip),
   );
 
   /* Category circles */
@@ -122,6 +122,18 @@ async function buildHomeMarkup(home: HomeData): Promise<string> {
     '<div class="swiper amazing-swiper" id="amazingSwiperEl" dir="rtl" hidden>',
     `<div class="swiper amazing-swiper" id="amazingSwiperEl" dir="rtl"${amazingSlides ? "" : " hidden"}>`,
   );
+  if (home.amazingProducts.length <= 1) {
+    html = replaceOnce(
+      html,
+      '<div class="swiper-button-next amazing-nav-next"></div>',
+      '<div class="swiper-button-next amazing-nav-next" hidden></div>',
+    );
+    html = replaceOnce(
+      html,
+      '<div class="swiper-button-prev amazing-nav-prev"></div>',
+      '<div class="swiper-button-prev amazing-nav-prev" hidden></div>',
+    );
+  }
   if (!amazingSlides) {
     html = replaceOnce(
       html,

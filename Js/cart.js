@@ -17,7 +17,7 @@ let state = {
     shippingCost: 35000,
     appliedDiscount: 0,
     appliedCoupon: null,
-    theme: localStorage.getItem(DB.theme) || 'light'
+    theme: localStorage.getItem(DB.theme) || 'system'
 };
 
 const FALLBACK_IMG = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10';
@@ -120,7 +120,10 @@ async function loadProducts() {
 
 // --- THEME ---
 function applyTheme(t) {
-    document.documentElement.setAttribute('data-theme', t);
+    const resolved = t === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : t;
+    document.documentElement.setAttribute('data-theme', resolved);
     const icon = t === 'dark' ? 'fa-sun' : 'fa-moon';
     const label = t === 'dark' ? 'حالت روز' : 'حالت شب';
 

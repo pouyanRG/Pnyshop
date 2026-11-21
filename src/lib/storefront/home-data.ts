@@ -1,11 +1,10 @@
 import { createSupabaseServerClient } from "@/lib/supabase/server";
 import type {
   Category,
-  ProductStripMode,
   SiteMedia,
   SiteSetting,
 } from "@/types/database";
-import type { StorefrontProduct } from "./types";
+import { storefrontPricing, type StorefrontProduct } from "./types";
 
 export type HomeProduct = StorefrontProduct;
 
@@ -17,7 +16,7 @@ export type HomeData = {
   categories: Category[];
   extraCircles: SiteMedia[];
   amazingProducts: HomeProduct[];
-  stripProducts: HomeProduct[];
+  productStrip: SiteMedia[];
   loadError: boolean;
 };
 
@@ -94,49 +93,94 @@ const FALLBACK_HERO: SiteMedia[] = [
   },
 ];
 
-function limitOf(settings: SiteSetting): number {
-  return Number.isInteger(settings.product_strip_limit)
-    ? Math.min(24, Math.max(1, settings.product_strip_limit))
-    : 12;
-}
-
-async function queryProducts(
+async function queryAmazingProducts(
   supabase: Awaited<ReturnType<typeof createSupabaseServerClient>>,
-  mode: ProductStripMode,
-  limit: number,
-  amazing: boolean,
 ): Promise<{ products: HomeProduct[]; error: boolean }> {
-  let query = supabase
-    .from("products")
-    .select("*, product_images(url, is_primary, sort_order)")
-    .eq("is_active", true)
-    .eq("status", "published");
+  const selection =
+    "*, product_images(url, is_primary, sort_order), product_variants(price, discount, stock, is_active, color_name, color_code, size, image_url)";
 
-  if (amazing || mode === "discount") {
-    query = query
+  const candidateLimit = 120;
+  const [discountedProducts, discountedVariants] = await Promise.all([
+    supabase
+      .from("products")
+      .select(selection)
+      .eq("is_active", true)
+      .eq("status", "published")
       .gt("discount", 0)
       .order("discount", { ascending: false })
-      .order("created_at", { ascending: false });
-  } else if (mode === "bestseller") {
-    query = query
-      .order("rating", { ascending: false, nullsFirst: false })
-      .order("review_count", { ascending: false });
-  } else {
-    query = query.order("created_at", { ascending: false });
-  }
+      .order("created_at", { ascending: false })
+      .limit(candidateLimit),
+    supabase
+      .from("product_variants")
+      .select("product_id, discount")
+      .eq("is_active", true)
+      .gt("discount", 0)
+      .order("discount", { ascending: false })
+      .limit(candidateLimit),
+  ]);
 
-  const { data, error } = await query.limit(amazing ? 12 : limit);
-  if (error) {
-    console.error("Could not load home products:", error);
+  if (discountedProducts.error) {
+    console.error(
+      "Could not load discounted home products:",
+      discountedProducts.error,
+    );
     return { products: [], error: true };
   }
-  return { products: (data ?? []) as unknown as HomeProduct[], error: false };
+  if (discountedVariants.error) {
+    console.error(
+      "Could not load discounted product variants:",
+      discountedVariants.error,
+    );
+    return { products: [], error: true };
+  }
+
+  const variantProductIds = [
+    ...new Set((discountedVariants.data ?? []).map((variant) => variant.product_id)),
+  ];
+  let variantProducts: HomeProduct[] = [];
+
+  if (variantProductIds.length > 0) {
+    const { data, error } = await supabase
+      .from("products")
+      .select(selection)
+      .eq("is_active", true)
+      .eq("status", "published")
+      .in("id", variantProductIds);
+
+    if (error) {
+      console.error(
+        "Could not load products with discounted variants:",
+        error,
+      );
+      return { products: [], error: true };
+    }
+    variantProducts = (data ?? []) as unknown as HomeProduct[];
+  }
+
+  const productsById = new Map<number, HomeProduct>();
+  for (const product of [
+    ...((discountedProducts.data ?? []) as unknown as HomeProduct[]),
+    ...variantProducts,
+  ]) {
+    productsById.set(product.id, product);
+  }
+
+  const products = [...productsById.values()]
+    .filter((product) => storefrontPricing(product).hasDiscount)
+    .sort((a, b) => {
+      const discountDifference =
+        storefrontPricing(b).discount - storefrontPricing(a).discount;
+      return discountDifference || b.created_at.localeCompare(a.created_at);
+    })
+    .slice(0, 12);
+
+  return { products, error: false };
 }
 
 export async function getHomeData(): Promise<HomeData> {
   const supabase = await createSupabaseServerClient();
 
-  const [settingsResult, mediaResult, categoryResult] = await Promise.all([
+  const [settingsResult, mediaResult, categoryResult, amazingResult] = await Promise.all([
     supabase.from("site_settings").select("*").eq("id", 1).maybeSingle(),
     supabase
       .from("site_media")
@@ -151,6 +195,7 @@ export async function getHomeData(): Promise<HomeData> {
       .order("sort_order", { ascending: true })
       .order("id", { ascending: true })
       .limit(12),
+    queryAmazingProducts(supabase),
   ]);
 
   if (settingsResult.error) {
@@ -176,11 +221,14 @@ export async function getHomeData(): Promise<HomeData> {
   const extraCircles = media.filter(
     (item) => item.placement === "category_circle",
   );
-
-  const [amazingResult, stripResult] = await Promise.all([
-    queryProducts(supabase, settings.product_strip_mode, limitOf(settings), true),
-    queryProducts(supabase, settings.product_strip_mode, limitOf(settings), false),
-  ]);
+  const now = Date.now();
+  const productStrip = media.filter(
+    (item) =>
+      item.placement === "product_strip" &&
+      item.is_active &&
+      (!item.starts_at || new Date(item.starts_at).getTime() <= now) &&
+      (!item.ends_at || new Date(item.ends_at).getTime() >= now),
+  );
 
   return {
     settings,
@@ -190,13 +238,12 @@ export async function getHomeData(): Promise<HomeData> {
     categories,
     extraCircles,
     amazingProducts: amazingResult.products,
-    stripProducts: stripResult.products,
+    productStrip,
     loadError: Boolean(
       settingsResult.error ||
         mediaResult.error ||
         categoryResult.error ||
-        amazingResult.error ||
-        stripResult.error,
+        amazingResult.error,
     ),
   };
 }

@@ -36,8 +36,11 @@
 
     <script>
         (function() {
-            const savedTheme = localStorage.getItem('theme') || 'light';
-            document.documentElement.setAttribute('data-theme', savedTheme);
+            const preference = localStorage.getItem('theme');
+            const resolvedTheme = preference === 'dark' || preference === 'light'
+                ? preference
+                : (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+            document.documentElement.setAttribute('data-theme', resolvedTheme);
         })();
     </script>
     <link rel="stylesheet" href="Css/profile.css">
@@ -71,18 +74,6 @@
         </div>
 
         <div class="header-actions">
-                <button type="button" class="theme-switch-pill theme-d" id="themeToggle" onclick="toggleTheme()" role="switch" aria-checked="false" aria-label="تغییر حالت شب/روز">
-                    <span class="tsp-track">
-                        <span class="tsp-thumb"><i class="fas fa-moon"></i></span>
-                        <span class="tsp-label" id="themeLabel">حالت شب</span>
-                    </span>
-                </button>
-
-
-
-            <button class="h-action-btn" id="mobileTheme" onclick="toggleTheme()" aria-label="تغییر تم" style="display:none;">
-                <i class="fas fa-moon"></i>
-            </button>
         </div>
     </div>
 </header>

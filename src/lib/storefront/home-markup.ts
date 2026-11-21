@@ -1,5 +1,9 @@
 import type { Category, SiteMedia, SiteSetting } from "@/types/database";
-import { productImage, type StorefrontProduct } from "./types";
+import {
+  productImage,
+  storefrontPricing,
+  type StorefrontProduct,
+} from "./types";
 
 export function escapeHtml(value: unknown): string {
   return String(value ?? "").replace(/[&<>"']/g, (character) =>
@@ -50,72 +54,127 @@ export function renderHeroSlides(hero: SiteMedia[]): string {
 }
 
 export function renderProductStrip(
-  products: StorefrontProduct[],
-  title: string,
+  mediaItems: SiteMedia[],
 ): string {
-  if (products.length === 0) return "";
-  const items = products
-    .map((product) => {
-      const image = productImage(product);
-      return `<a href="/product?id=${product.id}" class="productnav-item">
-        <div class="productnav-image-wrapper">${
-          image
-            ? imageTag(image, product.name, "lazy")
-            : '<i class="fas fa-image" aria-hidden="true"></i>'
-        }</div>
-        <span class="productnav-label">${escapeHtml(product.name)}</span>
-      </a>`;
+  if (mediaItems.length === 0) return "";
+  const items = mediaItems
+    .map((item) => {
+      const content = `<div class="productnav-image-wrapper">${imageTag(
+        item.image_url,
+        item.title || "تصویر تزئینی",
+        "lazy",
+      )}</div>${
+        item.title
+          ? `<span class="productnav-label">${escapeHtml(item.title)}</span>`
+          : ""
+      }`;
+      return item.link
+        ? `<a href="${escapeAttr(item.link)}" class="productnav-item">${content}</a>`
+        : `<div class="productnav-item">${content}</div>`;
     })
     .join("");
-  return `<section class="product-nav-section" aria-label="${escapeAttr(title)}">
+  return `<section class="product-nav-section" aria-label="نوار تزئینی">
     <div class="rs-productnav-cardsshelf">
       <div class="rs-productnav-shelf-wrapper">${items}</div>
     </div>
   </section>`;
 }
 
+export function renderProductCard(
+  product: StorefrontProduct,
+  options: { search?: boolean; wished?: boolean } = {},
+): string {
+  const pricing = storefrontPricing(product);
+  const image = productImage(product);
+  const productUrl = `/product?id=${product.id}`;
+
+  if (options.search) {
+    const discountBadge =
+      pricing.discount > 0
+        ? `<span class="p-discount-badge">${pricing.discount.toLocaleString("fa-IR")}٪</span>`
+        : "";
+    const ratingValue = Number(product.rating ?? 0);
+    const rating =
+      ratingValue > 0 && product.review_count > 0
+        ? `<span class="p-rating-box"><i class="fas fa-star" aria-hidden="true"></i><span class="p-rating-num">${ratingValue.toFixed(1)}</span></span>`
+        : "";
+    const wishlist = `<button type="button" class="p-wishlist-btn${options.wished ? " active" : ""}" data-wishlist-id="${product.id}" aria-label="${options.wished ? "حذف از علاقه‌مندی‌ها" : "افزودن به علاقه‌مندی‌ها"}" aria-pressed="${Boolean(options.wished)}"><i class="${options.wished ? "fas" : "far"} fa-heart" aria-hidden="true"></i></button>`;
+    const stock = product.stock <= 0
+      ? '<span class="p-stock stock-out">ناموجود</span>'
+      : "";
+    const productLink = `<a class="srp-card-link" href="${productUrl}" data-product-id="${product.id}">`;
+    const imageContent = image
+      ? imageTag(image, product.name, "lazy")
+      : '<i class="fas fa-image" aria-hidden="true"></i>';
+    const brand = product.brand.trim()
+      ? `<div class="p-category"><i class="fas fa-tag" aria-hidden="true"></i>${escapeHtml(product.brand)}</div>`
+      : "";
+    const pricePrefix = pricing.startsAt ? "از " : "";
+    const priceRow = `<div class="p-price-row">${
+      pricing.originalPrice !== null
+        ? `<span class="p-original">${pricing.originalPrice.toLocaleString("en-US")}</span>`
+        : "<span></span>"
+    }<span class="p-final">${pricePrefix}${pricing.finalPrice.toLocaleString("en-US")}<small>تومان</small></span></div>`;
+    const addToCart = `<button type="button" class="p-add-btn srp-card-add-btn" data-add-id="${product.id}" ${product.stock <= 0 ? "disabled" : ""}><i class="fas fa-shopping-bag" aria-hidden="true"></i>${product.stock <= 0 ? "ناموجود" : "افزودن به سبد خرید"}</button>`;
+
+    return `<article class="p-card srp-product-card" data-product-id="${product.id}">
+      <div class="p-img-wrap">
+        ${productLink}${imageContent}</a>
+        ${discountBadge}
+        ${rating}
+        ${stock}
+        ${wishlist}
+      </div>
+      <div class="p-body">
+        ${brand}
+        ${productLink}<span class="p-name">${escapeHtml(product.name)}</span></a>
+        ${priceRow}
+        ${addToCart}
+      </div>
+    </article>`;
+  }
+
+  const finalPrice = pricing.finalPrice;
+  const perInstallment = Math.round(finalPrice / 4);
+  const codeBadge =
+    pricing.discount > 0
+      ? `<span class="amazing-code-badge">${pricing.discount.toLocaleString("fa-IR")}٪ تخفیف</span>`
+      : "";
+  const priceRow =
+    pricing.originalPrice !== null
+      ? `<span class="amazing-discount-badge">${pricing.discount.toLocaleString("fa-IR")}٪</span><span class="amazing-old-price">${pricing.originalPrice.toLocaleString("en-US")}</span>`
+      : `<span></span><span></span>`;
+  const ratingValue = Number(product.rating ?? 0);
+  const rating =
+    ratingValue > 0 && product.review_count > 0
+      ? `<div class="amazing-store-badge"><i class="fas fa-star" style="color:#f59e0b;"></i> ${ratingValue.toFixed(1)}</div>`
+      : "";
+  const content = `<div class="amazing-card-img-wrap">
+      ${codeBadge}
+      ${image ? imageTag(image, product.name, "lazy") : '<i class="fas fa-image" aria-hidden="true"></i>'}
+      ${rating}
+    </div>
+    <div class="amazing-card-body">
+      <div class="amazing-installment-row">
+        <div class="amazing-installment-badge"><b>۴</b><span>قسط</span></div>
+        <div class="amazing-installment-price"><b>${perInstallment.toLocaleString("en-US")}</b><span>تومانی</span></div>
+      </div>
+      <div class="amazing-title">${escapeHtml(product.name)}</div>
+      <div class="amazing-store-name"><i class="fas fa-store"></i>pnyshop فروشگاه</div>
+      <div class="amazing-price-row">${priceRow}</div>
+      <div class="amazing-final-price">${finalPrice.toLocaleString("en-US")} تومان</div>
+    </div>`;
+
+  return `<a class="amazing-card" href="${productUrl}" aria-label="${escapeAttr(product.name)}">${content}</a>`;
+}
+
 export function renderAmazingSlides(products: StorefrontProduct[]): string {
   if (products.length === 0) return "";
-  const looped = [...products];
-  while (looped.length < 12) looped.push(...products);
-
-  return looped
-    .map((product) => {
-      const finalPrice = Math.round(
-        product.price * (1 - product.discount / 100),
-      );
-      const perInstallment = Math.round(finalPrice / 4);
-      const image = productImage(product);
-      const codeBadge =
-        product.discount > 0
-          ? `<span class="amazing-code-badge">کد ${product.discount.toLocaleString("fa-IR")}</span>`
-          : "";
-      const priceRow =
-        product.discount > 0
-          ? `<span class="amazing-discount-badge">${product.discount.toLocaleString("fa-IR")}٪</span><span class="amazing-old-price">${product.price.toLocaleString("en-US")}</span>`
-          : `<span></span><span></span>`;
-      const rating = Number(product.rating ?? 0).toFixed(1);
-
-      return `<div class="swiper-slide">
-        <a class="amazing-card" href="/product?id=${product.id}" aria-label="${escapeAttr(product.name)}">
-          <div class="amazing-card-img-wrap">
-            ${codeBadge}
-            ${image ? imageTag(image, product.name, "lazy") : '<i class="fas fa-image" aria-hidden="true"></i>'}
-            <div class="amazing-store-badge"><i class="fas fa-star" style="color:#f59e0b;"></i> ${escapeHtml(rating)}</div>
-          </div>
-          <div class="amazing-card-body">
-            <div class="amazing-installment-row">
-              <div class="amazing-installment-badge"><b>۴</b><span>قسط</span></div>
-              <div class="amazing-installment-price"><b>${perInstallment.toLocaleString("en-US")}</b><span>تومانی</span></div>
-            </div>
-            <div class="amazing-title">${escapeHtml(product.name)}</div>
-            <div class="amazing-store-name"><i class="fas fa-store"></i>pnyshop فروشگاه</div>
-            <div class="amazing-price-row">${priceRow}</div>
-            <div class="amazing-final-price">${finalPrice.toLocaleString("en-US")} تومان</div>
-          </div>
-        </a>
-      </div>`;
-    })
+  return products
+    .map(
+      (product) =>
+        `<div class="swiper-slide">${renderProductCard(product)}</div>`,
+    )
     .join("");
 }
 

@@ -33,12 +33,14 @@ select {
 
 /* Common fixed-header spacing for every migrated page */
 .profile-page,
-.storefront-product-page,
-.cart-page,
 .checkout-page,
 .ai-page,
 .admin-page {
   padding-top: 76px;
+}
+
+body:has(.cart-page) {
+  padding-top: 12px;
 }
 
 .migration-state {

@@ -8,7 +8,7 @@ const THEME_KEY = 'theme';
 const LEGACY_SESSION_KEY = 'current_user';
 
 const state = {
-    theme: localStorage.getItem(THEME_KEY) || 'light',
+    theme: localStorage.getItem(THEME_KEY) || 'system',
     user: null,        // { uid, name, cart, wishlist, ... } یا null برای مهمان
     products: [],       // کاتالوگ محصولات Supabase
     chatStarted: false
@@ -27,7 +27,10 @@ function finalPrice(p) { return Math.round(p.price - (p.price * (p.discount || 0
    THEME MANAGEMENT
    ========================================================= */
 function applyTheme(t) {
-    document.documentElement.setAttribute('data-theme', t);
+    const resolved = t === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : t;
+    document.documentElement.setAttribute('data-theme', resolved);
     const icon = t === 'dark' ? 'fa-sun' : 'fa-moon';
     document.querySelectorAll('#navTheme i, #aiThemeToggleMobile i').forEach(i => { i.className = `fas ${icon}`; });
 }

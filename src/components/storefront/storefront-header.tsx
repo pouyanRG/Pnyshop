@@ -4,19 +4,12 @@ import Image from "next/image";
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { useStorefrontTheme } from "./use-storefront-theme";
 import styles from "./storefront-header.module.css";
 
-export function StorefrontHeader() {
+export function StorefrontHeader({ showHeader = true }: { showHeader?: boolean }) {
   const router = useRouter();
   const pathname = usePathname();
   const [query, setQuery] = useState("");
-  const { theme, setTheme } = useStorefrontTheme();
-
-  function toggleTheme() {
-    setTheme(theme === "dark" ? "light" : "dark");
-  }
-
   function openSearch() {
     const value = query.trim();
     router.push(value ? `/?q=${encodeURIComponent(value)}#search` : "/");
@@ -24,35 +17,40 @@ export function StorefrontHeader() {
 
   return (
     <>
-      <header className={styles.header}>
-        <div className={styles.inner}>
-          <Link className={styles.logo} href="/" aria-label="صفحه اصلی Pnyshop">
-            <Image
-              src="/images/Pnyshop-img-logo.png"
-              alt="Pnyshop"
-              width={92}
-              height={48}
-              priority
-            />
-          </Link>
+      {showHeader && (
+        <header className={styles.header}>
+          <div className={styles.inner}>
+            <Link className={styles.logo} href="/" aria-label="صفحه اصلی Pnyshop">
+              <Image
+                src="/images/Pnyshop-img-logo.png"
+                alt="Pnyshop"
+                width={92}
+                height={48}
+                priority
+              />
+            </Link>
 
-          <form className={styles.search} onSubmit={(event) => { event.preventDefault(); openSearch(); }}>
-            <i className="fas fa-search" aria-hidden="true" />
-            <input
-              value={query}
-              onChange={(event) => setQuery(event.target.value)}
-              placeholder="جست‌وجو در فروشگاه، برندها و محصولات"
-              aria-label="جستجوی فروشگاه"
-            />
-          </form>
+            <form className={styles.search} onSubmit={(event) => { event.preventDefault(); openSearch(); }}>
+              <i className="fas fa-search" aria-hidden="true" />
+              <input
+                value={query}
+                onChange={(event) => setQuery(event.target.value)}
+                placeholder="جست‌وجو در فروشگاه، برندها و محصولات"
+                aria-label="جستجوی فروشگاه"
+              />
+            </form>
 
-          <div className={styles.actions}>
-            <button type="button" onClick={toggleTheme} aria-label="تغییر حالت روشن یا تاریک">
-              <i className={`fas ${theme === "dark" ? "fa-sun" : "fa-moon"}`} aria-hidden="true" />
-            </button>
+            <div className={styles.actions}>
+              <Link className={styles.actionLink} href="/cart" aria-label="سبد خرید">
+                <i className="fas fa-shopping-cart" aria-hidden="true" />
+              </Link>
+              <Link className={styles.actionLink} href="/profile" aria-label="حساب کاربری">
+                <i className="far fa-user" aria-hidden="true" />
+              </Link>
+            </div>
           </div>
-        </div>
-      </header>
+        </header>
+      )}
 
       <nav className="mobile-nav" aria-label="ناوبری پایین">
         <Link

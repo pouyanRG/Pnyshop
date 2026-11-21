@@ -2,7 +2,7 @@ import * as wishlistService from './wishlist-service.js';
 const FALLBACK_IMG = 'https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTkvallQ5ZGN8H0RHyH6fe91ycZ2NbnLPmx9x-2_NqnBQ&s=10';
 const DB = { session: 'current_user', theme: 'theme' };
 const state = {
-    theme: localStorage.getItem(DB.theme) || 'light',
+    theme: localStorage.getItem(DB.theme) || 'system',
     product: null, images: [], selectedColor: '', currentUser: null,
     mobileSwiper: null, lightboxSwiper: null, lightboxIndex: 0
 };
@@ -21,7 +21,10 @@ function esc(str) {
 }
 
 function applyTheme(t) {
-    document.documentElement.setAttribute('data-theme', t);
+    const resolved = t === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : t;
+    document.documentElement.setAttribute('data-theme', resolved);
     const icon = t === 'dark' ? 'fa-sun' : 'fa-moon';
     const label = t === 'dark' ? 'حالت روز' : 'حالت شب';
 

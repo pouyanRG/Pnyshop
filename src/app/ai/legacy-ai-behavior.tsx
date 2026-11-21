@@ -8,23 +8,6 @@ type ChatHistoryItem = { role: "bot" | "user"; text: string };
 
 export function LegacyAiBehavior() {
   useEffect(() => {
-    const root = document.documentElement;
-    const applyTheme = (theme: "light" | "dark") => {
-      root.dataset.theme = theme;
-      document.querySelectorAll("#navTheme i, #aiThemeToggleMobile i").forEach((icon) => {
-        icon.className = `fas ${theme === "dark" ? "fa-sun" : "fa-moon"}`;
-      });
-    };
-    applyTheme(window.localStorage.getItem("theme") === "dark" ? "dark" : "light");
-
-    const toggleTheme = () => {
-      const next = root.dataset.theme === "dark" ? "light" : "dark";
-      window.localStorage.setItem("theme", next);
-      applyTheme(next);
-    };
-    document.getElementById("navTheme")?.addEventListener("click", toggleTheme);
-    document.getElementById("aiThemeToggleMobile")?.addEventListener("click", toggleTheme);
-
     const sidebar = document.getElementById("aiSidebar");
     const backdrop = document.getElementById("aiDrawerBackdrop");
     const closeDrawer = () => {
@@ -185,10 +168,7 @@ export function LegacyAiBehavior() {
       window.location.href = userProfile ? "/profile" : "/login";
     });
 
-    return () => {
-      document.getElementById("navTheme")?.removeEventListener("click", toggleTheme);
-      document.getElementById("aiThemeToggleMobile")?.removeEventListener("click", toggleTheme);
-    };
+    return () => {};
   }, []);
 
   return null;

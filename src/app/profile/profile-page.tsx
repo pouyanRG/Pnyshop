@@ -6,6 +6,7 @@ import { useRouter } from "next/navigation";
 import type { Order, Profile } from "@/types/database";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { useStorefrontTheme } from "@/components/storefront/use-storefront-theme";
 import styles from "./profile-page.module.css";
 
 type ProfileFields = Pick<
@@ -45,7 +46,7 @@ type EditableProfile = {
   postal_code: string;
 };
 
-type Section = "personal" | "orders" | "favorites" | "wallet";
+type Section = "personal" | "orders" | "favorites" | "wallet" | "appearance";
 type Notice = { message: string; error: boolean };
 
 const EDITABLE_FIELDS: Array<{
@@ -88,6 +89,7 @@ export function ProfilePage({
   ordersUnavailable,
 }: Props) {
   const router = useRouter();
+  const { preference, setThemePreference } = useStorefrontTheme();
   const [section, setSection] = useState<Section>("personal");
   const [editing, setEditing] = useState(false);
   const [saving, setSaving] = useState(false);
@@ -229,6 +231,12 @@ export function ProfilePage({
               icon="fa-wallet"
               label="کیف پول"
               onClick={() => setSection("wallet")}
+            />
+            <SectionButton
+              active={section === "appearance"}
+              icon="fa-palette"
+              label="ظاهر برنامه"
+              onClick={() => setSection("appearance")}
             />
           </nav>
           <button
@@ -453,6 +461,39 @@ export function ProfilePage({
               <Link className={styles.secondaryButton} href="/">
                 مشاهده فروشگاه
               </Link>
+            </section>
+          )}
+
+          {section === "appearance" && (
+            <section className={styles.card}>
+              <h2 className={styles.sectionTitle}>
+                <span className={styles.titleDot} />
+                ظاهر برنامه
+              </h2>
+              <div className={styles.themeOptions} role="radiogroup" aria-label="انتخاب ظاهر برنامه">
+                {([
+                  ["light", "fa-sun", "روز"],
+                  ["dark", "fa-moon", "شب"],
+                  ["system", "fa-desktop", "متناسب با سیستم"],
+                ] as const).map(([value, icon, label]) => (
+                  <button
+                    key={value}
+                    type="button"
+                    role="radio"
+                    aria-checked={preference === value}
+                    className={`${styles.themeOption} ${preference === value ? styles.activeThemeOption : ""}`}
+                    onClick={() => setThemePreference(value)}
+                  >
+                    <span className={styles.themeOptionIcon}>
+                      <i className={`fas ${icon}`} aria-hidden="true" />
+                    </span>
+                    <span>{label}</span>
+                    {preference === value && (
+                      <i className={`fas fa-check ${styles.themeOptionCheck}`} aria-hidden="true" />
+                    )}
+                  </button>
+                ))}
+              </div>
             </section>
           )}
         </div>

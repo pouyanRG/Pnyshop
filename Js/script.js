@@ -172,7 +172,7 @@ const Store = {
 const state = {
     searchCatalog: [],
     slides: [],
-    theme: Store.getTheme() || 'light',
+    theme: Store.getTheme() || 'system',
     cartCount: 0,
     srpQuery: '',
     srpCat: '',
@@ -206,7 +206,10 @@ let priceFilterDebounce = null;    // تایمر debounce برای اینپوت�
    THEME SYNCHRONIZATION
    ============================================ */
 function applyTheme(t) {
-    document.documentElement.setAttribute('data-theme', t);
+    const resolved = t === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : t;
+    document.documentElement.setAttribute('data-theme', resolved);
     const icon = t === 'dark' ? 'fa-sun' : 'fa-moon';
     const label = t === 'dark' ? 'حالت روز' : 'حالت شب';
 

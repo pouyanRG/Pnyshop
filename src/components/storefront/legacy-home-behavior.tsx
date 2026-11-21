@@ -118,12 +118,13 @@ function initializeHero() {
 
 function initializeAmazingSwiper() {
   const slider = document.getElementById("amazingSwiperEl");
-  if (!slider || !window.Swiper) return;
-  if (slider.querySelector(".swiper-slide") === null) return;
+  if (!slider) return;
+  const slideCount = slider.querySelectorAll(".swiper-slide").length;
+  if (slideCount === 0 || !window.Swiper) return;
   if (slider.classList.contains("swiper-initialized")) return;
   new window.Swiper(".amazing-swiper", {
     direction: "horizontal",
-    loop: true,
+    loop: slideCount > 1,
     rtl: true,
     centeredSlides: true,
     slidesPerView: "auto",
@@ -202,25 +203,6 @@ function LegacyHomeBehaviorInner() {
   const router = useRouter();
 
   useEffect(() => {
-    const root = document.documentElement;
-    const applyTheme = (theme: "light" | "dark") => {
-      root.dataset.theme = theme;
-      document.querySelectorAll("#themeToggle i, #mobileTheme i").forEach((icon) => {
-        icon.className = `fas ${theme === "dark" ? "fa-sun" : "fa-moon"}`;
-      });
-      const toggle = document.getElementById("themeToggle");
-      toggle?.setAttribute("aria-checked", String(theme === "dark"));
-      const label = document.getElementById("themeLabel");
-      if (label) label.textContent = theme === "dark" ? "حالت روز" : "حالت شب";
-    };
-    applyTheme(window.localStorage.getItem("theme") === "dark" ? "dark" : "light");
-
-    window.toggleTheme = () => {
-      const next = root.dataset.theme === "dark" ? "light" : "dark";
-      window.localStorage.setItem("theme", next);
-      applyTheme(next);
-    };
-
     window.toggleMegaMenu = () => {
       const menu = document.getElementById("megaMenu");
       const trigger = document.getElementById("megaTrigger");
@@ -286,6 +268,65 @@ function LegacyHomeBehaviorInner() {
       return state.client;
     }
 
+    async function updateHeaderUser(client: SupabaseClient<Database>) {
+      const nameElement = document.querySelector<HTMLElement>(
+        ".header-actions .h-user-btn span",
+      );
+      if (!nameElement) return;
+
+      try {
+        const {
+          data: { user },
+          error: authError,
+        } = await client.auth.getUser();
+        if (authError) throw authError;
+        if (!user) {
+          nameElement.textContent = "حساب کاربری";
+          return;
+        }
+
+        const { data: profile, error: profileError } = await client
+          .from("profiles")
+          .select("name")
+          .eq("id", user.id)
+          .maybeSingle();
+        if (profileError) {
+          console.error("Could not load the signed-in user's profile name:", profileError);
+        }
+
+        const metadataName =
+          typeof user.user_metadata.full_name === "string"
+            ? user.user_metadata.full_name
+            : typeof user.user_metadata.name === "string"
+              ? user.user_metadata.name
+              : "";
+        nameElement.textContent =
+          profile?.name?.trim() ||
+          metadataName.trim() ||
+          user.email?.split("@")[0] ||
+          "حساب کاربری";
+      } catch (error) {
+        console.error("Could not load the signed-in user's header name:", error);
+      }
+    }
+
+    let authSubscription: { unsubscribe: () => void } | undefined;
+    let disposed = false;
+    void getClient()
+      .then((client) => {
+        if (disposed) return;
+        void updateHeaderUser(client);
+        const { data } = client.auth.onAuthStateChange(() => {
+          window.setTimeout(() => {
+            if (!disposed) void updateHeaderUser(client);
+          }, 0);
+        });
+        authSubscription = data.subscription;
+      })
+      .catch((error: unknown) => {
+        console.error("Could not subscribe to storefront auth changes:", error);
+      });
+
     async function loadCatalog() {
       if (state.loaded || state.loading) return state.products;
       state.loading = true;
@@ -293,7 +334,7 @@ function LegacyHomeBehaviorInner() {
         const client = await getClient();
         const { data, error } = await client
           .from("products")
-          .select("*, product_images(url, is_primary, sort_order)")
+          .select("*, product_images(url, is_primary, sort_order), product_variants(price, discount, stock, is_active, color_name, color_code, size, image_url)")
           .eq("is_active", true)
           .eq("status", "published")
           .order("created_at", { ascending: false })
@@ -797,6 +838,13 @@ function LegacyHomeBehaviorInner() {
 
     function handleGridClick(event: MouseEvent) {
       const target = event.target as HTMLElement;
+      const productLink = target.closest<HTMLAnchorElement>(".srp-card-link");
+      if (productLink) {
+        event.preventDefault();
+        const id = productLink.dataset.productId;
+        if (id) void router.push(`/product?id=${encodeURIComponent(id)}`);
+        return;
+      }
       const wishlistButton = target.closest<HTMLButtonElement>("[data-wishlist-id]");
       if (wishlistButton) {
         event.stopPropagation();
@@ -821,7 +869,9 @@ function LegacyHomeBehaviorInner() {
 
     function handleGridKeydown(event: KeyboardEvent) {
       if (event.key !== "Enter" && event.key !== " ") return;
-      const card = (event.target as HTMLElement).closest<HTMLElement>("[data-product-id]");
+      const target = event.target as HTMLElement;
+      if (target.closest("button, a")) return;
+      const card = target.closest<HTMLElement>("[data-product-id]");
       if (!card) return;
       event.preventDefault();
       const id = card.dataset.productId;
@@ -970,6 +1020,8 @@ function LegacyHomeBehaviorInner() {
     startAmazingTimer();
 
     return () => {
+      disposed = true;
+      authSubscription?.unsubscribe();
       search?.removeEventListener("keydown", onSearchKeyDown);
       clearSearch?.removeEventListener("click", clearSearchValue);
       grid?.removeEventListener("click", handleGridClick);

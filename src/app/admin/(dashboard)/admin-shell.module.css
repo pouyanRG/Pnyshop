@@ -150,7 +150,7 @@
   padding: var(--space-6);
 }
 
-@media (max-width: 900px) {
+@media (max-width: 1200px) {
   .shell {
     display: flex;
     flex-direction: column;
@@ -197,18 +197,21 @@
   .sidebar {
     position: fixed;
     inset-block: 0;
-    inset-inline-end: 0;
-    inset-inline-start: auto;
+    right: 0;
+    left: auto;
     width: min(264px, 84vw);
     height: 100dvh;
     transform: translateX(105%);
-    transition: transform 0.25s ease;
+    visibility: hidden;
+    transition: transform 0.25s ease, visibility 0s linear 0.25s;
     overflow-y: auto;
     box-shadow: -12px 0 40px rgba(15, 23, 42, 0.12);
   }
 
   .sidebarOpen {
     transform: translateX(0);
+    visibility: visible;
+    transition: transform 0.25s ease, visibility 0s;
   }
 
   .sidebarClose {

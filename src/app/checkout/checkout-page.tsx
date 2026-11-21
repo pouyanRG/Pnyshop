@@ -60,8 +60,6 @@ export function CheckoutPage({
   );
 
   useEffect(() => {
-    const theme = window.localStorage.getItem("theme") === "dark" ? "dark" : "light";
-    document.documentElement.dataset.theme = theme;
   }, []);
 
   const availableItems = cart.filter((item) => productMap.has(item.id));

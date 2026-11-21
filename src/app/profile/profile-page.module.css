@@ -371,6 +371,56 @@
   opacity: 0.75;
 }
 
+.themeOptions {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: var(--space-3);
+}
+
+.themeOption {
+  position: relative;
+  display: flex;
+  min-height: 110px;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  border: 1px solid var(--border-default);
+  border-radius: var(--radius-md);
+  background: var(--bg-elevated);
+  color: var(--text-secondary);
+  cursor: pointer;
+  font-family: inherit;
+  font-size: var(--font-sm);
+  font-weight: 800;
+  transition: var(--transition);
+}
+
+.themeOption:hover,
+.activeThemeOption {
+  border-color: var(--checkout-btn);
+  background: var(--primary-soft2);
+  color: var(--text-primary);
+}
+
+.themeOptionIcon {
+  display: grid;
+  width: 44px;
+  height: 44px;
+  place-items: center;
+  border-radius: var(--radius-full);
+  background: var(--primary);
+  color: var(--checkout-btn);
+  font-size: 18px;
+}
+
+.themeOptionCheck {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  color: var(--checkout-btn);
+}
+
 .readOnlyNote,
 .emptyState {
   padding: var(--space-5);
@@ -516,6 +566,14 @@
 
   .card {
     padding: var(--space-5);
+  }
+
+  .themeOptions {
+    grid-template-columns: 1fr;
+  }
+
+  .themeOption {
+    min-height: 82px;
   }
 }
 

@@ -180,7 +180,7 @@ i[class*="fa-th-large"] {
   --amazing-text-secondary: #6B7280;
   --amazing-accent: #4f46e5;
   --amazing-discount: #EF4444;
-  --amazing-installment-bg: rgba(255, 255, 255, 0.45);
+  --amazing-installment-bg: #ffffff;
   --amazing-badge-bg: rgba(255, 255, 255, 0.55);
 }
  
@@ -201,7 +201,7 @@ i[class*="fa-th-large"] {
   --amazing-accent: #a5b4fc;
   --amazing-discount: #ff6b6b;
   /* نوار قسط اکنون یک روکش تیره است، نه سفید نیمه‌شفاف روی متن روشن (کنتراست ناکافی قبلی) */
-  --amazing-installment-bg: rgba(12, 14, 28, 0.55);
+  --amazing-installment-bg: #181927;
   --amazing-badge-bg: rgba(12, 14, 28, 0.5);
 }
 
@@ -571,6 +571,12 @@ img { max-width: 100%; height: auto; display: block; }
     position: relative; 
     cursor: pointer; 
 }
+.h-cart-btn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-decoration: none;
+}
 .h-action-btn:hover { 
     background: var(--primary); 
     
@@ -899,32 +905,6 @@ img { max-width: 100%; height: auto; display: block; }
         0 8px 24px var(--ai-fab-shadow),
         0 2px 8px rgba(0, 0, 0, 0.18),
         inset 0 1px 0 var(--ai-fab-highlight) !important;
-}
-
-
-/* =============================================
-   HEADER HOVER
-   ============================================= */
-
-@media (hover: hover) {
-
-    .main-header:hover {
-        background: var(--ai-fab-bg-hover) !important;
-
-        border-color: var(--ai-fab-border-hover) !important;
-
-        box-shadow:
-            0 12px 30px var(--ai-fab-shadow-hover),
-            0 3px 10px rgba(15, 23, 42, 0.06),
-            inset 0 1px 0 var(--ai-fab-highlight) !important;
-    }
-
-    [data-theme="dark"] .main-header:hover {
-        box-shadow:
-            0 12px 30px var(--ai-fab-shadow-hover),
-            0 3px 10px rgba(0, 0, 0, 0.20),
-            inset 0 1px 0 var(--ai-fab-highlight) !important;
-    }
 }
 
 

@@ -5,7 +5,6 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
-import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import type { Json, Product, ProductImage, ProductVariant } from "@/types/database";
 import styles from "./product-page.module.css";
 
@@ -100,8 +99,6 @@ export function ProductPage({
   const clientRef = useRef<ReturnType<typeof createSupabaseBrowserClient> | null>(null);
 
   useEffect(() => {
-    const savedTheme = window.localStorage.getItem("theme") === "dark" ? "dark" : "light";
-    document.documentElement.dataset.theme = savedTheme;
     void (async () => {
       try {
         clientRef.current ??= createSupabaseBrowserClient();
@@ -255,9 +252,19 @@ export function ProductPage({
 
   return (
     <div className={`${styles.page} storefront-product-page`} dir="rtl">
-      <StorefrontHeader />
-
       <main className={styles.content}>
+        <div className={styles.pageTop}>
+          <button
+            type="button"
+            className={styles.backButton}
+            onClick={() => router.back()}
+            aria-label="بازگشت به صفحهٔ قبل"
+          >
+            <i className="fas fa-arrow-left" aria-hidden="true" />
+            بازگشت
+          </button>
+        </div>
+
         <nav className={styles.breadcrumb} aria-label="مسیر">
           <Link href="/">خانه</Link><i className="fas fa-chevron-left" />
           <span>{product.category || "محصولات"}</span><i className="fas fa-chevron-left" />
@@ -378,10 +385,22 @@ export function ProductPage({
             <h2>محصولات مشابه</h2>
             <div className={styles.related}>
               {related.map((item) => (
-                <Link href={`/product?id=${encodeURIComponent(item.id)}`} key={item.id}>
-                  <span>{item.image_url ? <Image src={item.image_url} alt="" fill sizes="180px" unoptimized /> : <i className="far fa-image" />}</span>
-                  <b>{item.name}</b>
-                  <small>{Math.round(item.price * (1 - item.discount / 100)).toLocaleString("fa-IR")} تومان</small>
+                <Link
+                  href={`/product?id=${encodeURIComponent(item.id)}`}
+                  className={styles.relatedCard}
+                  key={item.id}
+                >
+                  <span className={styles.relatedImage}>
+                    {item.image_url
+                      ? <Image src={item.image_url} alt={item.name} fill sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 20vw" unoptimized />
+                      : <i className="far fa-image" aria-label="بدون تصویر" />}
+                  </span>
+                  <span className={styles.relatedBody}>
+                    <b className={styles.relatedName}>{item.name}</b>
+                    <small className={styles.relatedPrice}>
+                      {Math.round(item.price * (1 - item.discount / 100)).toLocaleString("en-US")} تومان
+                    </small>
+                  </span>
                 </Link>
               ))}
             </div>

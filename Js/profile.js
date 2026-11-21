@@ -10,7 +10,7 @@ function esc(str) {
 const LEGACY_SESSION_KEY = 'current_user'; // فقط پل موقتی برای صفحات مهاجرت‌نشده
 
 let state = {
-    theme: localStorage.getItem(THEME_KEY) || 'light',
+    theme: localStorage.getItem(THEME_KEY) || 'system',
     products: [],
     user: null,      // { uid, name, mobile, melli, email, address, post, date, wallet, points, cart, ... }
     orders: []        // آخرین سفارشات این کاربر از Supabase
@@ -82,7 +82,10 @@ function initApp() {
 
 /* --- Synced Light/Dark Theme Engine --- */
 function applyTheme(t) {
-    document.documentElement.setAttribute('data-theme', t);
+    const resolved = t === 'system'
+        ? (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light')
+        : t;
+    document.documentElement.setAttribute('data-theme', resolved);
     const icon = t === 'dark' ? 'fa-sun' : 'fa-moon';
     const label = t === 'dark' ? 'حالت روز' : 'حالت شب';
 

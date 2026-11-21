@@ -9,8 +9,11 @@ export const metadata: Metadata = {
 
 const themeInitializationScript = `
   try {
-    const theme = localStorage.getItem("theme");
-    document.documentElement.dataset.theme = theme === "dark" ? "dark" : "light";
+    const preference = localStorage.getItem("theme");
+    const resolved = preference === "dark" || preference === "light"
+      ? preference
+      : (window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light");
+    document.documentElement.dataset.theme = resolved;
   } catch {
     document.documentElement.dataset.theme = "light";
   }
