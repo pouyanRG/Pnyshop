@@ -224,20 +224,36 @@ function LegacyHomeBehaviorInner() {
 
     const search = document.getElementById("mainSearch") as HTMLInputElement | null;
     const clearSearch = document.getElementById("clearSearch");
+    const mobileSearchQuery = window.matchMedia("(max-width: 768px)");
+    const updateSearchPlaceholder = () => {
+      if (search) {
+        search.placeholder = mobileSearchQuery.matches
+          ? "جستجو..."
+          : "جستجوی محصول، برند، دسته‌بندی...";
+      }
+    };
     const openSearch = () => {
       if (search?.value.trim()) window.openSRP(search.value.trim());
+    };
+    const updateClearSearch = () => {
+      if (clearSearch) clearSearch.style.display = search?.value ? "flex" : "none";
     };
     const clearSearchValue = () => {
       if (search) {
         search.value = "";
+        updateClearSearch();
         search.focus();
       }
     };
     const onSearchKeyDown = (event: KeyboardEvent) => {
       if (event.key === "Enter") openSearch();
     };
+    search?.addEventListener("input", updateClearSearch);
     search?.addEventListener("keydown", onSearchKeyDown);
     clearSearch?.addEventListener("click", clearSearchValue);
+    mobileSearchQuery.addEventListener("change", updateSearchPlaceholder);
+    updateSearchPlaceholder();
+    updateClearSearch();
 
     /* --------------------
        Search results (SRP)
@@ -993,14 +1009,44 @@ function LegacyHomeBehaviorInner() {
     grid?.addEventListener("keydown", handleGridKeydown);
 
     let lastScrollY = window.scrollY;
+    let accumulatedScroll = 0;
+    let scrollDirection = 0;
+    const amazingSection = document.getElementById("amazingSectionRoot");
+    const headerCollapseEdge = document
+      .getElementById("mainHeader")
+      ?.getBoundingClientRect().bottom ?? 0;
     const onScroll = () => {
       const header = document.getElementById("mainHeader");
       const currentY = window.scrollY;
       header?.classList.toggle("scrolled", currentY > 10);
-      if (currentY <= 10 || currentY < lastScrollY) {
+      const direction = Math.sign(currentY - lastScrollY);
+      const isMobile = window.matchMedia("(max-width: 768px)").matches;
+      const reachedAmazingSection =
+        amazingSection !== null &&
+        amazingSection.getBoundingClientRect().top <= headerCollapseEdge;
+      if (!isMobile) {
+        if (currentY <= 10 || currentY < lastScrollY) {
+          header?.classList.remove("header-hidden");
+        } else if (currentY > lastScrollY) {
+          header?.classList.add("header-hidden");
+        }
+        accumulatedScroll = 0;
+        scrollDirection = 0;
+      } else if (currentY <= 10) {
         header?.classList.remove("header-hidden");
-      } else if (currentY > lastScrollY) {
-        header?.classList.add("header-hidden");
+        accumulatedScroll = 0;
+        scrollDirection = 0;
+      } else if (direction > 0 && !reachedAmazingSection) {
+        accumulatedScroll = 0;
+        scrollDirection = 0;
+      } else if (direction !== 0) {
+        if (direction !== scrollDirection) accumulatedScroll = 0;
+        accumulatedScroll += Math.abs(currentY - lastScrollY);
+        scrollDirection = direction;
+        if (accumulatedScroll >= (direction > 0 ? 12 : 80)) {
+          header?.classList.toggle("header-hidden", direction > 0);
+          accumulatedScroll = 0;
+        }
       }
       lastScrollY = currentY;
     };
@@ -1022,6 +1068,8 @@ function LegacyHomeBehaviorInner() {
     return () => {
       disposed = true;
       authSubscription?.unsubscribe();
+      mobileSearchQuery.removeEventListener("change", updateSearchPlaceholder);
+      search?.removeEventListener("input", updateClearSearch);
       search?.removeEventListener("keydown", onSearchKeyDown);
       clearSearch?.removeEventListener("click", clearSearchValue);
       grid?.removeEventListener("click", handleGridClick);
