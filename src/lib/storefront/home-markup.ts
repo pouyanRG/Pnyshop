@@ -155,7 +155,7 @@ export function renderProductCard(
       ${rating}
     </div>
     <div class="amazing-card-body">
-      <div class="amazing-installment-row">
+      <div class="amazing-installment-row" style="backdrop-filter:blur(20px) saturate(180%);-webkit-backdrop-filter:blur(20px) saturate(180%)">
         <div class="amazing-installment-badge"><b>۴</b><span>قسط</span></div>
         <div class="amazing-installment-price"><b>${perInstallment.toLocaleString("en-US")}</b><span>تومانی</span></div>
       </div>

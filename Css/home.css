@@ -483,6 +483,21 @@
   border: 1px solid var(--glass-border);
   isolation: isolate;
 }
+
+@media (max-width: 768px) {
+  #amazingSectionRoot {
+    padding-inline: 0;
+  }
+
+  .amazing-section-wrap {
+    box-sizing: border-box;
+    width: 100%;
+    height: clamp(362px, calc(67.5vh - 8px), 403px);
+    margin-inline: auto;
+    padding: 18px 18px 14px 0;
+    border-radius: 0;
+  }
+}
  
 /* Liquid glass specular layer */
 .amazing-section-wrap::before {
@@ -597,10 +612,7 @@
 }
  
 .ah-btn-all:hover {
-  background: rgba(255, 255, 255, 0.25);
-  box-shadow:
-    0 4px 16px rgba(0, 0, 0, 0.15),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
+  background: rgba(255, 255, 255, 0.17);
 }
  
 /* ── Responsive Header ── */
@@ -1050,6 +1062,217 @@
   box-shadow:
     0 2px 8px rgba(255, 92, 92, 0.25),
     inset 0 1px 0 rgba(255, 255, 255, 0.1);
+}
+
+/* ── Light theme ── */
+:root:not([data-theme="dark"]) .amazing-card {
+  background: #ffffff;
+  border-color: #e2e8f0;
+  box-shadow:
+    0 8px 24px rgba(15, 23, 42, 0.08),
+    0 2px 6px rgba(15, 23, 42, 0.04);
+}
+
+:root:not([data-theme="dark"]) .amazing-card .amazing-title,
+:root:not([data-theme="dark"]) .amazing-card .amazing-installment-price b,
+:root:not([data-theme="dark"]) .amazing-card .amazing-final-price {
+  color: #17212b;
+}
+
+:root:not([data-theme="dark"]) .amazing-card .amazing-store-name,
+:root:not([data-theme="dark"]) .amazing-card .amazing-installment-price span,
+:root:not([data-theme="dark"]) .amazing-card .amazing-old-price {
+  color: #64748b;
+}
+
+:root:not([data-theme="dark"]) .amazing-card::before {
+  background: linear-gradient(
+    180deg,
+    rgba(255, 255, 255, 0.92) 0%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+:root:not([data-theme="dark"]) .amazing-card-img-wrap {
+  background: #ffffff;
+}
+
+:root:not([data-theme="dark"]) .amazing-card-body {
+  background: #ffffff;
+}
+
+:root:not([data-theme="dark"]) .amazing-card-img-wrap img {
+  object-fit: contain;
+}
+
+:root:not([data-theme="dark"]) .amazing-installment-row {
+  background: linear-gradient(
+    135deg,
+    rgb(255, 255, 255) 0%,
+    rgba(240, 244, 255, 0) 100%
+  );
+  backdrop-filter: blur(2px) saturate(180%) !important;
+  -webkit-backdrop-filter: blur(0px) saturate(180%) !important;
+  border-color: rgba(99, 102, 241, 0.16);
+  box-shadow:
+    0 3px 12px rgba(79, 70, 229, 0.08),
+    inset 0 1px 0 rgba(255, 255, 255, 0.70);
+}
+
+@media (max-width: 768px) {
+  .amazing-header-bar {
+    box-sizing: border-box;
+    width: 100%;
+    height: 24px;
+    gap: 6px;
+    margin-bottom: 20px;
+    padding: 0 0 0 20px;
+    top: -3px;
+    font-family: "yekan-bakh", Vazirmatn, -apple-system, BlinkMacSystemFont, sans-serif;
+  }
+
+  .ah-right-title {
+    font-size: 14px;
+    font-weight: 900;
+    line-height: 20.3px;
+  }
+
+  .ah-timer {
+    gap: 2.7px;
+    font-size: 16px;
+    line-height: 27.93px;
+    font-weight: 370;
+  }
+
+  .ah-digit {
+    width: 28px;
+    height: 28px;
+    font-size: 16px;
+    line-height: 27.93px;
+    font-weight: 370;
+  }
+
+  .ah-sep {
+    font-size: 16px;
+    line-height: 27.93px;
+    font-weight: 370;
+  }
+
+  .ah-btn-all {
+    height: 24px;
+    padding: 2px 8px;
+  }
+
+  .amazing-swiper .swiper-slide {
+    width: clamp(155px, 35.4vw, 173px);
+  }
+
+  .amazing-swiper .swiper-slide-active {
+    transform: none;
+  }
+
+  .amazing-card {
+    box-sizing: border-box;
+    width: clamp(155px, 35.4vw, 173px);
+    height: clamp(286px, 52.2vh, 318px);
+    margin: 0 auto;
+    padding: clamp(3px, 0.69vw, 3.4px);
+    border-radius: clamp(24px, 5.48vw, 27px);
+  }
+
+  .amazing-card-img-wrap {
+    height: clamp(147px, 33.56vw, 164px);
+    flex: 0 0 clamp(147px, 33.56vw, 164px);
+    aspect-ratio: 1;
+  }
+
+  .amazing-card-img-wrap img {
+    border-radius: clamp(20px, 4.57vw, 22.4px);
+  }
+
+  .amazing-card-body {
+    gap: clamp(4px, 0.91vw, 4.5px);
+    margin-top: clamp(8px, 1.83vw, 9px);
+    min-height: 0;
+    padding: 0 clamp(5px, 1.14vw, 5.6px) clamp(4px, 0.91vw, 4.5px);
+    position: static;
+  }
+
+  .amazing-installment-row {
+    position: absolute;
+    top: clamp(113px, 25.8vw, 126px);
+    inset-inline: clamp(11px, 2.45vw, 12px);
+    width: auto;
+    max-width: clamp(131px, 29.7vw, 145px);
+    height: clamp(32px, 7.3vw, 36px);
+    min-height: clamp(32px, 7.3vw, 36px);
+    border-radius: clamp(32px, 7.3vw, 36px);
+    margin: 0 auto;
+  }
+
+  .amazing-installment-badge {
+    width: clamp(28px, 6.4vw, 31px);
+    height: clamp(28px, 6.4vw, 31px);
+  }
+
+  .amazing-installment-badge b {
+    font-size: clamp(12px, 2.74vw, 13.4px);
+    font-weight: 800;
+  }
+
+  .amazing-installment-price b {
+    font-size: clamp(14px, 3.2vw, 15.7px);
+    font-weight: 600;
+  }
+
+  .amazing-installment-badge span,
+  .amazing-installment-price span {
+    font-size: clamp(8px, 1.83vw, 9px);
+  }
+
+  .amazing-title {
+    order: 2;
+    min-height: clamp(36px, 8.2vw, 40px);
+    font-size: clamp(12px, 2.74vw, 13.4px);
+    font-weight: 500;
+    line-height: 1.66;
+  }
+
+  .amazing-store-name {
+    order: 1;
+    font-size: clamp(10px, 2.28vw, 11.2px);
+    font-weight: 500;
+  }
+
+  .amazing-old-price {
+    font-size: clamp(12px, 2.74vw, 13.4px);
+    font-weight: 500;
+    line-height: 1.66;
+  }
+
+  .amazing-discount-badge,
+  .amazing-code-badge {
+    font-size: clamp(10px, 2.28vw, 11.2px);
+  }
+
+  .amazing-discount-badge {
+    font-weight: 500;
+  }
+
+  .amazing-price-row {
+    order: 3;
+  }
+
+  .amazing-final-price {
+    order: 4;
+    font-size: clamp(16px, 3.65vw, 17.85px);
+    font-weight: 600;
+    line-height: clamp(32px, 7.3vw, 36px);
+  }
+
+  .amazing-store-badge {
+    font-size: clamp(8px, 1.83vw, 9px);
+  }
 }
  
 /* ── Liquid Glass Animation (subtle shimmer) ── */
