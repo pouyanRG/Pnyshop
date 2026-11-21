@@ -104,7 +104,14 @@ export function ProductVariants({
       };
     });
 
-    onChange(next);
+    const keyOf = (color: string, size: string) => `${color}|${size}`;
+    const existingKeys = new Set(
+      variants.map((variant) => keyOf(variant.color_name, variant.size)),
+    );
+    const added = next.filter(
+      (variant) => !existingKeys.has(keyOf(variant.color_name, variant.size)),
+    );
+    onChange([...variants, ...added]);
   }
 
   function updateVariant(index: number, patch: Partial<ProductVariantInput>) {

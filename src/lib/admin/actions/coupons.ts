@@ -26,10 +26,9 @@ function optionalNumber(
   label: string,
   { integer = false, min = 0 }: { integer?: boolean; min?: number } = {},
 ): number | null {
-  const raw = asString(value).trim();
-  if (raw === "") return null;
-  const parsed = Number(raw);
-  if (!Number.isFinite(parsed)) {
+  if (value === null || value === undefined || value === "") return null;
+  const parsed = asNumber(value);
+  if (parsed === null) {
     errors[field] = `${label} باید عدد باشد.`;
     return null;
   }

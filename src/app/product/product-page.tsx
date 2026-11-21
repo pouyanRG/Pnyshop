@@ -6,7 +6,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
-import type { Json, Product, ProductVariant } from "@/types/database";
+import type { Json, Product, ProductImage, ProductVariant } from "@/types/database";
 import styles from "./product-page.module.css";
 
 type CartItem = { id: string; qty: number; color: string; name?: string };
@@ -27,11 +27,19 @@ function asColors(value: Json): ProductColor[] {
   });
 }
 
-function asImages(product: Product) {
+function asImages(product: Product, galleryImages: ProductImage[]) {
+  const catalogGallery = galleryImages
+    .slice()
+    .sort((a, b) => a.sort_order - b.sort_order)
+    .map((image) => image.url);
   const gallery = Array.isArray(product.gallery)
     ? product.gallery.filter((image): image is string => typeof image === "string" && Boolean(image))
     : [];
-  return Array.from(new Set([product.image_url, ...gallery].filter((image): image is string => Boolean(image))));
+  return Array.from(new Set([
+    ...catalogGallery,
+    product.image_url,
+    ...gallery,
+  ].filter((image): image is string => Boolean(image))));
 }
 
 function asSpecifications(value: Json) {
@@ -64,13 +72,23 @@ function serializeCart(items: CartItem[]): Json[] {
 
 export type ProductPageVariant = Pick<
   ProductVariant,
-  "color_name" | "price" | "discount" | "is_active"
+  "color_name" | "color_code" | "size" | "price" | "discount" | "stock" | "image_url" | "is_active"
 >;
 
-export function ProductPage({ product, related, variants }: { product: Product; related: Product[]; variants: ProductPageVariant[] }) {
+export function ProductPage({
+  product,
+  related,
+  variants,
+  galleryImages,
+}: {
+  product: Product;
+  related: Product[];
+  variants: ProductPageVariant[];
+  galleryImages: ProductImage[];
+}) {
   const router = useRouter();
   const colors = useMemo(() => asColors(product.colors), [product.colors]);
-  const images = useMemo(() => asImages(product), [product]);
+  const images = useMemo(() => asImages(product, galleryImages), [product, galleryImages]);
   const [selectedColor, setSelectedColor] = useState<ProductColor | null>(
     () => colors.find((color) => (color.stock ?? product.stock) > 0) ?? colors[0] ?? null,
   );

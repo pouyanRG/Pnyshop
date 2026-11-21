@@ -197,12 +197,14 @@
   .sidebar {
     position: fixed;
     inset-block: 0;
-    inset-inline-start: 0;
+    inset-inline-end: 0;
+    inset-inline-start: auto;
     width: min(264px, 84vw);
     height: 100dvh;
-    transform: translateX(-105%);
+    transform: translateX(105%);
     transition: transform 0.25s ease;
     overflow-y: auto;
+    box-shadow: -12px 0 40px rgba(15, 23, 42, 0.12);
   }
 
   .sidebarOpen {
@@ -248,4 +250,9 @@
   .main {
     padding: var(--space-4) var(--space-3);
   }
+}
+
+:global(body):has(.shell) {
+  padding-top: 0;
+  padding-bottom: 0;
 }

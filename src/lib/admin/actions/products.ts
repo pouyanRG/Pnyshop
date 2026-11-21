@@ -63,6 +63,13 @@ export type ProductResult = {
   productId?: number;
 };
 
+function must(
+  result: { error: { message: string } | null },
+  what: string,
+) {
+  if (result.error) throw new Error(`${what}: ${result.error.message}`);
+}
+
 function normalizeImages(
   value: ProductInput["images"],
 ): ProductImageInput[] {
@@ -134,7 +141,7 @@ function validate(input: ProductInput): FieldErrors {
   const variants = normalizeVariants(input.variants);
 
   if (!name) errors.name = "عنوان محصول الزامی است.";
-  else if (name.length > 200) errors.title = "عنوان محصول حداکثر ۲۰۰ حرف باشد.";
+  else if (name.length > 200) errors.name = "عنوان محصول حداکثر ۲۰۰ حرف باشد.";
   if (!slug) errors.slug = "اسلاگ معتبر نیست.";
   if (images.length === 0) errors.images = "حداقل یک تصویر برای محصول الزامی است.";
   if (images.length > 20) errors.images = "حداکثر ۲۰ تصویر مجاز است.";
@@ -219,7 +226,7 @@ async function reconcileImages(
 
   for (const image of normalized) {
     if (image.id && existingIds.has(image.id)) {
-      await supabase
+      must(await supabase
         .from("product_images")
         .update({
           url: image.url,
@@ -227,10 +234,10 @@ async function reconcileImages(
           sort_order: image.sort_order,
           is_primary: image.is_primary,
         })
-        .eq("id", image.id);
+        .eq("id", image.id), "تصویر");
       keptIds.add(image.id);
     } else {
-      const { data } = await supabase
+      const insertResult = await supabase
         .from("product_images")
         .insert({
           product_id: productId,
@@ -241,17 +248,19 @@ async function reconcileImages(
         })
         .select("id")
         .maybeSingle();
+      must(insertResult, "تصویر");
+      const { data } = insertResult;
       if (data?.id) keptIds.add(data.id);
     }
   }
 
   const toDelete = [...existingIds].filter((id) => !keptIds.has(id));
   if (toDelete.length > 0) {
-    await supabase
+    must(await supabase
       .from("product_images")
       .delete()
       .eq("product_id", productId)
-      .in("id", toDelete);
+      .in("id", toDelete), "حذف تصویر");
   }
 }
 
@@ -269,7 +278,7 @@ async function reconcileVariants(
 
   for (const variant of variants) {
     if (variant.id && existingIds.has(variant.id)) {
-      await supabase
+      must(await supabase
         .from("product_variants")
         .update({
           sku: variant.sku,
@@ -283,10 +292,10 @@ async function reconcileVariants(
           is_active: variant.is_active,
           updated_at: new Date().toISOString(),
         })
-        .eq("id", variant.id);
+        .eq("id", variant.id), "واریانت");
       keptIds.add(variant.id);
     } else {
-      const { data } = await supabase
+      const insertResult = await supabase
         .from("product_variants")
         .insert({
           product_id: productId,
@@ -302,17 +311,19 @@ async function reconcileVariants(
         })
         .select("id")
         .maybeSingle();
+      must(insertResult, "واریانت");
+      const { data } = insertResult;
       if (data?.id) keptIds.add(data.id);
     }
   }
 
   const toDelete = [...existingIds].filter((id) => !keptIds.has(id));
   if (toDelete.length > 0) {
-    await supabase
+    must(await supabase
       .from("product_variants")
       .delete()
       .eq("product_id", productId)
-      .in("id", toDelete);
+      .in("id", toDelete), "حذف واریانت");
   }
 }
 
@@ -449,8 +460,18 @@ export async function createProduct(
     return { ok: false, message: "ذخیرهٔ محصول انجام نشد." };
   }
 
-  await reconcileImages(supabase, product.id, images);
-  await reconcileVariants(supabase, product.id, variants);
+  try {
+    await reconcileImages(supabase, product.id, images);
+    await reconcileVariants(supabase, product.id, variants);
+  } catch (error) {
+    console.error("Could not reconcile product media or variants:", error);
+    return {
+      ok: false,
+      message: error instanceof Error
+        ? error.message
+        : "ذخیرهٔ تصاویر یا واریانت‌های محصول انجام نشد.",
+    };
+  }
 
   await writeAudit(admin, "create", "product", `محصول «${name}» ایجاد شد`);
   return {
@@ -549,8 +570,18 @@ export async function updateProduct(
     return { ok: false, message: "ذخیرهٔ محصول انجام نشد." };
   }
 
-  await reconcileImages(supabase, id, images);
-  await reconcileVariants(supabase, id, variants);
+  try {
+    await reconcileImages(supabase, id, images);
+    await reconcileVariants(supabase, id, variants);
+  } catch (error) {
+    console.error("Could not reconcile product media or variants:", error);
+    return {
+      ok: false,
+      message: error instanceof Error
+        ? error.message
+        : "ذخیرهٔ تصاویر یا واریانت‌های محصول انجام نشد.",
+    };
+  }
 
   await writeAudit(admin, "update", "product", `محصول «${name}» ویرایش شد`);
   return {

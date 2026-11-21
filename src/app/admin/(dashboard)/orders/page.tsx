@@ -59,16 +59,19 @@ export default async function OrdersPage({
 
   const safeQuery = q.replace(/[,()]/g, " ").trim();
   if (safeQuery) {
+    const UUID = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
     const { data: matches } = await supabase
       .from("profiles")
       .select("id")
       .or(`name.ilike.%${safeQuery}%,mobile.ilike.%${safeQuery}%`)
       .limit(200);
     const ids = (matches ?? []).map((profile) => profile.id);
-    query =
-      ids.length > 0
-        ? query.or(`id.ilike.%${safeQuery}%,user_id.in.(${ids.join(",")})`)
-        : query.ilike("id", `%${safeQuery}%`);
+    const clauses: string[] = [];
+    if (ids.length > 0) clauses.push(`user_id.in.(${ids.join(",")})`);
+    if (UUID.test(safeQuery)) clauses.push(`id.eq.${safeQuery}`);
+    query = clauses.length
+      ? query.or(clauses.join(","))
+      : query.eq("id", "00000000-0000-0000-0000-000000000000");
   }
 
   const result = await query.range(

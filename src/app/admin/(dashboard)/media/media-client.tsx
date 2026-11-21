@@ -115,6 +115,12 @@ function toDatetimeLocal(value: string | null): string {
   return `${date.getFullYear()}-${pad(date.getMonth() + 1)}-${pad(date.getDate())}T${pad(date.getHours())}:${pad(date.getMinutes())}`;
 }
 
+function toIso(value: string): string {
+  if (!value) return "";
+  const date = new Date(value);
+  return Number.isNaN(date.getTime()) ? "" : date.toISOString();
+}
+
 function mediaToForm(media: SiteMedia): MediaFormState {
   return {
     id: media.id,
@@ -162,7 +168,11 @@ export function MediaClient({
     setBusy(true);
     setNotice("");
     setSettingsErrors({});
-    const result = await updateSiteSettings(settings);
+    const result = await updateSiteSettings({
+      ...settings,
+      amazing_timer_starts_at: toIso(settings.amazing_timer_starts_at),
+      amazing_timer_ends_at: toIso(settings.amazing_timer_ends_at),
+    });
     if (result.ok) {
       setNotice(result.message);
       router.refresh();
@@ -192,9 +202,14 @@ export function MediaClient({
     setBusy(true);
     setNotice("");
     setMediaErrors({});
+    const payload = {
+      ...mediaForm,
+      starts_at: toIso(mediaForm.starts_at),
+      ends_at: toIso(mediaForm.ends_at),
+    };
     const result = mediaForm.id
-      ? await updateSiteMedia(mediaForm.id, mediaForm)
-      : await createSiteMedia(mediaForm);
+      ? await updateSiteMedia(mediaForm.id, payload)
+      : await createSiteMedia(payload);
     if (result.ok) {
       setNotice(result.message);
       setMediaForm(null);

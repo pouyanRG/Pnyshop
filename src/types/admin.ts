@@ -163,6 +163,7 @@ export const AUDIT_ENTITY_LABELS: Record<string, string> = {
   coupon: "کد تخفیف",
   order: "سفارش",
   product: "محصول",
+  media: "رسانه",
   site_media: "رسانهٔ سایت",
   site_settings: "تنظیمات سایت",
 };

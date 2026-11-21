@@ -1,7 +1,7 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { createSupabaseServerClient } from "@/lib/supabase/server";
-import type { Product } from "@/types/database";
+import type { Product, ProductImage } from "@/types/database";
 import { ProductPage, type ProductPageVariant } from "./product-page";
 
 type Props = {
@@ -48,7 +48,7 @@ export default async function ProductRoute({ searchParams }: Props) {
   const supabase = await createSupabaseServerClient();
   const { data: product, error } = await supabase
     .from("products")
-    .select("*")
+    .select("*, product_images(id, url, alt, sort_order, is_primary)")
     .eq("id", id)
     .eq("is_active", true)
     .maybeSingle();
@@ -94,7 +94,7 @@ export default async function ProductRoute({ searchParams }: Props) {
   let variants: ProductPageVariant[] = [];
   const variantsResult = await supabase
     .from("product_variants")
-    .select("color_name, price, discount, is_active")
+    .select("color_name, color_code, size, price, discount, stock, image_url, is_active")
     .eq("product_id", product.id);
   if (variantsResult.error) {
     console.error("Could not load product variants:", variantsResult.error);
@@ -102,5 +102,21 @@ export default async function ProductRoute({ searchParams }: Props) {
     variants = variantsResult.data ?? [];
   }
 
-  return <ProductPage product={product} related={related} variants={variants} />;
+  const productWithImages = product as unknown as Product & {
+    product_images?: ProductImage[];
+  };
+  const galleryImages = Array.isArray(productWithImages.product_images)
+    ? productWithImages.product_images
+      .slice()
+      .sort((a, b) => a.sort_order - b.sort_order)
+    : [];
+
+  return (
+    <ProductPage
+      product={product}
+      related={related}
+      variants={variants}
+      galleryImages={galleryImages}
+    />
+  );
 }
