@@ -155,7 +155,7 @@ function validate(input: ProductInput): FieldErrors {
   if (variants.length === 0) {
     if (price === null || price < 0) errors.price = "قیمت محصول معتبر نیست.";
     if (stock === null || !Number.isInteger(stock) || stock < 0)
-      errors.stock = "موجودی محصول باید عدد صحیح و ناچیز باشد.";
+      errors.stock = "موجودی محصول باید عددی صحیح و نامنفی باشد.";
   }
   if (discount < 0 || discount > 100)
     errors.discount = "تخفیف محصول بین ۰ تا ۱۰۰ درصد باشد.";
@@ -708,6 +708,19 @@ export async function updateProductQuick(
 ): Promise<ProductResult> {
   const admin = await requireAdmin();
   const supabase = await createSupabaseServerClient();
+
+  const { data: variants } = await supabase
+    .from("product_variants")
+    .select("id")
+    .eq("product_id", id)
+    .limit(1);
+  const hasVariants = (variants?.length ?? 0) > 0;
+  if (hasVariants && (input.price !== undefined || input.stock !== undefined)) {
+    return {
+      ok: false,
+      message: "این محصول واریانت دارد؛ قیمت و موجودی را از فرم واریانت‌ها تغییر دهید.",
+    };
+  }
 
   const update: Partial<Product> = { updated_at: new Date().toISOString() };
   if (input.price !== undefined) {

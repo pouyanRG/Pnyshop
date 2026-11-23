@@ -47,6 +47,13 @@ export function BrandsClient({
     loadError ? "برندها از پایگاه داده خوانده نشدند." : "",
   );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState("");
+
+  const visibleBrands = brands.filter((brand) => {
+    const query = search.trim().toLowerCase();
+    if (!query) return true;
+    return `${brand.name} ${brand.slug} ${brand.description}`.toLowerCase().includes(query);
+  });
 
   function openCreate() {
     setForm({ ...emptyForm });
@@ -140,7 +147,17 @@ export function BrandsClient({
               <input
                 value={form.name}
                 onChange={(event) =>
-                  setForm({ ...form, name: event.target.value })
+                  setForm((current) =>
+                    current
+                      ? {
+                          ...current,
+                          name: event.target.value,
+                          slug: current.id || current.slug
+                            ? current.slug
+                            : slugify(event.target.value),
+                        }
+                      : current,
+                  )
                 }
                 maxLength={120}
                 autoFocus
@@ -229,6 +246,24 @@ export function BrandsClient({
         </form>
       )}
 
+      <div className={styles.toolbar}>
+        <label>
+          <i className="fas fa-search" aria-hidden="true" />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="جستجوی نام، اسلاگ یا توضیح برند"
+          />
+        </label>
+        <span>{visibleBrands.length.toLocaleString("fa-IR")} برند</span>
+        {search && (
+          <button type="button" className={styles.small} onClick={() => setSearch("")}>
+            پاک کردن
+          </button>
+        )}
+      </div>
+
       <div className={styles.tableWrap}>
         <table>
           <thead>
@@ -242,7 +277,7 @@ export function BrandsClient({
             </tr>
           </thead>
           <tbody>
-            {brands.map((brand) => (
+            {visibleBrands.map((brand) => (
               <tr key={brand.id}>
                 <td>
                   {brand.logo_url ? (
@@ -288,9 +323,13 @@ export function BrandsClient({
                 </td>
               </tr>
             ))}
-            {brands.length === 0 && (
+            {visibleBrands.length === 0 && (
               <tr>
-                <td colSpan={6}>برندی ثبت نشده است.</td>
+                <td colSpan={6}>
+                  {brands.length === 0
+                    ? "برندی ثبت نشده است."
+                    : "برندی با این جستجو یافت نشد."}
+                </td>
               </tr>
             )}
           </tbody>

@@ -74,28 +74,30 @@ export default async function ProductRoute({ searchParams }: Props) {
     );
   }
 
-  let related: Product[] = [];
-  if (product.category) {
-    const relatedResult = await supabase
+  const relatedQuery = product.category
+    ? supabase
       .from("products")
       .select("*")
       .eq("is_active", true)
       .eq("category", product.category)
       .neq("id", product.id)
       .order("created_at", { ascending: false })
-      .limit(4);
-    if (relatedResult.error) {
-      console.error("Could not load related products:", relatedResult.error);
-    } else {
-      related = relatedResult.data ?? [];
-    }
-  }
-
-  let variants: ProductPageVariant[] = [];
-  const variantsResult = await supabase
+      .limit(4)
+    : Promise.resolve({ data: [] as Product[], error: null });
+  const variantsQuery = supabase
     .from("product_variants")
     .select("color_name, color_code, size, price, discount, stock, image_url, is_active")
     .eq("product_id", product.id);
+  const [relatedResult, variantsResult] = await Promise.all([relatedQuery, variantsQuery]);
+
+  let related: Product[] = [];
+  if (relatedResult.error) {
+    console.error("Could not load related products:", relatedResult.error);
+  } else {
+    related = relatedResult.data ?? [];
+  }
+
+  let variants: ProductPageVariant[] = [];
   if (variantsResult.error) {
     console.error("Could not load product variants:", variantsResult.error);
   } else {
@@ -113,9 +115,11 @@ export default async function ProductRoute({ searchParams }: Props) {
 
   return (
     <ProductPage
+      key={product.id}
       product={product}
       related={related}
       variants={variants}
+      variantsUnavailable={Boolean(variantsResult.error)}
       galleryImages={galleryImages}
     />
   );

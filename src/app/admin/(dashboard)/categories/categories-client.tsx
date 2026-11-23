@@ -68,11 +68,26 @@ function buildTree(categories: Category[]): CategoryNode[] {
   return roots;
 }
 
-function flattenTree(nodes: CategoryNode[], depth = 0): Array<CategoryNode & { depth: number }> {
-  return nodes.flatMap((node) => [
-    { ...node, depth },
-    ...flattenTree(node.children, depth + 1),
-  ]);
+function flattenTree(
+  nodes: CategoryNode[],
+  collapsed: Set<number>,
+  query: string,
+  depth = 0,
+): Array<CategoryNode & { depth: number }> {
+  const matches = (node: CategoryNode) =>
+    `${node.name} ${node.slug} ${node.icon}`.toLowerCase().includes(query);
+  const hasMatchingDescendant = (node: CategoryNode): boolean =>
+    node.children.some(
+      (child) => matches(child) || hasMatchingDescendant(child),
+    );
+
+  return nodes.flatMap((node) => {
+    if (query && !matches(node) && !hasMatchingDescendant(node)) return [];
+    const visibleChildren = query || !collapsed.has(node.id)
+      ? flattenTree(node.children, collapsed, query, depth + 1)
+      : [];
+    return [{ ...node, depth }, ...visibleChildren];
+  });
 }
 
 function specFieldCount(category: Category): number {
@@ -95,14 +110,56 @@ export function CategoriesClient({
     loadError ? "دسته‌بندی‌ها از پایگاه داده خوانده نشدند." : "",
   );
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
+  const [search, setSearch] = useState("");
+  const [collapsed, setCollapsed] = useState<Set<number>>(() => new Set());
 
   const tree = buildTree(categories);
-  const flat = flattenTree(tree);
+  const flat = flattenTree(tree, new Set(), "");
+  const query = search.trim().toLowerCase();
+  const visibleFlat = flattenTree(tree, collapsed, query);
 
-  function openCreate() {
-    setForm({ ...emptyForm, sort_order: categories.length });
+  function isInvalidParent(categoryId: number, candidateParentId: number): boolean {
+    if (categoryId === candidateParentId) return true;
+    let cursor = categories.find((item) => item.id === candidateParentId);
+    const visited = new Set<number>();
+    while (cursor?.parent_id && !visited.has(cursor.id)) {
+      visited.add(cursor.id);
+      if (cursor.parent_id === categoryId) return true;
+      cursor = categories.find((item) => item.id === cursor?.parent_id);
+    }
+    return false;
+  }
+
+  function openCreate(parentId: number | null = null) {
+    setForm({
+      ...emptyForm,
+      parent_id: parentId,
+      sort_order: categories.filter((item) => item.parent_id === parentId).length,
+    });
+    if (parentId !== null) {
+      setCollapsed((current) => {
+        const next = new Set(current);
+        let cursor = categories.find((item) => item.id === parentId);
+        while (cursor) {
+          next.delete(cursor.id);
+          cursor = cursor.parent_id === null
+            ? undefined
+            : categories.find((item) => item.id === cursor?.parent_id);
+        }
+        return next;
+      });
+    }
     setFieldErrors({});
     setNotice("");
+  }
+
+  function toggleCollapsed(categoryId: number) {
+    setCollapsed((current) => {
+      const next = new Set(current);
+      if (next.has(categoryId)) next.delete(categoryId);
+      else next.add(categoryId);
+      return next;
+    });
   }
 
   function openEdit(category: Category) {
@@ -195,7 +252,7 @@ export function CategoriesClient({
         <button
           type="button"
           className={styles.primary}
-          onClick={openCreate}
+          onClick={() => openCreate()}
           disabled={busy}
         >
           <i className="fas fa-plus" aria-hidden="true" /> افزودن دسته
@@ -218,7 +275,17 @@ export function CategoriesClient({
               <input
                 value={form.name}
                 onChange={(event) =>
-                  setForm({ ...form, name: event.target.value })
+                  setForm((current) =>
+                    current
+                      ? {
+                          ...current,
+                          name: event.target.value,
+                          slug: current.id || current.slug
+                            ? current.slug
+                            : slugify(event.target.value),
+                        }
+                      : current,
+                  )
                 }
                 maxLength={120}
                 autoFocus
@@ -266,11 +333,17 @@ export function CategoriesClient({
                 }
               >
                 <option value="">بدون مادر (ریشه)</option>
-                {flat.map((category) => (
-                  <option key={category.id} value={category.id}>
-                    {`${"— ".repeat(category.depth)}${category.name}`}
-                  </option>
-                ))}
+                {flat
+                  .filter((category) =>
+                    form.id
+                      ? !isInvalidParent(form.id, category.id)
+                      : true,
+                  )
+                  .map((category) => (
+                    <option key={category.id} value={category.id}>
+                      {`${"— ".repeat(category.depth)}${category.name}`}
+                    </option>
+                  ))}
               </select>
               {fieldErrors.parent_id && (
                 <small className={styles.error}>{fieldErrors.parent_id}</small>
@@ -422,14 +495,72 @@ export function CategoriesClient({
         </form>
       )}
 
+      <div className={styles.toolbar}>
+        <label>
+          <i className="fas fa-search" aria-hidden="true" />
+          <input
+            type="search"
+            value={search}
+            onChange={(event) => setSearch(event.target.value)}
+            placeholder="جستجوی نام، اسلاگ یا آیکون دسته"
+          />
+        </label>
+        <span>{visibleFlat.length.toLocaleString("fa-IR")} دسته</span>
+        <button
+          type="button"
+          className={styles.small}
+          onClick={() => setCollapsed(new Set())}
+          disabled={tree.length === 0}
+        >
+          بازکردن همه
+        </button>
+        <button
+          type="button"
+          className={styles.small}
+          onClick={() =>
+            setCollapsed(
+              new Set(
+                flat
+                  .filter((category) => category.children.length > 0)
+                  .map((category) => category.id),
+              ),
+            )
+          }
+          disabled={tree.length === 0}
+        >
+          بستن همه
+        </button>
+        {search && (
+          <button type="button" className={styles.small} onClick={() => setSearch("")}>
+            پاک کردن
+          </button>
+        )}
+      </div>
+
       <div className={styles.tree}>
-        {flat.map((category) => (
+        {visibleFlat.map((category) => (
           <div
             key={category.id}
             className={`${styles.row} ${category.is_active ? "" : styles.rowInactive}`}
             style={{ paddingInlineStart: `calc(var(--space-4) + ${category.depth} * var(--space-6))` }}
           >
             <div className={styles.rowMain}>
+              {category.children.length > 0 ? (
+                <button
+                  type="button"
+                  className={styles.disclosure}
+                  onClick={() => toggleCollapsed(category.id)}
+                  aria-label={`${collapsed.has(category.id) ? "بازکردن" : "بستن"} زیرشاخه‌های ${category.name}`}
+                  aria-expanded={!collapsed.has(category.id)}
+                >
+                  <i
+                    className={`fas ${collapsed.has(category.id) ? "fa-chevron-left" : "fa-chevron-down"}`}
+                    aria-hidden="true"
+                  />
+                </button>
+              ) : (
+                <span className={styles.disclosureSpacer} />
+              )}
               <span className={styles.name}>
                 {category.image_url ? (
                   // eslint-disable-next-line @next/next/no-img-element
@@ -453,6 +584,11 @@ export function CategoriesClient({
                     {specFieldCount(category).toLocaleString("fa-IR")} فیلد
                   </span>
                 )}
+                {category.children.length > 0 && (
+                  <span className={styles.badge}>
+                    {category.children.length.toLocaleString("fa-IR")} زیر‌دسته
+                  </span>
+                )}
                 <span className={styles.badge}>
                   {category.sort_order.toLocaleString("fa-IR")}
                 </span>
@@ -467,6 +603,15 @@ export function CategoriesClient({
                 </button>
               </span>
               <span className={styles.actions}>
+                <button
+                  type="button"
+                  aria-label={`افزودن زیر‌دسته برای ${category.name}`}
+                  title="افزودن زیر‌دسته"
+                  onClick={() => openCreate(category.id)}
+                  disabled={busy}
+                >
+                  <i className="fas fa-folder-plus" aria-hidden="true" />
+                </button>
                 <button
                   type="button"
                   aria-label="جابجایی به بالا"
@@ -504,7 +649,13 @@ export function CategoriesClient({
             </div>
           </div>
         ))}
-        {flat.length === 0 && <p className={styles.empty}>دسته‌ای ثبت نشده است.</p>}
+        {visibleFlat.length === 0 && (
+          <p className={styles.empty}>
+            {flat.length === 0
+              ? "دسته‌ای ثبت نشده است."
+              : "دسته‌ای با این جستجو یافت نشد."}
+          </p>
+        )}
       </div>
     </div>
   );

@@ -38,6 +38,10 @@ export function ProductVariants({
   onChange: (variants: ProductVariantInput[]) => void;
   basePrice: number;
 }) {
+  const [bulkPrice, setBulkPrice] = useState("");
+  const [bulkDiscount, setBulkDiscount] = useState("");
+  const [bulkStock, setBulkStock] = useState("");
+
   const initialOptions: OptionGroup[] = [
     { name: "رنگ", values: "", colorCodes: {} },
   ];
@@ -143,6 +147,31 @@ export function ProductVariants({
     ]);
   }
 
+  function applyToAll(field: "price" | "discount" | "stock") {
+    const raw =
+      field === "price"
+        ? bulkPrice
+        : field === "discount"
+          ? bulkDiscount
+          : bulkStock;
+    const value = raw === "" ? null : Number(raw);
+    if (value === null || !Number.isFinite(value)) return;
+
+    const normalized =
+      field === "stock"
+        ? Math.max(0, Math.round(value))
+        : field === "discount"
+          ? Math.min(100, Math.max(0, value))
+          : Math.max(0, value);
+
+    onChange(
+      variants.map((variant) => ({
+        ...variant,
+        [field]: normalized,
+      })),
+    );
+  }
+
   return (
     <div className={styles.variantsBlock}>
       <div className={styles.optionsBlock}>
@@ -219,6 +248,50 @@ export function ProductVariants({
         </div>
       </div>
 
+      {variants.length > 0 && (
+        <div className={styles.variantBulkEdit}>
+          <b>اعمال مقدار یکسان روی همهٔ واریانت‌ها</b>
+          <label>
+            <span>قیمت</span>
+            <input
+              type="number"
+              min={0}
+              value={bulkPrice}
+              onChange={(event) => setBulkPrice(event.target.value)}
+            />
+            <button type="button" className={styles.ghost} onClick={() => applyToAll("price")} disabled={bulkPrice === ""}>
+              اعمال
+            </button>
+          </label>
+          <label>
+            <span>تخفیف ٪</span>
+            <input
+              type="number"
+              min={0}
+              max={100}
+              value={bulkDiscount}
+              onChange={(event) => setBulkDiscount(event.target.value)}
+            />
+            <button type="button" className={styles.ghost} onClick={() => applyToAll("discount")} disabled={bulkDiscount === ""}>
+              اعمال
+            </button>
+          </label>
+          <label>
+            <span>موجودی</span>
+            <input
+              type="number"
+              min={0}
+              step={1}
+              value={bulkStock}
+              onChange={(event) => setBulkStock(event.target.value)}
+            />
+            <button type="button" className={styles.ghost} onClick={() => applyToAll("stock")} disabled={bulkStock === ""}>
+              اعمال
+            </button>
+          </label>
+        </div>
+      )}
+
       <div className={styles.variantTableWrap}>
         <div className={styles.variantTableHeader}>
           <h3>ترکیب‌های واریانت ({variants.length.toLocaleString("fa-IR")})</h3>
@@ -276,7 +349,9 @@ export function ProductVariants({
                   min={0}
                   value={variant.price}
                   onChange={(event) =>
-                    updateVariant(index, { price: Number(event.target.value) || 0 })
+                    updateVariant(index, {
+                      price: Math.max(0, Number(event.target.value) || 0),
+                    })
                   }
                 />
                 <input
@@ -286,7 +361,10 @@ export function ProductVariants({
                   value={variant.discount}
                   onChange={(event) =>
                     updateVariant(index, {
-                      discount: Number(event.target.value) || 0,
+                      discount: Math.min(
+                        100,
+                        Math.max(0, Number(event.target.value) || 0),
+                      ),
                     })
                   }
                 />

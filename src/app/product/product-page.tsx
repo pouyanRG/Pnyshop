@@ -78,11 +78,13 @@ export function ProductPage({
   product,
   related,
   variants,
+  variantsUnavailable,
   galleryImages,
 }: {
   product: Product;
   related: Product[];
   variants: ProductPageVariant[];
+  variantsUnavailable: boolean;
   galleryImages: ProductImage[];
 }) {
   const router = useRouter();
@@ -92,6 +94,8 @@ export function ProductPage({
     () => colors.find((color) => (color.stock ?? product.stock) > 0) ?? colors[0] ?? null,
   );
   const [imageIndex, setImageIndex] = useState(0);
+  const [selectedGalleryImage, setSelectedGalleryImage] = useState<string | null>(null);
+  const [failedImage, setFailedImage] = useState<string | null>(null);
   const [quantity, setQuantity] = useState(1);
   const [busy, setBusy] = useState(false);
   const [wished, setWished] = useState(false);
@@ -99,19 +103,21 @@ export function ProductPage({
   const clientRef = useRef<ReturnType<typeof createSupabaseBrowserClient> | null>(null);
 
   useEffect(() => {
+    let cancelled = false;
     void (async () => {
       try {
         clientRef.current ??= createSupabaseBrowserClient();
         const client = await clientRef.current;
         const { data: { user }, error } = await client.auth.getUser();
         if (error) throw error;
-        if (!user) return;
+        if (!user || cancelled) return;
         const { data, error: profileError } = await client
           .from("profiles")
           .select("wishlist")
           .eq("id", user.id)
           .maybeSingle();
         if (profileError) throw profileError;
+        if (cancelled) return;
         const wishlist = Array.isArray(data?.wishlist) ? data.wishlist : [];
         setWished(wishlist.some((entry) => {
           if (entry && typeof entry === "object" && !Array.isArray(entry) && "id" in entry) {
@@ -123,9 +129,14 @@ export function ProductPage({
         console.error("Could not load product wishlist state:", error);
       }
     })();
+    return () => {
+      cancelled = true;
+    };
   }, [product.id]);
 
   const stock = selectedColor?.stock ?? product.stock;
+  const rawRating = Number(product.rating);
+  const rating = Number.isFinite(rawRating) ? Math.min(5, Math.max(0, rawRating)) : 0;
   const sellableVariants = useMemo(
     () => variants.filter((variant) => variant.is_active),
     [variants],
@@ -147,7 +158,7 @@ export function ProductPage({
   const oldPrice = colorOffer
     ? (colorOffer.discount > 0 ? colorOffer.price : null)
     : (product.discount > 0 ? product.price : null);
-  const displayedImage = selectedColor?.image || images[imageIndex] || null;
+  const displayedImage = selectedGalleryImage || selectedColor?.image || images[imageIndex] || null;
 
   async function addToCart() {
     if (busy) return;
@@ -206,6 +217,7 @@ export function ProductPage({
   }
 
   async function toggleWishlist() {
+    if (busy) return;
     setBusy(true);
     setNotice("");
     try {
@@ -266,18 +278,31 @@ export function ProductPage({
         </div>
 
         <nav className={styles.breadcrumb} aria-label="مسیر">
-          <Link href="/">خانه</Link><i className="fas fa-chevron-left" />
-          <span>{product.category || "محصولات"}</span><i className="fas fa-chevron-left" />
+          <Link href="/">خانه</Link><i className="fas fa-chevron-left" aria-hidden="true" />
+          <span>{product.category || "محصولات"}</span><i className="fas fa-chevron-left" aria-hidden="true" />
           <strong>{product.name}</strong>
         </nav>
 
         <div className={styles.productGrid}>
           <section className={styles.gallery} aria-label="گالری محصول">
             <div className={styles.mainImage}>
-              {displayedImage
-                ? <Image src={displayedImage} alt={product.name} fill sizes="(max-width: 760px) 100vw, 48vw" unoptimized />
-                : <i className="far fa-image" aria-label="بدون تصویر" />}
-              {product.discount > 0 && <span className={styles.discount}>{product.discount}%</span>}
+              {displayedImage && failedImage !== displayedImage
+                ? (
+                  <Image
+                    src={displayedImage}
+                    alt={product.name}
+                    fill
+                    sizes="(max-width: 760px) 100vw, 48vw"
+                    loading="eager"
+                    onError={() => setFailedImage(displayedImage)}
+                  />
+                )
+                : (
+                  <div className={styles.imageFallback} role="img" aria-label="تصویر محصول در دسترس نیست">
+                    <i className="far fa-image" aria-hidden="true" />
+                    <span>تصویر محصول در دسترس نیست</span>
+                  </div>
+                )}
             </div>
             {images.length > 1 && (
               <div className={styles.thumbnails}>
@@ -286,10 +311,11 @@ export function ProductPage({
                     type="button"
                     key={`${image}-${index}`}
                     className={index === imageIndex ? styles.selectedThumbnail : ""}
-                    onClick={() => { setImageIndex(index); setSelectedColor(null); }}
+                    onClick={() => { setImageIndex(index); setSelectedGalleryImage(image); }}
                     aria-label={`تصویر ${index + 1}`}
+                    aria-pressed={index === imageIndex}
                   >
-                    <Image src={image} alt="" fill sizes="64px" unoptimized />
+                    <Image src={image} alt="" fill sizes="64px" loading={index === imageIndex ? "eager" : "lazy"} />
                   </button>
                 ))}
               </div>
@@ -298,17 +324,20 @@ export function ProductPage({
 
           <section className={styles.details}>
             <div className={styles.metaRow}>
-              <span className={styles.category}><i className="fas fa-check-circle" /> {product.category || "محصول فروشگاه"}</span>
+              <span className={styles.category}><i className="fas fa-check-circle" aria-hidden="true" /> {product.category || "محصول فروشگاه"}</span>
               {product.brand ? <span className={styles.brand}>{product.brand}</span> : null}
             </div>
             <h1>{product.name}</h1>
-            {product.is_hot && <span className={styles.hot}><i className="fas fa-fire" /> فروش ویژه</span>}
+            {product.is_hot && <span className={styles.hot}><i className="fas fa-fire" aria-hidden="true" /> فروش ویژه</span>}
             <div className={styles.rating}>
-              <span aria-label={`امتیاز ${product.rating ?? 0}`}>{"★".repeat(Math.round(product.rating ?? 0))}{"☆".repeat(5 - Math.round(product.rating ?? 0))}</span>
-              <b>{Number(product.rating ?? 0).toFixed(1)}</b>
-              <small>{product.review_count.toLocaleString("fa-IR")} دیدگاه</small>
+              <span role="img" aria-label={`امتیاز ${rating}`}>
+                {"★".repeat(Math.round(rating))}
+                {"☆".repeat(5 - Math.round(rating))}
+              </span>
+              <b>{rating.toFixed(1)}</b>
+              <small>{Number(product.review_count ?? 0).toLocaleString("fa-IR")} دیدگاه</small>
               <em className={stock > 0 ? styles.inStock : styles.outOfStock}>
-                {stock > 0 ? (stock <= 2 ? `تنها ${stock} عدد` : "موجود") : "ناموجود"}
+                {stock > 0 ? (stock <= 2 ? `تنها ${stock.toLocaleString("fa-IR")} عدد` : "موجود") : "ناموجود"}
               </em>
             </div>
             <div className={styles.prices}>
@@ -327,7 +356,12 @@ export function ProductPage({
                       disabled={(color.stock ?? product.stock) <= 0}
                       aria-pressed={selectedColor?.name === color.name}
                       className={selectedColor?.name === color.name ? styles.selectedColor : ""}
-                      onClick={() => { setSelectedColor(color); setQuantity(1); setImageIndex(0); }}
+                      onClick={() => {
+                        setSelectedColor(color);
+                        setQuantity(1);
+                        setImageIndex(0);
+                        setSelectedGalleryImage(null);
+                      }}
                     >
                       <span style={{ backgroundColor: color.code || "#555" }} />
                       {color.name}
@@ -339,28 +373,44 @@ export function ProductPage({
 
             {product.warranty ? (
               <p className={styles.warranty}>
-                <i className="fas fa-shield-alt" /> {product.warranty}
+                <i className="fas fa-shield-alt" aria-hidden="true" /> {product.warranty}
               </p>
             ) : null}
 
             <div className={styles.actions}>
               <div className={styles.quantity}>
-                <button type="button" onClick={() => setQuantity((value) => Math.max(1, value - 1))} disabled={quantity <= 1}>−</button>
+                <button type="button" aria-label="کاهش تعداد" onClick={() => setQuantity((value) => Math.max(1, value - 1))} disabled={quantity <= 1}>
+                  <i className="fas fa-minus" aria-hidden="true" />
+                </button>
                 <span>{quantity.toLocaleString("fa-IR")}</span>
-                <button type="button" onClick={() => setQuantity((value) => Math.min(stock, value + 1))} disabled={quantity >= stock}>+</button>
+                <button type="button" aria-label="افزایش تعداد" onClick={() => setQuantity((value) => Math.min(stock, value + 1))} disabled={quantity >= stock}>
+                  <i className="fas fa-plus" aria-hidden="true" />
+                </button>
               </div>
-              <button type="button" className={styles.addButton} onClick={addToCart} disabled={busy || stock <= 0}>
-                <i className="fas fa-shopping-cart" /> {busy ? "در حال ثبت..." : "افزودن به سبد"}
+              <button type="button" className={styles.addButton} onClick={addToCart} disabled={busy || stock <= 0} aria-busy={busy}>
+                <i className="fas fa-shopping-cart" aria-hidden="true" /> {busy ? "در حال ثبت..." : "افزودن به سبد"}
               </button>
-              <button type="button" className={styles.iconButton} onClick={toggleWishlist} disabled={busy} aria-label="علاقه‌مندی">
-                <i className={`${wished ? "fas" : "far"} fa-heart`} />
+              <button
+                type="button"
+                className={styles.iconButton}
+                onClick={toggleWishlist}
+                disabled={busy}
+                aria-label={wished ? "حذف از علاقه‌مندی" : "افزودن به علاقه‌مندی"}
+                aria-pressed={wished}
+              >
+                <i className={`${wished ? "fas" : "far"} fa-heart`} aria-hidden="true" />
               </button>
             </div>
             {notice && <p className={styles.notice} role="status">{notice}</p>}
+            {variantsUnavailable && (
+              <p className={styles.dataNotice} role="status">
+                قیمت بعضی مدل‌ها موقتاً در دسترس نیست؛ قیمت پایهٔ محصول نمایش داده شده است.
+              </p>
+            )}
             <div className={styles.trust}>
-              <span><i className="fas fa-shield-alt" /> ضمانت اصالت</span>
-              <span><i className="fas fa-undo" /> ۷ روز بازگشت</span>
-              <span><i className="fas fa-truck" /> ارسال سریع</span>
+              <span><i className="fas fa-shield-alt" aria-hidden="true" /> ضمانت اصالت</span>
+              <span><i className="fas fa-undo" aria-hidden="true" /> ۷ روز بازگشت</span>
+              <span><i className="fas fa-truck" aria-hidden="true" /> ارسال سریع</span>
             </div>
           </section>
         </div>
@@ -392,13 +442,13 @@ export function ProductPage({
                 >
                   <span className={styles.relatedImage}>
                     {item.image_url
-                      ? <Image src={item.image_url} alt={item.name} fill sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 20vw" unoptimized />
-                      : <i className="far fa-image" aria-label="بدون تصویر" />}
+                      ? <Image src={item.image_url} alt={item.name} fill sizes="(max-width: 480px) 50vw, (max-width: 768px) 33vw, 20vw" />
+                      : <i className="far fa-image" aria-hidden="true" />}
                   </span>
                   <span className={styles.relatedBody}>
                     <b className={styles.relatedName}>{item.name}</b>
                     <small className={styles.relatedPrice}>
-                      {Math.round(item.price * (1 - item.discount / 100)).toLocaleString("en-US")} تومان
+                      {Math.round(item.price * (1 - item.discount / 100)).toLocaleString("fa-IR")} تومان
                     </small>
                   </span>
                 </Link>

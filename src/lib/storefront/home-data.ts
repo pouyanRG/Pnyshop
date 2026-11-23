@@ -193,8 +193,7 @@ export async function getHomeData(): Promise<HomeData> {
       .select("*")
       .eq("is_active", true)
       .order("sort_order", { ascending: true })
-      .order("id", { ascending: true })
-      .limit(12),
+      .order("id", { ascending: true }),
     queryAmazingProducts(supabase),
   ]);
 

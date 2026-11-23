@@ -21,6 +21,7 @@ type QuickEditState = {
   price: string;
   stock: string;
   is_active: boolean;
+  hasVariants: boolean;
 };
 
 function buildQuery(filters: ProductFilters, page: number): string {
@@ -171,8 +172,16 @@ export function ProductsClient({
     setBusy(true);
     setNotice("");
     const result = await updateProductQuick(quickEdit.id, {
-      price: quickEdit.price === "" ? undefined : Number(quickEdit.price),
-      stock: quickEdit.stock === "" ? undefined : Number(quickEdit.stock),
+      price: quickEdit.hasVariants
+        ? undefined
+        : quickEdit.price === ""
+          ? undefined
+          : Number(quickEdit.price),
+      stock: quickEdit.hasVariants
+        ? undefined
+        : quickEdit.stock === ""
+          ? undefined
+          : Number(quickEdit.stock),
       is_active: quickEdit.is_active,
     });
     setNotice(result.message);
@@ -443,6 +452,7 @@ export function ProductsClient({
                         price: String(product.price),
                         stock: String(product.stock),
                         is_active: product.is_active,
+                        hasVariants: product.product_variants.length > 0,
                       })
                     }
                     disabled={busy}
@@ -517,28 +527,39 @@ export function ProductsClient({
         <div className={styles.overlay}>
           <form className={styles.modal} onSubmit={submitQuickEdit}>
             <h2>ویرایش سریع: {quickEdit.name}</h2>
-            <label className={styles.field}>
-              <span>قیمت (تومان)</span>
-              <input
-                type="number"
-                min={0}
-                value={quickEdit.price}
-                onChange={(event) =>
-                  setQuickEdit({ ...quickEdit, price: event.target.value })
-                }
-              />
-            </label>
-            <label className={styles.field}>
-              <span>موجودی</span>
-              <input
-                type="number"
-                min={0}
-                value={quickEdit.stock}
-                onChange={(event) =>
-                  setQuickEdit({ ...quickEdit, stock: event.target.value })
-                }
-              />
-            </label>
+            {quickEdit.hasVariants ? (
+              <p className={styles.hint}>
+                این محصول واریانت دارد؛ قیمت و موجودی فقط از مرحلهٔ واریانت‌ها
+                ویرایش می‌شوند.
+              </p>
+            ) : (
+              <>
+                <label className={styles.field}>
+                  <span>قیمت (تومان)</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={quickEdit.price}
+                    onChange={(event) =>
+                      setQuickEdit({ ...quickEdit, price: event.target.value })
+                    }
+                  />
+                </label>
+                <label className={styles.field}>
+                  <span>موجودی</span>
+                  <input
+                    type="number"
+                    min={0}
+                    step={1}
+                    value={quickEdit.stock}
+                    onChange={(event) =>
+                      setQuickEdit({ ...quickEdit, stock: event.target.value })
+                    }
+                  />
+                </label>
+              </>
+            )}
             <label className={styles.inlineField}>
               <input
                 type="checkbox"

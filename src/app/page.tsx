@@ -76,7 +76,7 @@ async function buildHomeMarkup(home: HomeData): Promise<string> {
   html = replaceOnce(
     html,
     /<section class="section" aria-label="دسته‌بندی‌ها">[\s\S]*?<\/section>/,
-    renderCategoryCircles(home.categories, home.extraCircles),
+    renderCategoryCircles(home.categories.slice(0, 12), home.extraCircles),
   );
 
   /* Spotlight */
@@ -182,7 +182,7 @@ export default async function HomePage() {
 
   return (
     <>
-      <LegacyHomeBehavior />
+      <LegacyHomeBehavior categories={home.categories} />
       <div
         className="legacy-home-page"
         suppressHydrationWarning

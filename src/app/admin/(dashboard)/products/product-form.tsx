@@ -271,6 +271,42 @@ export function ProductForm({
     setStepIndex(index);
   }
 
+  function advanceStep() {
+    if (stepIndex === 0) {
+      if (!form.name.trim()) {
+        setNotice("عنوان محصول را وارد کنید.");
+        setFieldErrors({ name: "عنوان محصول الزامی است." });
+        return;
+      }
+      if (!form.slug.trim()) {
+        setForm({ ...form, slug: slugify(form.name) });
+      }
+    }
+    if (stepIndex === 2 && form.images.length === 0) {
+      setNotice("حداقل یک تصویر برای محصول انتخاب کنید.");
+      setFieldErrors({ images: "حداقل یک تصویر الزامی است." });
+      return;
+    }
+    if (stepIndex === 3) {
+      const invalidVariant = form.variants.find(
+        (variant) =>
+          variant.price < 0 ||
+          variant.discount < 0 ||
+          variant.discount > 100 ||
+          !Number.isInteger(variant.stock) ||
+          variant.stock < 0,
+      );
+      if (invalidVariant) {
+        setNotice("مقادیر واریانت‌ها را بررسی کنید؛ تخفیف باید ۰ تا ۱۰۰ باشد.");
+        setFieldErrors({ variants: "اطلاعات واریانت نامعتبر است." });
+        return;
+      }
+    }
+    setNotice("");
+    setFieldErrors({});
+    setStepIndex((index) => Math.min(STEPS.length - 1, index + 1));
+  }
+
   return (
     <div className={styles.overlay}>
       <div className={styles.dialog}>
@@ -318,9 +354,15 @@ export function ProductForm({
                   <span>عنوان محصول *</span>
                   <input
                     value={form.name}
-                    onChange={(event) =>
-                      setForm({ ...form, name: event.target.value })
-                    }
+                        onChange={(event) =>
+                          setForm({
+                            ...form,
+                            name: event.target.value,
+                            slug: product?.id || form.slug
+                              ? form.slug
+                              : slugify(event.target.value),
+                          })
+                        }
                     maxLength={200}
                     autoFocus
                   />
@@ -451,6 +493,7 @@ export function ProductForm({
                     type="number"
                     min={0}
                     value={form.price}
+                    disabled={form.variants.length > 0}
                     onChange={(event) =>
                       setForm({
                         ...form,
@@ -470,10 +513,11 @@ export function ProductForm({
                     min={0}
                     max={100}
                     value={form.discount}
+                    disabled={form.variants.length > 0}
                     onChange={(event) =>
                       setForm({
                         ...form,
-                        discount: Number(event.target.value) || 0,
+                        discount: Math.min(100, Math.max(0, Number(event.target.value) || 0)),
                       })
                     }
                   />
@@ -488,10 +532,12 @@ export function ProductForm({
                     type="number"
                     min={0}
                     value={form.stock}
+                    step={1}
+                    disabled={form.variants.length > 0}
                     onChange={(event) =>
                       setForm({
                         ...form,
-                        stock: Number(event.target.value) || 0,
+                        stock: Math.max(0, Math.round(Number(event.target.value) || 0)),
                       })
                     }
                   />
@@ -501,8 +547,8 @@ export function ProductForm({
                 </label>
               </div>
               <p className={styles.hint}>
-                اگر وارینت تعریف کنید، قیمت و موجودی محصول از وارینت‌ها محاسبه
-                می‌شود و این مقادیر پایه نادیده گرفته می‌شوند.
+                اگر واریانت تعریف کنید، قیمت، تخفیف و موجودی پایه نادیده گرفته
+                می‌شوند. این مقادیر را برای هر ترکیب در مرحلهٔ واریانت‌ها تنظیم کنید.
               </p>
             </div>
           )}
@@ -715,6 +761,11 @@ export function ProductForm({
                         {variant.color_name || "—"} / {variant.size || "—"}
                       </span>
                       <span>{variant.price.toLocaleString("fa-IR")} تومان</span>
+                      {variant.discount > 0 && (
+                        <span>
+                          تخفیف {variant.discount.toLocaleString("fa-IR")}٪
+                        </span>
+                      )}
                       <span>موجودی: {variant.stock.toLocaleString("fa-IR")}</span>
                       <span>SKU: {variant.sku || "—"}</span>
                     </div>
@@ -775,11 +826,7 @@ export function ProductForm({
               <button
                 type="button"
                 className={styles.primary}
-                onClick={() =>
-                  setStepIndex((index) =>
-                    Math.min(STEPS.length - 1, index + 1),
-                  )
-                }
+                onClick={advanceStep}
                 disabled={busy}
               >
                 بعدی

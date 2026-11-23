@@ -12,6 +12,10 @@ body {
   font-family: "Vazirmatn", -apple-system, BlinkMacSystemFont, sans-serif;
 }
 
+body:has(.storefront-product-page) {
+  padding: 0;
+}
+
 .migration-state,
 .main-header,
 .header-inner,

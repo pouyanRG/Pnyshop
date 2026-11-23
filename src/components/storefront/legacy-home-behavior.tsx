@@ -4,7 +4,7 @@ import Script from "next/script";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database, Json } from "@/types/database";
+import type { Category, Database, Json } from "@/types/database";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
   asColors,
@@ -43,6 +43,10 @@ declare global {
     toggleMegaMenu: () => void;
     handleMegaTriggerKeydown: (event: KeyboardEvent) => void;
     megaShowRail: () => void;
+    megaShowPanel: () => void;
+    megaActivateMain: (categoryId: number) => void;
+    megaScheduleActivate: (categoryId: number) => void;
+    closeMegaMenu: () => void;
     openSRP: (query?: string, category?: string, mode?: string) => void;
     closeSRP: () => void;
     openFilterSheet: (section: string) => void;
@@ -199,16 +203,129 @@ type SrpState = {
   trigger: HTMLElement | null;
 };
 
-function LegacyHomeBehaviorInner() {
+type CategoryNode = Category & { children: CategoryNode[] };
+
+function buildMegaCategoryTree(categories: Category[]): CategoryNode[] {
+  const nodes = new Map(categories.map((category) => [
+    category.id,
+    { ...category, children: [] as CategoryNode[] },
+  ]));
+  const roots: CategoryNode[] = [];
+
+  for (const node of nodes.values()) {
+    if (node.parent_id !== null && nodes.has(node.parent_id)) {
+      nodes.get(node.parent_id)?.children.push(node);
+    } else {
+      roots.push(node);
+    }
+  }
+
+  const sortNodes = (items: CategoryNode[]) => {
+    items.sort((a, b) => a.sort_order - b.sort_order || a.id - b.id);
+    items.forEach((item) => sortNodes(item.children));
+  };
+  sortNodes(roots);
+  return roots;
+}
+
+function collectCategoryLeaves(node: CategoryNode): Category[] {
+  if (node.children.length === 0) return [node];
+  return node.children.flatMap(collectCategoryLeaves);
+}
+
+function renderMegaPanel(node: CategoryNode): void {
+  const panel = document.getElementById("megaCatsPanel");
+  if (!panel) return;
+
+  const columns = node.children.length > 0
+    ? node.children.map((child) => {
+        const leaves = collectCategoryLeaves(child);
+        const links = leaves.map((leaf) =>
+          `<button type="button" class="mm-link" onclick="openSRP('', '${escapeAttr(leaf.name)}');closeMegaMenu();">${escapeHtml(leaf.name)}</button>`,
+        ).join("");
+        return `<div class="mega-panel-col">
+          <button type="button" class="mm-col-title mm-link" onclick="openSRP('', '${escapeAttr(child.name)}');closeMegaMenu();">${escapeHtml(child.name)}</button>
+          ${links}
+        </div>`;
+      }).join("")
+    : `<div class="mega-panel-col">
+        <button type="button" class="mm-link" onclick="openSRP('', '${escapeAttr(node.name)}');closeMegaMenu();">${escapeHtml(node.name)}</button>
+      </div>`;
+
+  panel.innerHTML = `<div class="mega-panel-columns">
+    ${columns}
+    <div class="mega-panel-col mega-panel-highlight">
+      <div class="mm-col-title">پیشنهاد ما</div>
+      <button type="button" class="mm-link" onclick="openSRP('', '', 'bestseller');closeMegaMenu();"><i class="fas fa-fire" style="color:var(--danger);font-size:11px;"></i> پرفروش‌ترین‌ها</button>
+      <button type="button" class="mm-link" onclick="openSRP('', '', 'discount');closeMegaMenu();"><i class="fas fa-tag" style="color:var(--danger);font-size:11px;"></i> تخفیفات ویژه</button>
+    </div>
+  </div>`;
+}
+
+let megaHoverTimer = 0;
+let megaCategoryNodes = new Map<number, CategoryNode>();
+
+function initializeMegaCategories(categories: Category[]): void {
+  const rail = document.getElementById("megaCatsRail");
+  const panel = document.getElementById("megaCatsPanel");
+  if (!rail || !panel) return;
+
+  const roots = buildMegaCategoryTree(categories);
+  megaCategoryNodes = new Map(roots.map((node) => [node.id, node]));
+
+  if (roots.length === 0) {
+    rail.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">دسته‌بندی‌ای یافت نشد.</div>';
+    panel.innerHTML = "";
+    return;
+  }
+
+  rail.innerHTML = roots.map((node) =>
+    `<button type="button" class="mega-cat-rail-item" role="tab" id="mega-rail-${node.id}" data-category-id="${node.id}"
+      onmouseenter="megaScheduleActivate(${node.id})"
+      onfocus="megaScheduleActivate(${node.id})"
+      onclick="megaActivateMain(${node.id});megaShowPanel()">
+      <span>${escapeHtml(node.name)}</span>
+      <i class="fas fa-chevron-left mcr-arrow"></i>
+    </button>`,
+  ).join("");
+
+  window.megaScheduleActivate = (categoryId: number) => {
+    window.clearTimeout(megaHoverTimer);
+    megaHoverTimer = window.setTimeout(() => window.megaActivateMain(categoryId), 180);
+  };
+  window.megaActivateMain = (categoryId: number) => {
+    window.clearTimeout(megaHoverTimer);
+    document.querySelectorAll(".mega-cat-rail-item").forEach((item) => {
+      item.classList.toggle("active", item.getAttribute("data-category-id") === String(categoryId));
+    });
+    const node = megaCategoryNodes.get(categoryId);
+    if (node) renderMegaPanel(node);
+  };
+  window.megaShowPanel = () => {
+    document.getElementById("megaMenu")?.setAttribute("data-mobile-view", "panel");
+  };
+  window.closeMegaMenu = () => {
+    document.getElementById("megaMenu")?.classList.remove("open");
+    document.getElementById("megaMenu")?.setAttribute("aria-hidden", "true");
+    document.getElementById("megaTrigger")?.setAttribute("aria-expanded", "false");
+  };
+
+  window.megaActivateMain(roots[0].id);
+}
+
+function LegacyHomeBehaviorInner({ categories }: { categories: Category[] }) {
   const router = useRouter();
 
   useEffect(() => {
+    initializeMegaCategories(categories);
+
     window.toggleMegaMenu = () => {
       const menu = document.getElementById("megaMenu");
       const trigger = document.getElementById("megaTrigger");
       const isOpen = menu?.classList.toggle("open") ?? false;
       menu?.setAttribute("aria-hidden", String(!isOpen));
       trigger?.setAttribute("aria-expanded", String(isOpen));
+      menu?.setAttribute("data-mobile-view", "rail");
     };
 
     window.handleMegaTriggerKeydown = (event) => {
@@ -951,7 +1068,20 @@ function LegacyHomeBehaviorInner() {
       listButton?.classList.toggle("active", mode === "list");
       gridButton?.setAttribute("aria-pressed", String(mode === "grid"));
       listButton?.setAttribute("aria-pressed", String(mode === "list"));
+      try {
+        localStorage.setItem("pnyshop-srp-view", mode);
+      } catch {
+        // The view still works when browser storage is unavailable.
+      }
     };
+    try {
+      const savedView = localStorage.getItem("pnyshop-srp-view");
+      if (savedView === "list" || savedView === "grid") {
+        window.setSrpViewMode(savedView);
+      }
+    } catch {
+      // Storage access can be blocked in privacy-focused browsers.
+    }
     window.toggleBrandFilter = (brand, checked) => {
       if (checked) state.brands.add(brand);
       else state.brands.delete(brand);
@@ -1086,10 +1216,10 @@ function LegacyHomeBehaviorInner() {
   return null;
 }
 
-export function LegacyHomeBehavior() {
+export function LegacyHomeBehavior({ categories }: { categories: Category[] }) {
   return (
     <>
-      <LegacyHomeBehaviorInner />
+      <LegacyHomeBehaviorInner categories={categories} />
       <Script
         src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"
         strategy="afterInteractive"
