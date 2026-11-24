@@ -181,6 +181,7 @@ export function CheckoutPage({
         window.setTimeout(() => router.push("/profile"), 1400);
         return;
       }
+      window.dispatchEvent(new Event("pnyshop:cart-updated"));
       setNotice("سفارش با موفقیت ثبت شد و در وضعیت انتظار پرداخت قرار دارد.");
       window.setTimeout(() => router.push("/profile"), 1400);
     } catch (error) {

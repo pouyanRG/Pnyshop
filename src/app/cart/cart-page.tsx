@@ -88,6 +88,7 @@ export function CartPage({
         .eq("id", user.id);
       if (error) throw error;
       setCart(nextCart);
+      window.dispatchEvent(new Event("pnyshop:cart-updated"));
     } catch (error) {
       console.error("Could not save cart to Supabase:", error);
       setNotice("تغییر سبد ذخیره نشد. لطفاً اتصال سوپابیس و schema را بررسی کنید.");
@@ -124,7 +125,7 @@ export function CartPage({
 
   return (
     <div className={`${styles.page} cart-page`} dir="rtl">
-      <StorefrontHeader showHeader={false} />
+      <StorefrontHeader />
       <main className={styles.content}>
         <div className={styles.titleRow}>
           <h1><i className="fas fa-shopping-basket" /> سبد خرید</h1>

@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import type { Order, Profile } from "@/types/database";
 import { StorefrontHeader } from "@/components/storefront/storefront-header";
@@ -106,6 +106,15 @@ export function ProfilePage({
   const wishlistCount = Array.isArray(profile?.wishlist)
     ? profile.wishlist.length
     : 0;
+
+  useEffect(() => {
+    const selectSectionFromHash = () => {
+      if (window.location.hash === "#orders") setSection("orders");
+    };
+    selectSectionFromHash();
+    window.addEventListener("hashchange", selectSectionFromHash);
+    return () => window.removeEventListener("hashchange", selectSectionFromHash);
+  }, []);
 
   function updateField(key: keyof EditableProfile, value: string) {
     setValues((current) => ({ ...current, [key]: value }));

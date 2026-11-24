@@ -213,7 +213,7 @@ export function renderCategoryCircles(
 
   const all = `${cards}${extraCards}`;
   if (!all) return "";
-  return `<section class="section" aria-label="دسته‌بندی‌ها"><div class="cat-grid" id="catGrid">${all}</div></section>`;
+  return `<section class="section" id="home-categories" aria-label="دسته‌بندی‌ها"><div class="cat-grid" id="catGrid">${all}</div></section>`;
 }
 
 export function renderSpotlight(media: SiteMedia[]): string {

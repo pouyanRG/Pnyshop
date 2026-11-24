@@ -5,6 +5,7 @@ import Link from "next/link";
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useRouter } from "next/navigation";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
+import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import type { Json, Product, ProductImage, ProductVariant } from "@/types/database";
 import styles from "./product-page.module.css";
 
@@ -207,6 +208,7 @@ export function ProductPage({
         .update({ cart: serializeCart(nextCart), updated_at: new Date().toISOString() })
         .eq("id", user.id);
       if (saveError) throw saveError;
+      window.dispatchEvent(new Event("pnyshop:cart-updated"));
       setNotice("محصول به سبد خرید اضافه شد.");
     } catch (error) {
       console.error("Could not add product to cart:", error);
@@ -264,6 +266,7 @@ export function ProductPage({
 
   return (
     <div className={`${styles.page} storefront-product-page`} dir="rtl">
+      <StorefrontHeader />
       <main className={styles.content}>
         <div className={styles.pageTop}>
           <button

@@ -42,7 +42,7 @@ export default async function CheckoutRoute() {
       <style>{`
         .checkout-page {
           min-height: 100vh;
-          padding-top: 76px;
+          padding-top: var(--storefront-header-height);
           background: var(--bg-body);
         }
         :root {

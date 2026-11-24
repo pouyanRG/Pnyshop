@@ -4,7 +4,7 @@ import Script from "next/script";
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Category, Database, Json } from "@/types/database";
+import type { Database, Json } from "@/types/database";
 import { createSupabaseBrowserClient } from "@/lib/supabase/browser";
 import {
   asColors,
@@ -40,14 +40,7 @@ declare global {
   interface Window {
     Swiper?: new (selector: string, options: SwiperOptions) => unknown;
     toggleTheme: () => void;
-    toggleMegaMenu: () => void;
-    handleMegaTriggerKeydown: (event: KeyboardEvent) => void;
-    megaShowRail: () => void;
-    megaShowPanel: () => void;
-    megaActivateMain: (categoryId: number) => void;
-    megaScheduleActivate: (categoryId: number) => void;
-    closeMegaMenu: () => void;
-    openSRP: (query?: string, category?: string, mode?: string) => void;
+    openSRP?: (query?: string, category?: string, mode?: string) => void;
     closeSRP: () => void;
     openFilterSheet: (section: string) => void;
     closeFilterSheet: () => void;
@@ -203,175 +196,10 @@ type SrpState = {
   trigger: HTMLElement | null;
 };
 
-type CategoryNode = Category & { children: CategoryNode[] };
-
-function buildMegaCategoryTree(categories: Category[]): CategoryNode[] {
-  const nodes = new Map(categories.map((category) => [
-    category.id,
-    { ...category, children: [] as CategoryNode[] },
-  ]));
-  const roots: CategoryNode[] = [];
-
-  for (const node of nodes.values()) {
-    if (node.parent_id !== null && nodes.has(node.parent_id)) {
-      nodes.get(node.parent_id)?.children.push(node);
-    } else {
-      roots.push(node);
-    }
-  }
-
-  const sortNodes = (items: CategoryNode[]) => {
-    items.sort((a, b) => a.sort_order - b.sort_order || a.id - b.id);
-    items.forEach((item) => sortNodes(item.children));
-  };
-  sortNodes(roots);
-  return roots;
-}
-
-function collectCategoryLeaves(node: CategoryNode): Category[] {
-  if (node.children.length === 0) return [node];
-  return node.children.flatMap(collectCategoryLeaves);
-}
-
-function renderMegaPanel(node: CategoryNode): void {
-  const panel = document.getElementById("megaCatsPanel");
-  if (!panel) return;
-
-  const columns = node.children.length > 0
-    ? node.children.map((child) => {
-        const leaves = collectCategoryLeaves(child);
-        const links = leaves.map((leaf) =>
-          `<button type="button" class="mm-link" onclick="openSRP('', '${escapeAttr(leaf.name)}');closeMegaMenu();">${escapeHtml(leaf.name)}</button>`,
-        ).join("");
-        return `<div class="mega-panel-col">
-          <button type="button" class="mm-col-title mm-link" onclick="openSRP('', '${escapeAttr(child.name)}');closeMegaMenu();">${escapeHtml(child.name)}</button>
-          ${links}
-        </div>`;
-      }).join("")
-    : `<div class="mega-panel-col">
-        <button type="button" class="mm-link" onclick="openSRP('', '${escapeAttr(node.name)}');closeMegaMenu();">${escapeHtml(node.name)}</button>
-      </div>`;
-
-  panel.innerHTML = `<div class="mega-panel-columns">
-    ${columns}
-    <div class="mega-panel-col mega-panel-highlight">
-      <div class="mm-col-title">پیشنهاد ما</div>
-      <button type="button" class="mm-link" onclick="openSRP('', '', 'bestseller');closeMegaMenu();"><i class="fas fa-fire" style="color:var(--danger);font-size:11px;"></i> پرفروش‌ترین‌ها</button>
-      <button type="button" class="mm-link" onclick="openSRP('', '', 'discount');closeMegaMenu();"><i class="fas fa-tag" style="color:var(--danger);font-size:11px;"></i> تخفیفات ویژه</button>
-    </div>
-  </div>`;
-}
-
-let megaHoverTimer = 0;
-let megaCategoryNodes = new Map<number, CategoryNode>();
-
-function initializeMegaCategories(categories: Category[]): void {
-  const rail = document.getElementById("megaCatsRail");
-  const panel = document.getElementById("megaCatsPanel");
-  if (!rail || !panel) return;
-
-  const roots = buildMegaCategoryTree(categories);
-  megaCategoryNodes = new Map(roots.map((node) => [node.id, node]));
-
-  if (roots.length === 0) {
-    rail.innerHTML = '<div style="padding:20px;text-align:center;color:var(--text-muted);font-size:13px;">دسته‌بندی‌ای یافت نشد.</div>';
-    panel.innerHTML = "";
-    return;
-  }
-
-  rail.innerHTML = roots.map((node) =>
-    `<button type="button" class="mega-cat-rail-item" role="tab" id="mega-rail-${node.id}" data-category-id="${node.id}"
-      onmouseenter="megaScheduleActivate(${node.id})"
-      onfocus="megaScheduleActivate(${node.id})"
-      onclick="megaActivateMain(${node.id});megaShowPanel()">
-      <span>${escapeHtml(node.name)}</span>
-      <i class="fas fa-chevron-left mcr-arrow"></i>
-    </button>`,
-  ).join("");
-
-  window.megaScheduleActivate = (categoryId: number) => {
-    window.clearTimeout(megaHoverTimer);
-    megaHoverTimer = window.setTimeout(() => window.megaActivateMain(categoryId), 180);
-  };
-  window.megaActivateMain = (categoryId: number) => {
-    window.clearTimeout(megaHoverTimer);
-    document.querySelectorAll(".mega-cat-rail-item").forEach((item) => {
-      item.classList.toggle("active", item.getAttribute("data-category-id") === String(categoryId));
-    });
-    const node = megaCategoryNodes.get(categoryId);
-    if (node) renderMegaPanel(node);
-  };
-  window.megaShowPanel = () => {
-    document.getElementById("megaMenu")?.setAttribute("data-mobile-view", "panel");
-  };
-  window.closeMegaMenu = () => {
-    document.getElementById("megaMenu")?.classList.remove("open");
-    document.getElementById("megaMenu")?.setAttribute("aria-hidden", "true");
-    document.getElementById("megaTrigger")?.setAttribute("aria-expanded", "false");
-  };
-
-  window.megaActivateMain(roots[0].id);
-}
-
-function LegacyHomeBehaviorInner({ categories }: { categories: Category[] }) {
+function LegacyHomeBehaviorInner() {
   const router = useRouter();
 
   useEffect(() => {
-    initializeMegaCategories(categories);
-
-    window.toggleMegaMenu = () => {
-      const menu = document.getElementById("megaMenu");
-      const trigger = document.getElementById("megaTrigger");
-      const isOpen = menu?.classList.toggle("open") ?? false;
-      menu?.setAttribute("aria-hidden", String(!isOpen));
-      trigger?.setAttribute("aria-expanded", String(isOpen));
-      menu?.setAttribute("data-mobile-view", "rail");
-    };
-
-    window.handleMegaTriggerKeydown = (event) => {
-      if (event.key === "Escape") {
-        document.getElementById("megaMenu")?.classList.remove("open");
-        document.getElementById("megaTrigger")?.setAttribute("aria-expanded", "false");
-      }
-    };
-
-    window.megaShowRail = () => {
-      document.getElementById("megaMenu")?.setAttribute("data-mobile-view", "rail");
-    };
-
-    const search = document.getElementById("mainSearch") as HTMLInputElement | null;
-    const clearSearch = document.getElementById("clearSearch");
-    const mobileSearchQuery = window.matchMedia("(max-width: 768px)");
-    const updateSearchPlaceholder = () => {
-      if (search) {
-        search.placeholder = mobileSearchQuery.matches
-          ? "جستجو..."
-          : "جستجوی محصول، برند، دسته‌بندی...";
-      }
-    };
-    const openSearch = () => {
-      if (search?.value.trim()) window.openSRP(search.value.trim());
-    };
-    const updateClearSearch = () => {
-      if (clearSearch) clearSearch.style.display = search?.value ? "flex" : "none";
-    };
-    const clearSearchValue = () => {
-      if (search) {
-        search.value = "";
-        updateClearSearch();
-        search.focus();
-      }
-    };
-    const onSearchKeyDown = (event: KeyboardEvent) => {
-      if (event.key === "Enter") openSearch();
-    };
-    search?.addEventListener("input", updateClearSearch);
-    search?.addEventListener("keydown", onSearchKeyDown);
-    clearSearch?.addEventListener("click", clearSearchValue);
-    mobileSearchQuery.addEventListener("change", updateSearchPlaceholder);
-    updateSearchPlaceholder();
-    updateClearSearch();
-
     /* --------------------
        Search results (SRP)
        -------------------- */
@@ -400,65 +228,6 @@ function LegacyHomeBehaviorInner({ categories }: { categories: Category[] }) {
       state.client ??= await createSupabaseBrowserClient();
       return state.client;
     }
-
-    async function updateHeaderUser(client: SupabaseClient<Database>) {
-      const nameElement = document.querySelector<HTMLElement>(
-        ".header-actions .h-user-btn span",
-      );
-      if (!nameElement) return;
-
-      try {
-        const {
-          data: { user },
-          error: authError,
-        } = await client.auth.getUser();
-        if (authError) throw authError;
-        if (!user) {
-          nameElement.textContent = "حساب کاربری";
-          return;
-        }
-
-        const { data: profile, error: profileError } = await client
-          .from("profiles")
-          .select("name")
-          .eq("id", user.id)
-          .maybeSingle();
-        if (profileError) {
-          console.error("Could not load the signed-in user's profile name:", profileError);
-        }
-
-        const metadataName =
-          typeof user.user_metadata.full_name === "string"
-            ? user.user_metadata.full_name
-            : typeof user.user_metadata.name === "string"
-              ? user.user_metadata.name
-              : "";
-        nameElement.textContent =
-          profile?.name?.trim() ||
-          metadataName.trim() ||
-          user.email?.split("@")[0] ||
-          "حساب کاربری";
-      } catch (error) {
-        console.error("Could not load the signed-in user's header name:", error);
-      }
-    }
-
-    let authSubscription: { unsubscribe: () => void } | undefined;
-    let disposed = false;
-    void getClient()
-      .then((client) => {
-        if (disposed) return;
-        void updateHeaderUser(client);
-        const { data } = client.auth.onAuthStateChange(() => {
-          window.setTimeout(() => {
-            if (!disposed) void updateHeaderUser(client);
-          }, 0);
-        });
-        authSubscription = data.subscription;
-      })
-      .catch((error: unknown) => {
-        console.error("Could not subscribe to storefront auth changes:", error);
-      });
 
     async function loadCatalog() {
       if (state.loaded || state.loading) return state.products;
@@ -797,7 +566,7 @@ function LegacyHomeBehaviorInner({ categories }: { categories: Category[] }) {
       const overlay = document.getElementById("srpOverlay");
       overlay?.classList.add("open");
       document.body.style.overflow = "hidden";
-      document.getElementById("megaMenu")?.classList.remove("open");
+      window.dispatchEvent(new Event("pnyshop:close-navigation-menu"));
 
       const input = document.getElementById("srpInput") as HTMLInputElement | null;
       if (input) {
@@ -959,6 +728,7 @@ function LegacyHomeBehaviorInner({ categories }: { categories: Category[] }) {
           .update({ cart, updated_at: new Date().toISOString() })
           .eq("id", user.id);
         if (saveError) throw saveError;
+        window.dispatchEvent(new Event("pnyshop:cart-updated"));
         showToast("به سبد خرید اضافه شد");
       } catch (error) {
         console.error("Could not add the product to the cart:", error);
@@ -1012,6 +782,16 @@ function LegacyHomeBehaviorInner({ categories }: { categories: Category[] }) {
     }
 
     window.openSRP = openSrp;
+    const searchParams = new URLSearchParams(window.location.search);
+    const initialQuery = searchParams.get("q") ?? "";
+    const initialCategory = searchParams.get("category") ?? "";
+    const initialMode = searchParams.get("mode") ?? "all";
+    if (initialQuery || initialCategory || initialMode !== "all") {
+      window.setTimeout(
+        () => void openSrp(initialQuery, initialCategory, initialMode),
+        0,
+      );
+    }
     window.closeSRP = closeSrp;
     window.srpFilter = onSrpInput;
     window.onSrpSortChange = (value) => {
@@ -1138,55 +918,11 @@ function LegacyHomeBehaviorInner({ categories }: { categories: Category[] }) {
     grid?.addEventListener("click", handleGridClick);
     grid?.addEventListener("keydown", handleGridKeydown);
 
-    let lastScrollY = window.scrollY;
-    let accumulatedScroll = 0;
-    let scrollDirection = 0;
-    const amazingSection = document.getElementById("amazingSectionRoot");
-    const headerCollapseEdge = document
-      .getElementById("mainHeader")
-      ?.getBoundingClientRect().bottom ?? 0;
-    const onScroll = () => {
-      const header = document.getElementById("mainHeader");
-      const currentY = window.scrollY;
-      header?.classList.toggle("scrolled", currentY > 10);
-      const direction = Math.sign(currentY - lastScrollY);
-      const isMobile = window.matchMedia("(max-width: 768px)").matches;
-      const reachedAmazingSection =
-        amazingSection !== null &&
-        amazingSection.getBoundingClientRect().top <= headerCollapseEdge;
-      if (!isMobile) {
-        if (currentY <= 10 || currentY < lastScrollY) {
-          header?.classList.remove("header-hidden");
-        } else if (currentY > lastScrollY) {
-          header?.classList.add("header-hidden");
-        }
-        accumulatedScroll = 0;
-        scrollDirection = 0;
-      } else if (currentY <= 10) {
-        header?.classList.remove("header-hidden");
-        accumulatedScroll = 0;
-        scrollDirection = 0;
-      } else if (direction > 0 && !reachedAmazingSection) {
-        accumulatedScroll = 0;
-        scrollDirection = 0;
-      } else if (direction !== 0) {
-        if (direction !== scrollDirection) accumulatedScroll = 0;
-        accumulatedScroll += Math.abs(currentY - lastScrollY);
-        scrollDirection = direction;
-        if (accumulatedScroll >= (direction > 0 ? 12 : 80)) {
-          header?.classList.toggle("header-hidden", direction > 0);
-          accumulatedScroll = 0;
-        }
-      }
-      lastScrollY = currentY;
-    };
-    window.addEventListener("scroll", onScroll, { passive: true });
-
     const onEscape = (event: KeyboardEvent) => {
       if (event.key === "Escape") {
         window.closeSRP();
         window.closeFilterSheet();
-        document.getElementById("megaMenu")?.classList.remove("open");
+        window.dispatchEvent(new Event("pnyshop:close-navigation-menu"));
       }
     };
     document.addEventListener("keydown", onEscape);
@@ -1196,15 +932,8 @@ function LegacyHomeBehaviorInner({ categories }: { categories: Category[] }) {
     startAmazingTimer();
 
     return () => {
-      disposed = true;
-      authSubscription?.unsubscribe();
-      mobileSearchQuery.removeEventListener("change", updateSearchPlaceholder);
-      search?.removeEventListener("input", updateClearSearch);
-      search?.removeEventListener("keydown", onSearchKeyDown);
-      clearSearch?.removeEventListener("click", clearSearchValue);
       grid?.removeEventListener("click", handleGridClick);
       grid?.removeEventListener("keydown", handleGridKeydown);
-      window.removeEventListener("scroll", onScroll);
       document.removeEventListener("keydown", onEscape);
       state.observer?.disconnect();
     };
@@ -1216,10 +945,10 @@ function LegacyHomeBehaviorInner({ categories }: { categories: Category[] }) {
   return null;
 }
 
-export function LegacyHomeBehavior({ categories }: { categories: Category[] }) {
+export function LegacyHomeBehavior() {
   return (
     <>
-      <LegacyHomeBehaviorInner categories={categories} />
+      <LegacyHomeBehaviorInner />
       <Script
         src="https://cdn.jsdelivr.net/npm/swiper@10/swiper-bundle.min.js"
         strategy="afterInteractive"

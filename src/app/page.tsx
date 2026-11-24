@@ -3,6 +3,7 @@ import { cache } from "react";
 import { readFile } from "node:fs/promises";
 import path from "node:path";
 import { LegacyHomeBehavior } from "@/components/storefront/legacy-home-behavior";
+import { StorefrontHeader } from "@/components/storefront/storefront-header";
 import { getHomeData, type HomeData } from "@/lib/storefront/home-data";
 import {
   renderAmazingSlides,
@@ -56,6 +57,11 @@ async function buildHomeMarkup(home: HomeData): Promise<string> {
       /<div class="loading-screen" id="loadingScreen">[\s\S]*?(?=<header class="main-header")/i,
       "",
     )
+    .replace(
+      /<header class="main-header"[\s\S]*?(?=<main>)/i,
+      "",
+    )
+    .replace(/<nav class="mobile-nav"[\s\S]*?<\/nav>/i, "")
     .replace(/<script\b[^>]*>[\s\S]*?<\/script>/gi, "")
     .replace(/href=(["'])index\.html\1/gi, 'href="/"')
     .replace(/href=(["'])profile\.html\1/gi, 'href="/profile"')
@@ -182,7 +188,11 @@ export default async function HomePage() {
 
   return (
     <>
-      <LegacyHomeBehavior categories={home.categories} />
+      <StorefrontHeader
+        categories={home.categories}
+        logoUrl={home.settings.logo_url || "/images/Pnyshop-img-logo.png"}
+      />
+      <LegacyHomeBehavior />
       <div
         className="legacy-home-page"
         suppressHydrationWarning

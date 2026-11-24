@@ -3,7 +3,7 @@
 
 /* Shared storefront visual language for all migrated Next.js routes */
 :root {
-  --storefront-header-height: 64px;
+  --storefront-header-height: 120px;
   --storefront-radius-card: 16px;
   --storefront-radius-control: 12px;
 }
@@ -13,7 +13,11 @@ body {
 }
 
 body:has(.storefront-product-page) {
-  padding: 0;
+  padding: 0 0 calc(var(--bottom-nav-h) + env(safe-area-inset-bottom, 0px) + 16px);
+}
+
+body:has(#mainHeader) {
+  padding-top: 0;
 }
 
 .migration-state,
@@ -38,13 +42,38 @@ select {
 /* Common fixed-header spacing for every migrated page */
 .profile-page,
 .checkout-page,
+body:has(#mainHeader) .admin-page {
+  padding-top: var(--storefront-header-height);
+}
+
 .ai-page,
 .admin-page {
   padding-top: 76px;
 }
 
+@media (max-width: 900px) {
+  :root {
+    --storefront-header-height: calc(88px + env(safe-area-inset-top, 0px));
+  }
+
+  .profile-page,
+  .checkout-page,
+  body:has(#mainHeader) .admin-page {
+    padding-top: var(--storefront-header-height);
+  }
+
+  .ai-page,
+  .admin-page {
+    padding-top: 76px;
+  }
+}
+
 body:has(.cart-page) {
   padding-top: 12px;
+}
+
+body:has(.cart-page):has(#mainHeader) {
+  padding-top: 0;
 }
 
 .migration-state {

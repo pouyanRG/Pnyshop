@@ -285,7 +285,7 @@ body {
 
 @media screen and (max-width: 768px) {
     body:has(.legacy-home-page) {
-        padding-top: calc(56px + env(safe-area-inset-top, 0px));
+        padding-top: calc(88px + env(safe-area-inset-top, 0px));
     }
 }
  

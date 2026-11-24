@@ -2666,7 +2666,7 @@
    DESKTOP OVERRIDES
    ============================================= */
 @media (min-width: 769px) {
-    .legacy-home-page { padding-top: calc(var(--header-h) + 48px); padding-bottom: 0; }
+    .legacy-home-page { padding-top: var(--storefront-header-height); padding-bottom: 0; }
     .mobile-nav { display: none; }
     .desktop-nav { display: block; }
     .ai-fab { display: flex; }
@@ -2674,8 +2674,12 @@
     :root { --header-h: 64px; }
 }
 @media (max-width: 768px) {
+    .legacy-home-page { padding-top: calc(88px + env(safe-area-inset-top, 0px)); }
     .desktop-nav { display: none !important; }
     .section { padding: var(--space-4) var(--space-4) 0; }
+}
+@media (min-width: 769px) and (max-width: 900px) {
+    .legacy-home-page { padding-top: calc(88px + env(safe-area-inset-top, 0px)); }
 }
 
 
