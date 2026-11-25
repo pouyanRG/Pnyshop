@@ -26,14 +26,27 @@ type SwiperOptions = {
   slidesPerView?: "auto" | number;
   spaceBetween?: number;
   grabCursor?: boolean;
-  autoplay: { delay: number; disableOnInteraction: boolean };
+  speed?: number;
+  allowTouchMove?: boolean;
+  autoplay: {
+    delay: number;
+    disableOnInteraction: boolean;
+    pauseOnMouseEnter?: boolean;
+  };
   pagination?: { el: string; clickable: boolean };
-  navigation: { nextEl: string; prevEl: string };
+  navigation?: { nextEl: string; prevEl: string };
   effect?: "fade";
   fadeEffect?: { crossFade: boolean };
   breakpoints?: Record<number, Record<string, unknown>>;
   observer?: boolean;
   observeParents?: boolean;
+  on?: {
+    init?: () => void;
+    setTranslate?: () => void;
+    transitionStart?: () => void;
+    transitionEnd?: () => void;
+    resize?: () => void;
+  };
 };
 
 declare global {
@@ -113,28 +126,124 @@ function initializeHero() {
   showHero();
 }
 
+function prepareAmazingSlides(slider: HTMLElement) {
+  const wrapper = slider.querySelector<HTMLElement>(".swiper-wrapper");
+  if (!wrapper || wrapper.dataset.cloned === "true") return;
+
+  const originals = Array.from(wrapper.children) as HTMLElement[];
+  if (originals.length === 0) return;
+
+  const containerWidth = slider.clientWidth || window.innerWidth;
+  const slideWidth =
+    window.innerWidth >= 1200 ? 232 : window.innerWidth >= 769 ? 218 : 185;
+  const minSlides = Math.max(Math.ceil((containerWidth * 3) / slideWidth), 10);
+
+  let i = 0;
+  while (wrapper.children.length < minSlides) {
+    wrapper.appendChild(originals[i % originals.length].cloneNode(true));
+    i += 1;
+  }
+  wrapper.dataset.cloned = "true";
+}
+
+function updateAmazingSlideScales(slider: HTMLElement) {
+  const sliderBounds = slider.getBoundingClientRect();
+  const sliderStyle = window.getComputedStyle(slider);
+  const contentLeft =
+    sliderBounds.left + (Number.parseFloat(sliderStyle.paddingLeft) || 0);
+  const contentRight =
+    sliderBounds.right - (Number.parseFloat(sliderStyle.paddingRight) || 0);
+  const contentWidth = contentRight - contentLeft;
+  if (contentWidth <= 0) return;
+
+  const slideScales = Array.from(
+    slider.querySelectorAll<HTMLElement>(".swiper-slide"),
+    (slide) => {
+      const bounds = slide.getBoundingClientRect();
+      const center = bounds.left + bounds.width / 2;
+      const position = Math.min(
+        1,
+        Math.max(0, (center - contentLeft) / contentWidth),
+      );
+      const distanceFromEdge = Math.min(position, 1 - position);
+      const progress = Math.min(
+        1,
+        Math.max(0, (distanceFromEdge - 0.18) / 0.1),
+      );
+      const easedProgress = progress * progress * (3 - 2 * progress);
+      return {
+        slide,
+        scale: (0.86 + easedProgress * 0.14).toFixed(4),
+        opacity: (0.82 + easedProgress * 0.18).toFixed(4),
+      };
+    },
+  );
+
+  for (const { slide, scale, opacity } of slideScales) {
+    if (slide.style.getPropertyValue("--amazing-slide-scale") !== scale) {
+      slide.style.setProperty("--amazing-slide-scale", scale);
+    }
+    if (slide.style.getPropertyValue("--amazing-slide-opacity") !== opacity) {
+      slide.style.setProperty("--amazing-slide-opacity", opacity);
+    }
+  }
+}
+
 function initializeAmazingSwiper() {
   const slider = document.getElementById("amazingSwiperEl");
-  if (!slider) return;
-  const slideCount = slider.querySelectorAll(".swiper-slide").length;
-  if (slideCount === 0 || !window.Swiper) return;
+  if (!slider || !window.Swiper) return;
+  if (slider.querySelectorAll(".swiper-slide").length === 0) return;
   if (slider.classList.contains("swiper-initialized")) return;
+
+  prepareAmazingSlides(slider);
+
+  let animationFrame = 0;
+  const updateScales = () => updateAmazingSlideScales(slider);
+  const animateScales = () => {
+    if (!slider.isConnected) {
+      animationFrame = 0;
+      return;
+    }
+    updateScales();
+    animationFrame = window.requestAnimationFrame(animateScales);
+  };
+  const startScaleAnimation = () => {
+    if (animationFrame === 0) {
+      animationFrame = window.requestAnimationFrame(animateScales);
+    }
+  };
+  const stopScaleAnimation = () => {
+    if (animationFrame !== 0) {
+      window.cancelAnimationFrame(animationFrame);
+      animationFrame = 0;
+    }
+    updateScales();
+  };
+
   new window.Swiper(".amazing-swiper", {
     direction: "horizontal",
-    loop: slideCount > 1,
+    loop: true,
     rtl: true,
-    centeredSlides: true,
     slidesPerView: "auto",
     spaceBetween: 12,
+    centeredSlides: true,
     grabCursor: true,
-    autoplay: { delay: 3000, disableOnInteraction: false },
-    navigation: { nextEl: ".amazing-nav-next", prevEl: ".amazing-nav-prev" },
+    speed: 800,
+    autoplay: { delay: 3000, disableOnInteraction: false, pauseOnMouseEnter: true },
+    allowTouchMove: true,
     breakpoints: {
-      769: { centeredSlides: false, slidesPerView: "auto", spaceBetween: 18 },
-      1200: { centeredSlides: false, slidesPerView: "auto", spaceBetween: 20 },
+      769: { spaceBetween: 18 },
+      1200: { spaceBetween: 20 },
     },
     observer: true,
     observeParents: true,
+    on: {
+      init: updateScales,
+      setTranslate: updateScales,
+      transitionStart: startScaleAnimation,
+      transitionEnd: stopScaleAnimation,
+      resize: updateScales,
+    },
   });
 }
 

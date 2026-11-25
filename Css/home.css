@@ -656,21 +656,14 @@
 }
  
 .amazing-swiper .swiper-slide {
-  transition: transform 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.4s;
+  transform: scale(var(--amazing-slide-scale, 1));
+  opacity: var(--amazing-slide-opacity, 1);
+  transition: none;
   height: auto;
 }
- 
+
 @media (max-width: 768px) {
   .amazing-swiper .swiper-slide { width: 180px; }
-  .amazing-swiper .swiper-slide:not(.swiper-slide-active) {
-    transform: scale(0.92);
-    opacity: 0.7;
-  }
-  .amazing-swiper .swiper-slide-active {
-    transform: scale(1.05);
-    opacity: 1;
-    z-index: 2;
-  }
 }
  
 @media (min-width: 480px) and (max-width: 768px) {
@@ -679,19 +672,19 @@
  
 @media (min-width: 769px) {
   .amazing-swiper {
-    padding-inline: var(--space-4);
+    padding-inline: clamp(48px, 5vw, 80px);
+    padding-top: 16px;
     padding-bottom: var(--space-5);
   }
   .amazing-swiper .swiper-slide {
-    transform: none !important;
-    opacity: 1 !important;
-    z-index: auto !important;
-    width: 200px !important;
+    width: clamp(208px, 18vw, 238px) !important;
   }
 }
  
 @media (min-width: 1200px) {
-  .amazing-swiper .swiper-slide { width: 212px !important; }
+  .amazing-swiper .swiper-slide {
+    width: clamp(238px, 16vw, 270px) !important;
+  }
 }
  
 /* ── Navigation Buttons — Glass ── */
@@ -1165,10 +1158,6 @@
 
   .amazing-swiper .swiper-slide {
     width: clamp(155px, 35.4vw, 173px);
-  }
-
-  .amazing-swiper .swiper-slide-active {
-    transform: none;
   }
 
   .amazing-card {
